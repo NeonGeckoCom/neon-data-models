@@ -25,8 +25,8 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, List, Literal
-from neon_hana.schema.node_model import NodeData
+from typing import Optional, List, Literal
+from neon_data_models.models.client.node import NodeData
 
 
 class NodeInputContext(BaseModel):
@@ -152,3 +152,6 @@ class CoreAlertExpired(BaseModel):
     msg_type: str = "neon.alert_expired"
     data: dict
     context: dict
+
+
+# TODO: Define `__all__`
