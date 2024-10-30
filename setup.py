@@ -76,6 +76,7 @@ setup(
     package_data={'neon_data_models': ['*.yaml', '*.json']},
     include_package_data=True,
     install_requires=get_requirements("requirements.txt"),
+    extras_require={"test": get_requirements("test.txt")},
     zip_safe=True,
     classifiers=[
         'Intended Audience :: Developers',
