@@ -1,0 +1,331 @@
+{
+  "$defs": {
+    "_LanguageConfig": {
+      "properties": {
+        "input_languages": {
+          "default": [
+            "en-us"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Input Languages",
+          "type": "array"
+        },
+        "output_languages": {
+          "default": [
+            "en-us"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Output Languages",
+          "type": "array"
+        }
+      },
+      "title": "_LanguageConfig",
+      "type": "object"
+    },
+    "_LocationConfig": {
+      "properties": {
+        "latitude": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latitude"
+        },
+        "longitude": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Longitude"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "timezone": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timezone"
+        }
+      },
+      "title": "_LocationConfig",
+      "type": "object"
+    },
+    "_PrivacyConfig": {
+      "properties": {
+        "save_text": {
+          "default": true,
+          "title": "Save Text",
+          "type": "boolean"
+        },
+        "save_audio": {
+          "default": false,
+          "title": "Save Audio",
+          "type": "boolean"
+        }
+      },
+      "title": "_PrivacyConfig",
+      "type": "object"
+    },
+    "_ResponseConfig": {
+      "properties": {
+        "hesitation": {
+          "default": false,
+          "title": "Hesitation",
+          "type": "boolean"
+        },
+        "limit_dialog": {
+          "default": false,
+          "title": "Limit Dialog",
+          "type": "boolean"
+        },
+        "tts_gender": {
+          "default": "female",
+          "enum": [
+            "male",
+            "female"
+          ],
+          "title": "Tts Gender",
+          "type": "string"
+        },
+        "tts_speed_multiplier": {
+          "default": 1.0,
+          "title": "Tts Speed Multiplier",
+          "type": "number"
+        }
+      },
+      "title": "_ResponseConfig",
+      "type": "object"
+    },
+    "_UnitsConfig": {
+      "properties": {
+        "time": {
+          "default": 12,
+          "enum": [
+            12,
+            24
+          ],
+          "title": "Time",
+          "type": "integer"
+        },
+        "date": {
+          "default": "MDY",
+          "enum": [
+            "MDY",
+            "YMD",
+            "YDM",
+            "DMY"
+          ],
+          "title": "Date",
+          "type": "string"
+        },
+        "measure": {
+          "default": "imperial",
+          "enum": [
+            "imperial",
+            "metric"
+          ],
+          "title": "Measure",
+          "type": "string"
+        }
+      },
+      "title": "_UnitsConfig",
+      "type": "object"
+    },
+    "_UserConfig": {
+      "properties": {
+        "first_name": {
+          "default": "",
+          "title": "First Name",
+          "type": "string"
+        },
+        "middle_name": {
+          "default": "",
+          "title": "Middle Name",
+          "type": "string"
+        },
+        "last_name": {
+          "default": "",
+          "title": "Last Name",
+          "type": "string"
+        },
+        "preferred_name": {
+          "default": "",
+          "title": "Preferred Name",
+          "type": "string"
+        },
+        "dob": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dob"
+        },
+        "email": {
+          "default": "",
+          "title": "Email",
+          "type": "string"
+        },
+        "avatar_url": {
+          "default": "",
+          "title": "Avatar Url",
+          "type": "string"
+        },
+        "about": {
+          "default": "",
+          "title": "About",
+          "type": "string"
+        },
+        "phone": {
+          "default": "",
+          "title": "Phone",
+          "type": "string"
+        },
+        "phone_verified": {
+          "default": false,
+          "title": "Phone Verified",
+          "type": "boolean"
+        },
+        "email_verified": {
+          "default": false,
+          "title": "Email Verified",
+          "type": "boolean"
+        }
+      },
+      "title": "_UserConfig",
+      "type": "object"
+    }
+  },
+  "description": "Defines user configuration used in Neon Core.",
+  "properties": {
+    "skills": {
+      "additionalProperties": {
+        "type": "object"
+      },
+      "default": {},
+      "title": "Skills",
+      "type": "object"
+    },
+    "user": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/_UserConfig"
+        }
+      ],
+      "default": {
+        "first_name": "",
+        "middle_name": "",
+        "last_name": "",
+        "preferred_name": "",
+        "dob": null,
+        "email": "",
+        "avatar_url": "",
+        "about": "",
+        "phone": "",
+        "phone_verified": false,
+        "email_verified": false
+      }
+    },
+    "language": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/_LanguageConfig"
+        }
+      ],
+      "default": {
+        "input_languages": [
+          "en-us"
+        ],
+        "output_languages": [
+          "en-us"
+        ]
+      }
+    },
+    "units": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/_UnitsConfig"
+        }
+      ],
+      "default": {
+        "time": 12,
+        "date": "MDY",
+        "measure": "imperial"
+      }
+    },
+    "location": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/_LocationConfig"
+        }
+      ],
+      "default": {
+        "latitude": null,
+        "longitude": null,
+        "name": null,
+        "timezone": null
+      }
+    },
+    "response_mode": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/_ResponseConfig"
+        }
+      ],
+      "default": {
+        "hesitation": false,
+        "limit_dialog": false,
+        "tts_gender": "female",
+        "tts_speed_multiplier": 1.0
+      }
+    },
+    "privacy": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/_PrivacyConfig"
+        }
+      ],
+      "default": {
+        "save_text": true,
+        "save_audio": false
+      }
+    }
+  },
+  "title": "NeonUserConfig",
+  "type": "object"
+}

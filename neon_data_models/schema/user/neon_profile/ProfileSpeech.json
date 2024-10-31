@@ -1,0 +1,70 @@
+{
+  "properties": {
+    "stt_language": {
+      "default": "en-us",
+      "title": "Stt Language",
+      "type": "string"
+    },
+    "alt_languages": {
+      "default": [
+        "en"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Alt Languages",
+      "type": "array"
+    },
+    "tts_language": {
+      "default": "en-us",
+      "title": "Tts Language",
+      "type": "string"
+    },
+    "tts_gender": {
+      "default": "female",
+      "title": "Tts Gender",
+      "type": "string"
+    },
+    "neon_voice": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": "",
+      "title": "Neon Voice"
+    },
+    "secondary_tts_language": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": "",
+      "title": "Secondary Tts Language"
+    },
+    "secondary_tts_gender": {
+      "default": "male",
+      "title": "Secondary Tts Gender",
+      "type": "string"
+    },
+    "secondary_neon_voice": {
+      "default": "",
+      "title": "Secondary Neon Voice",
+      "type": "string"
+    },
+    "speed_multiplier": {
+      "default": 1.0,
+      "title": "Speed Multiplier",
+      "type": "number"
+    }
+  },
+  "title": "ProfileSpeech",
+  "type": "object"
+}

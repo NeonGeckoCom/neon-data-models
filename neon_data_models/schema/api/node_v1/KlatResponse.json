@@ -1,0 +1,18 @@
+{
+  "properties": {
+    "sentence": {
+      "description": "Text response",
+      "title": "Sentence",
+      "type": "string"
+    },
+    "audio": {
+      "title": "Audio",
+      "type": "object"
+    }
+  },
+  "required": [
+    "sentence"
+  ],
+  "title": "KlatResponse",
+  "type": "object"
+}

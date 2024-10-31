@@ -1,0 +1,21 @@
+{
+  "properties": {
+    "time": {
+      "default": 12,
+      "title": "Time",
+      "type": "integer"
+    },
+    "date": {
+      "default": "MDY",
+      "title": "Date",
+      "type": "string"
+    },
+    "measure": {
+      "default": "imperial",
+      "title": "Measure",
+      "type": "string"
+    }
+  },
+  "title": "ProfileUnits",
+  "type": "object"
+}

@@ -1,0 +1,22 @@
+{
+  "properties": {
+    "msg_type": {
+      "default": "neon.get_stt.response",
+      "title": "Msg Type",
+      "type": "string"
+    },
+    "data": {
+      "title": "Data",
+      "type": "object"
+    },
+    "context": {
+      "title": "Context",
+      "type": "object"
+    }
+  },
+  "required": [
+    "context"
+  ],
+  "title": "NodeGetSttResponse",
+  "type": "object"
+}

@@ -1,0 +1,20 @@
+{
+  "properties": {
+    "text": {
+      "description": "String text input",
+      "title": "Text",
+      "type": "string"
+    },
+    "lang": {
+      "description": "BCP-47 language code",
+      "title": "Lang",
+      "type": "string"
+    }
+  },
+  "required": [
+    "text",
+    "lang"
+  ],
+  "title": "TextInputData",
+  "type": "object"
+}

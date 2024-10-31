@@ -1,0 +1,177 @@
+{
+  "$defs": {
+    "NodeData": {
+      "properties": {
+        "device_id": {
+          "title": "Device Id",
+          "type": "string"
+        },
+        "device_name": {
+          "default": "",
+          "title": "Device Name",
+          "type": "string"
+        },
+        "device_description": {
+          "default": "",
+          "title": "Device Description",
+          "type": "string"
+        },
+        "platform": {
+          "default": "",
+          "title": "Platform",
+          "type": "string"
+        },
+        "networking": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/NodeNetworking"
+            }
+          ],
+          "default": {
+            "local_ip": "127.0.0.1",
+            "public_ip": "",
+            "mac_address": ""
+          }
+        },
+        "software": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/NodeSoftware"
+            }
+          ],
+          "default": {
+            "operating_system": "",
+            "os_version": "",
+            "neon_packages": null
+          }
+        },
+        "location": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/NodeLocation"
+            }
+          ],
+          "default": {
+            "lat": null,
+            "lon": null,
+            "site_id": null
+          }
+        }
+      },
+      "title": "NodeData",
+      "type": "object"
+    },
+    "NodeLocation": {
+      "properties": {
+        "lat": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lat"
+        },
+        "lon": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lon"
+        },
+        "site_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Site Id"
+        }
+      },
+      "title": "NodeLocation",
+      "type": "object"
+    },
+    "NodeNetworking": {
+      "properties": {
+        "local_ip": {
+          "default": "127.0.0.1",
+          "title": "Local Ip",
+          "type": "string"
+        },
+        "public_ip": {
+          "default": "",
+          "title": "Public Ip",
+          "type": "string"
+        },
+        "mac_address": {
+          "default": "",
+          "title": "Mac Address",
+          "type": "string"
+        }
+      },
+      "title": "NodeNetworking",
+      "type": "object"
+    },
+    "NodeSoftware": {
+      "properties": {
+        "operating_system": {
+          "default": "",
+          "title": "Operating System",
+          "type": "string"
+        },
+        "os_version": {
+          "default": "",
+          "title": "Os Version",
+          "type": "string"
+        },
+        "neon_packages": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Neon Packages"
+        }
+      },
+      "title": "NodeSoftware",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "node_data": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/NodeData"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Node Data"
+    }
+  },
+  "required": [
+    "node_data"
+  ],
+  "title": "NodeInputContext",
+  "type": "object"
+}

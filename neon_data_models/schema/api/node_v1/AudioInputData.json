@@ -1,0 +1,20 @@
+{
+  "properties": {
+    "audio_data": {
+      "description": "base64-encoded audio",
+      "title": "Audio Data",
+      "type": "string"
+    },
+    "lang": {
+      "description": "BCP-47 language code",
+      "title": "Lang",
+      "type": "string"
+    }
+  },
+  "required": [
+    "audio_data",
+    "lang"
+  ],
+  "title": "AudioInputData",
+  "type": "object"
+}

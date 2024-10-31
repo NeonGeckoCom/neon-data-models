@@ -1,0 +1,21 @@
+{
+  "description": "Defines configuration used in BrainForge LLM applications.",
+  "properties": {
+    "inference_access": {
+      "additionalProperties": {
+        "additionalProperties": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "type": "object"
+      },
+      "default": {},
+      "title": "Inference Access",
+      "type": "object"
+    }
+  },
+  "title": "BrainForgeConfig",
+  "type": "object"
+}

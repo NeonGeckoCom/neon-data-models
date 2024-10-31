@@ -1,0 +1,402 @@
+{
+  "$defs": {
+    "ProfileLocation": {
+      "properties": {
+        "lat": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lat"
+        },
+        "lng": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lng"
+        },
+        "city": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "City"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State"
+        },
+        "country": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Country"
+        },
+        "tz": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tz"
+        },
+        "utc": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Utc"
+        }
+      },
+      "title": "ProfileLocation",
+      "type": "object"
+    },
+    "ProfilePrivacy": {
+      "properties": {
+        "save_audio": {
+          "default": false,
+          "title": "Save Audio",
+          "type": "boolean"
+        },
+        "save_text": {
+          "default": false,
+          "title": "Save Text",
+          "type": "boolean"
+        }
+      },
+      "title": "ProfilePrivacy",
+      "type": "object"
+    },
+    "ProfileResponseMode": {
+      "properties": {
+        "speed_mode": {
+          "default": "quick",
+          "title": "Speed Mode",
+          "type": "string"
+        },
+        "hesitation": {
+          "default": false,
+          "title": "Hesitation",
+          "type": "boolean"
+        },
+        "limit_dialog": {
+          "default": false,
+          "title": "Limit Dialog",
+          "type": "boolean"
+        }
+      },
+      "title": "ProfileResponseMode",
+      "type": "object"
+    },
+    "ProfileSpeech": {
+      "properties": {
+        "stt_language": {
+          "default": "en-us",
+          "title": "Stt Language",
+          "type": "string"
+        },
+        "alt_languages": {
+          "default": [
+            "en"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Alt Languages",
+          "type": "array"
+        },
+        "tts_language": {
+          "default": "en-us",
+          "title": "Tts Language",
+          "type": "string"
+        },
+        "tts_gender": {
+          "default": "female",
+          "title": "Tts Gender",
+          "type": "string"
+        },
+        "neon_voice": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "",
+          "title": "Neon Voice"
+        },
+        "secondary_tts_language": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "",
+          "title": "Secondary Tts Language"
+        },
+        "secondary_tts_gender": {
+          "default": "male",
+          "title": "Secondary Tts Gender",
+          "type": "string"
+        },
+        "secondary_neon_voice": {
+          "default": "",
+          "title": "Secondary Neon Voice",
+          "type": "string"
+        },
+        "speed_multiplier": {
+          "default": 1.0,
+          "title": "Speed Multiplier",
+          "type": "number"
+        }
+      },
+      "title": "ProfileSpeech",
+      "type": "object"
+    },
+    "ProfileUnits": {
+      "properties": {
+        "time": {
+          "default": 12,
+          "title": "Time",
+          "type": "integer"
+        },
+        "date": {
+          "default": "MDY",
+          "title": "Date",
+          "type": "string"
+        },
+        "measure": {
+          "default": "imperial",
+          "title": "Measure",
+          "type": "string"
+        }
+      },
+      "title": "ProfileUnits",
+      "type": "object"
+    },
+    "ProfileUser": {
+      "properties": {
+        "first_name": {
+          "default": "",
+          "title": "First Name",
+          "type": "string"
+        },
+        "middle_name": {
+          "default": "",
+          "title": "Middle Name",
+          "type": "string"
+        },
+        "last_name": {
+          "default": "",
+          "title": "Last Name",
+          "type": "string"
+        },
+        "preferred_name": {
+          "default": "",
+          "title": "Preferred Name",
+          "type": "string"
+        },
+        "full_name": {
+          "default": "",
+          "title": "Full Name",
+          "type": "string"
+        },
+        "dob": {
+          "default": "YYYY/MM/DD",
+          "title": "Dob",
+          "type": "string"
+        },
+        "age": {
+          "default": "",
+          "title": "Age",
+          "type": "string"
+        },
+        "email": {
+          "default": "",
+          "title": "Email",
+          "type": "string"
+        },
+        "username": {
+          "default": "",
+          "title": "Username",
+          "type": "string"
+        },
+        "password": {
+          "default": "",
+          "title": "Password",
+          "type": "string"
+        },
+        "picture": {
+          "default": "",
+          "title": "Picture",
+          "type": "string"
+        },
+        "about": {
+          "default": "",
+          "title": "About",
+          "type": "string"
+        },
+        "phone": {
+          "default": "",
+          "title": "Phone",
+          "type": "string"
+        },
+        "phone_verified": {
+          "default": false,
+          "title": "Phone Verified",
+          "type": "boolean"
+        },
+        "email_verified": {
+          "default": false,
+          "title": "Email Verified",
+          "type": "boolean"
+        }
+      },
+      "title": "ProfileUser",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "user": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/ProfileUser"
+        }
+      ],
+      "default": {
+        "first_name": "",
+        "middle_name": "",
+        "last_name": "",
+        "preferred_name": "",
+        "full_name": "",
+        "dob": "YYYY/MM/DD",
+        "age": "",
+        "email": "",
+        "username": "",
+        "password": "",
+        "picture": "",
+        "about": "",
+        "phone": "",
+        "phone_verified": false,
+        "email_verified": false
+      }
+    },
+    "speech": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/ProfileSpeech"
+        }
+      ],
+      "default": {
+        "stt_language": "en-us",
+        "alt_languages": [
+          "en"
+        ],
+        "tts_language": "en-us",
+        "tts_gender": "female",
+        "neon_voice": "",
+        "secondary_tts_language": "",
+        "secondary_tts_gender": "male",
+        "secondary_neon_voice": "",
+        "speed_multiplier": 1.0
+      }
+    },
+    "units": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/ProfileUnits"
+        }
+      ],
+      "default": {
+        "time": 12,
+        "date": "MDY",
+        "measure": "imperial"
+      }
+    },
+    "location": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/ProfileLocation"
+        }
+      ],
+      "default": {
+        "lat": null,
+        "lng": null,
+        "city": null,
+        "state": null,
+        "country": null,
+        "tz": null,
+        "utc": null
+      }
+    },
+    "response_mode": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/ProfileResponseMode"
+        }
+      ],
+      "default": {
+        "speed_mode": "quick",
+        "hesitation": false,
+        "limit_dialog": false
+      }
+    },
+    "privacy": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/ProfilePrivacy"
+        }
+      ],
+      "default": {
+        "save_audio": false,
+        "save_text": false
+      }
+    }
+  },
+  "title": "UserProfile",
+  "type": "object"
+}

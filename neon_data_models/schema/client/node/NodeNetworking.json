@@ -1,0 +1,21 @@
+{
+  "properties": {
+    "local_ip": {
+      "default": "127.0.0.1",
+      "title": "Local Ip",
+      "type": "string"
+    },
+    "public_ip": {
+      "default": "",
+      "title": "Public Ip",
+      "type": "string"
+    },
+    "mac_address": {
+      "default": "",
+      "title": "Mac Address",
+      "type": "string"
+    }
+  },
+  "title": "NodeNetworking",
+  "type": "object"
+}

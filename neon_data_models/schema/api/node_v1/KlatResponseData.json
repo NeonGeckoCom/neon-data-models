@@ -1,0 +1,10 @@
+{
+  "properties": {
+    "responses": {
+      "title": "Responses",
+      "type": "object"
+    }
+  },
+  "title": "KlatResponseData",
+  "type": "object"
+}

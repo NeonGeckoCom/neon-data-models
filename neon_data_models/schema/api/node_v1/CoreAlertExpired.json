@@ -1,0 +1,23 @@
+{
+  "properties": {
+    "msg_type": {
+      "default": "neon.alert_expired",
+      "title": "Msg Type",
+      "type": "string"
+    },
+    "data": {
+      "title": "Data",
+      "type": "object"
+    },
+    "context": {
+      "title": "Context",
+      "type": "object"
+    }
+  },
+  "required": [
+    "data",
+    "context"
+  ],
+  "title": "CoreAlertExpired",
+  "type": "object"
+}

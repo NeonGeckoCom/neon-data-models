@@ -1,0 +1,81 @@
+{
+  "properties": {
+    "first_name": {
+      "default": "",
+      "title": "First Name",
+      "type": "string"
+    },
+    "middle_name": {
+      "default": "",
+      "title": "Middle Name",
+      "type": "string"
+    },
+    "last_name": {
+      "default": "",
+      "title": "Last Name",
+      "type": "string"
+    },
+    "preferred_name": {
+      "default": "",
+      "title": "Preferred Name",
+      "type": "string"
+    },
+    "full_name": {
+      "default": "",
+      "title": "Full Name",
+      "type": "string"
+    },
+    "dob": {
+      "default": "YYYY/MM/DD",
+      "title": "Dob",
+      "type": "string"
+    },
+    "age": {
+      "default": "",
+      "title": "Age",
+      "type": "string"
+    },
+    "email": {
+      "default": "",
+      "title": "Email",
+      "type": "string"
+    },
+    "username": {
+      "default": "",
+      "title": "Username",
+      "type": "string"
+    },
+    "password": {
+      "default": "",
+      "title": "Password",
+      "type": "string"
+    },
+    "picture": {
+      "default": "",
+      "title": "Picture",
+      "type": "string"
+    },
+    "about": {
+      "default": "",
+      "title": "About",
+      "type": "string"
+    },
+    "phone": {
+      "default": "",
+      "title": "Phone",
+      "type": "string"
+    },
+    "phone_verified": {
+      "default": false,
+      "title": "Phone Verified",
+      "type": "boolean"
+    },
+    "email_verified": {
+      "default": false,
+      "title": "Email Verified",
+      "type": "boolean"
+    }
+  },
+  "title": "ProfileUser",
+  "type": "object"
+}

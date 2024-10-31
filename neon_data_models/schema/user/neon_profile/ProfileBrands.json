@@ -1,0 +1,21 @@
+{
+  "properties": {
+    "ignored_brands": {
+      "default": {},
+      "title": "Ignored Brands",
+      "type": "object"
+    },
+    "favorite_brands": {
+      "default": {},
+      "title": "Favorite Brands",
+      "type": "object"
+    },
+    "specially_requested": {
+      "default": {},
+      "title": "Specially Requested",
+      "type": "object"
+    }
+  },
+  "title": "ProfileBrands",
+  "type": "object"
+}
