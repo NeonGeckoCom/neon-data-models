@@ -24,60 +24,21 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from enum import IntEnum
+from unittest import TestCase
+from pydantic import ValidationError
+
+from neon_data_models.models.api.mq import UserDbRequest
 
 
-class AccessRoles(IntEnum):
-    """
-    Defines access roles such that a larger value always corresponds to more
-    permissions. `0` equates to no permission, negative numbers correspond to
-    non-user roles. In this way, an activity can require, for example,
-    `permission > AccessRoles.GUEST` to grant access to all registered users,
-    admins, and owners.
-    """
-    NONE = 0
-    GUEST = 1
-    USER = 2
-    ADMIN = 3
-    OWNER = 4
-
-    NODE = -1
-
-
-class UserData(IntEnum):
-    """
-    Defines types of user data.
-    """
-    CACHES = 0
-    PROFILE = 1
-    ALL_TR = 2
-    CONF_LIKES = 3
-    CONF_DISLIKES = 4
-    ALL_DATA = 5
-    ALL_MEDIA = 6
-    ALL_UNITS = 7
-    ALL_LANGUAGE = 8
-
-
-class AlertType(IntEnum):
-    """
-    Defines kinds of alerts.
-    """
-    ALL = -1
-    ALARM = 0
-    TIMER = 1
-    REMINDER = 2
-    UNKNOWN = 99
-
-
-class Weekdays(IntEnum):
-    """
-    Defines weekdays.
-    """
-    MON = 0
-    TUE = 1
-    WED = 2
-    THU = 3
-    FRI = 4
-    SAT = 5
-    SUN = 6
+class TestMQ(TestCase):
+    def test_user_db_request(self):
+        valid_model = UserDbRequest(operation="create", username="test_user",
+                                    message_id="test")
+        self.assertIsInstance(valid_model, UserDbRequest)
+        with self.assertRaises(ValidationError):
+            UserDbRequest(operation="get", username="test", message_id="test")
+        with self.assertRaises(ValidationError):
+            UserDbRequest(operation="delete", username="test_user",
+                          user="test_user", message_id="test")
+        with self.assertRaises(ValidationError):
+            UserDbRequest(operation="create", username="test_user")

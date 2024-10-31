@@ -24,10 +24,13 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from datetime import datetime, timedelta
 from pydantic import Field
-from typing import List, Literal
+from typing import List, Literal, Optional, Annotated
+
+from neon_data_models.enum import UserData, AlertType, Weekdays
 from neon_data_models.models.base import BaseModel
-from neon_data_models.models.base.messagebus import BaseMessage
+from neon_data_models.models.base.messagebus import BaseMessage, MessageContext
 
 
 class AudioInputData(BaseModel):
@@ -61,6 +64,29 @@ class TtsResponse(KlatResponse):
 class KlatResponseData(BaseModel):
     responses: dict = {Field(type=str,
                              description="BCP-47 language"): KlatResponse}
+
+
+class ClearDataData(BaseModel):
+    username: str
+    data_to_remove: List[UserData]
+
+
+class KlatErrorData(BaseModel):
+    error: str = "unknown error"
+    data: dict = {}
+
+
+class AlertData(BaseModel):
+    next_expiration_time: Optional[datetime]
+    alert_type: AlertType
+    priority: Annotated[int, Field(gt=1, lt=10)]
+    repeat_frequency: Optional[timedelta]
+    repeat_days: Optional[List[Weekdays]]
+    end_repeat: Optional[datetime]
+    alret_name: str
+    audio_file: Optional[str]
+    script_filename: Optional[str]
+    context: MessageContext
 
 
 class NodeAudioInput(BaseMessage):
@@ -119,23 +145,23 @@ class CoreWWDetected(BaseMessage):
 
 
 class CoreIntentFailure(BaseMessage):
-    msg_type: str = "complete.intent.failure"
-    data: dict
+    msg_type: str = "complete_intent_failure"
+    data: dict  # Empty dict
 
 
 class CoreErrorResponse(BaseMessage):
     msg_type: str = "klat.error"
-    data: dict
+    data: KlatErrorData
 
 
 class CoreClearData(BaseMessage):
     msg_type: str = "neon.clear_data"
-    data: dict
+    data: ClearDataData
 
 
 class CoreAlertExpired(BaseMessage):
     msg_type: str = "neon.alert_expired"
-    data: dict
+    data: AlertData
 
 
 __all__ = [NodeAudioInput.__name__, NodeTextInput.__name__, NodeGetStt.__name__,

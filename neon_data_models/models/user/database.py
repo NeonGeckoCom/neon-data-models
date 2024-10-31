@@ -151,14 +151,6 @@ class User(BaseModel):
         return self.model_dump() == other.model_dump()
 
 
-class MQRequest(BaseModel):
-    operation: Literal["create", "read", "update", "delete"]
-    username: str
-    password: Optional[str] = None
-    access_token: Optional[str] = None
-    user: Optional[User] = None
-
-
 __all__ = [NeonUserConfig.__name__, KlatConfig.__name__,
            BrainForgeConfig.__name__, PermissionsConfig.__name__,
-           TokenConfig.__name__, User.__name__, MQRequest.__name__]
+           TokenConfig.__name__, User.__name__]
