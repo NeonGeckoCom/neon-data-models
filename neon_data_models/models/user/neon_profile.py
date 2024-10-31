@@ -28,7 +28,7 @@ import pytz
 import datetime
 
 from typing import Optional, List
-from neon_data_models.base import BaseModel
+from neon_data_models.models.base import BaseModel
 
 from neon_data_models.models.user.database import User
 
@@ -49,12 +49,6 @@ class ProfileUser(BaseModel):
     phone: str = ""
     phone_verified: bool = False
     email_verified: bool = False
-
-
-class ProfileBrands(BaseModel):
-    ignored_brands: dict = {}
-    favorite_brands: dict = {}
-    specially_requested: dict = {}
 
 
 class ProfileSpeech(BaseModel):
@@ -101,7 +95,6 @@ class ProfilePrivacy(BaseModel):
 
 class UserProfile(BaseModel):
     user: ProfileUser = ProfileUser()
-    # brands: ProfileBrands
     speech: ProfileSpeech = ProfileSpeech()
     units: ProfileUnits = ProfileUnits()
     location: ProfileLocation = ProfileLocation()
@@ -109,13 +102,13 @@ class UserProfile(BaseModel):
     privacy: ProfilePrivacy = ProfilePrivacy()
 
     @classmethod
-    def from_user_config(cls, user: User):
+    def from_user_object(cls, user: User):
         user_config = user.neon
         today = datetime.date.today()
         if user_config.user.dob:
             dob = user_config.user.dob
-            age = today.year - dob.year - (
-                    (today.month, today.day) < (dob.month, dob.day))
+            age = str(today.year - dob.year - (
+                    (today.month, today.day) < (dob.month, dob.day)))
             dob = dob.strftime("%Y/%m/%d")
         else:
             age = ""
@@ -126,14 +119,14 @@ class UserProfile(BaseModel):
         user = ProfileUser(about=user_config.user.about,
                            age=age, dob=dob,
                            email=user_config.user.email,
-                           email_verified=user_config.user.email_verified,
+                           email_verified=False,
                            first_name=user_config.user.first_name,
                            full_name=full_name,
                            last_name=user_config.user.last_name,
                            middle_name=user_config.user.middle_name,
                            password=user.password_hash or "",
                            phone=user_config.user.phone,
-                           phone_verified=user_config.user.phone_verified,
+                           phone_verified=False,
                            picture=user_config.user.avatar_url,
                            preferred_name=user_config.user.preferred_name,
                            username=user.username
@@ -167,7 +160,6 @@ class UserProfile(BaseModel):
                            units=units, user=user)
 
 
-__all__ = [ProfileUser.__name__, ProfileBrands.__name__, ProfileSpeech.__name__,
-           ProfileUnits.__name__, ProfileLocation.__name__,
-           ProfileResponseMode.__name__, ProfilePrivacy.__name__,
-           UserProfile.__name__]
+__all__ = [ProfileUser.__name__, ProfileSpeech.__name__, ProfileUnits.__name__,
+           ProfileLocation.__name__, ProfileResponseMode.__name__,
+           ProfilePrivacy.__name__, UserProfile.__name__]

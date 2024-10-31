@@ -25,12 +25,9 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from pydantic import Field
-from typing import Optional, List, Literal
-from neon_data_models.models.client.node import NodeData
-from neon_data_models.base import BaseModel
-
-class NodeInputContext(BaseModel):
-    node_data: Optional[NodeData] = Field(description="Node Data")
+from typing import List, Literal
+from neon_data_models.models.base import BaseModel
+from neon_data_models.models.base.messagebus import BaseMessage
 
 
 class AudioInputData(BaseModel):
@@ -66,37 +63,32 @@ class KlatResponseData(BaseModel):
                              description="BCP-47 language"): KlatResponse}
 
 
-class NodeAudioInput(BaseModel):
+class NodeAudioInput(BaseMessage):
     msg_type: str = "neon.audio_input"
     data: AudioInputData
-    context: NodeInputContext
 
 
-class NodeTextInput(BaseModel):
+class NodeTextInput(BaseMessage):
     msg_type: str = "recognizer_loop:utterance"
     data: UtteranceInputData
-    context: NodeInputContext
 
 
-class NodeGetStt(BaseModel):
+class NodeGetStt(BaseMessage):
     msg_type: str = "neon.get_stt"
     data: AudioInputData
-    context: NodeInputContext
 
 
-class NodeGetTts(BaseModel):
+class NodeGetTts(BaseMessage):
     msg_type: str = "neon.get_tts"
     data: TextInputData
-    context: NodeInputContext
 
 
-class NodeKlatResponse(BaseModel):
+class NodeKlatResponse(BaseMessage):
     msg_type: str = "klat.response"
     data: dict = {Field(type=str, description="BCP-47 language"): KlatResponse}
-    context: dict
 
 
-class NodeAudioInputResponse(BaseModel):
+class NodeAudioInputResponse(BaseMessage):
     msg_type: str = "neon.audio_input.response"
     data: dict = {"parser_data": Field(description="Dict audio parser data",
                                        type=dict),
@@ -104,10 +96,9 @@ class NodeAudioInputResponse(BaseModel):
                                        type=List[str]),
                   "skills_recv": Field(description="Skills service acknowledge",
                                        type=bool)}
-    context: dict
 
 
-class NodeGetSttResponse(BaseModel):
+class NodeGetSttResponse(BaseMessage):
     msg_type: str = "neon.get_stt.response"
     data: dict = {"parser_data": Field(description="Dict audio parser data",
                                        type=dict),
@@ -115,43 +106,41 @@ class NodeGetSttResponse(BaseModel):
                                        type=List[str]),
                   "skills_recv": Field(description="Skills service acknowledge",
                                        type=bool)}
-    context: dict
 
 
-class NodeGetTtsResponse(BaseModel):
+class NodeGetTtsResponse(BaseMessage):
     msg_type: str = "neon.get_tts.response"
     data: KlatResponseData
-    context: dict
 
 
-class CoreWWDetected(BaseModel):
+class CoreWWDetected(BaseMessage):
     msg_type: str = "neon.ww_detected"
     data: dict
-    context: dict
 
 
-class CoreIntentFailure(BaseModel):
+class CoreIntentFailure(BaseMessage):
     msg_type: str = "complete.intent.failure"
     data: dict
-    context: dict
 
 
-class CoreErrorResponse(BaseModel):
+class CoreErrorResponse(BaseMessage):
     msg_type: str = "klat.error"
     data: dict
-    context: dict
 
 
-class CoreClearData(BaseModel):
+class CoreClearData(BaseMessage):
     msg_type: str = "neon.clear_data"
     data: dict
-    context: dict
 
 
-class CoreAlertExpired(BaseModel):
+class CoreAlertExpired(BaseMessage):
     msg_type: str = "neon.alert_expired"
     data: dict
-    context: dict
 
 
-# TODO: Define `__all__`
+__all__ = [NodeAudioInput.__name__, NodeTextInput.__name__, NodeGetStt.__name__,
+           NodeGetTts.__name__, NodeKlatResponse.__name__,
+           NodeAudioInputResponse.__name__, NodeGetSttResponse.__name__,
+           NodeGetTtsResponse.__name__, CoreWWDetected.__name__,
+           CoreIntentFailure.__name__, CoreErrorResponse.__name__,
+           CoreClearData.__name__, CoreAlertExpired.__name__]

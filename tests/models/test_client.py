@@ -23,3 +23,31 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+from time import time
+from unittest import TestCase
+from pydantic import ValidationError
+from datetime import date
+from neon_data_models.models.user.database import NeonUserConfig, TokenConfig, User, MQRequest, PermissionsConfig
+
+
+class TestNode(TestCase):
+    def test_node_data(self):
+        from neon_data_models.models.client.node import (NodeData, NodeSoftware,
+                                                         NodeLocation,
+                                                         NodeNetworking)
+        # Default config
+        node_config = NodeData()
+        self.assertEqual(node_config, NodeData(**node_config.model_dump()))
+        self.assertIsInstance(node_config.networking, NodeNetworking)
+        self.assertIsInstance(node_config.software, NodeSoftware)
+        self.assertIsInstance(node_config.location, NodeLocation)
+
+        # With location compat. handling
+        config_2 = NodeData(networking={"local_ip": "10.0.0.2"},
+                            location={"lat": 42.0, "lon": -71.0})
+        self.assertNotEqual(node_config.device_id, config_2.device_id)
+        self.assertEqual(config_2.networking.local_ip, "10.0.0.2")
+
+        self.assertIsInstance(config_2.location.latitude, float)
+        self.assertIsInstance(config_2.location.longitude, float)

@@ -27,7 +27,8 @@
 from uuid import uuid4
 from pydantic import Field
 from typing import Optional, Dict
-from neon_data_models.base import BaseModel
+from neon_data_models.models.base import BaseModel
+
 
 class NodeSoftware(BaseModel):
     operating_system: str = ""
@@ -42,8 +43,15 @@ class NodeNetworking(BaseModel):
 
 
 class NodeLocation(BaseModel):
-    lat: Optional[float] = None
-    lon: Optional[float] = None
+    def __init__(self, **kwargs):
+        # Enables backwards-compat. with old coordinate values
+        if lat := kwargs.pop("lat", None):
+            kwargs.setdefault("latitude", lat)
+        if lon := kwargs.pop("lon", None):
+            kwargs.setdefault("longitude", lon)
+        BaseModel.__init__(self, **kwargs)
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     site_id: Optional[str] = None
 
 

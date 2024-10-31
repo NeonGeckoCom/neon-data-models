@@ -27,7 +27,7 @@
 from time import time
 from typing import Dict, Any, List, Literal, Optional
 from uuid import uuid4
-from neon_data_models.base import BaseModel
+from neon_data_models.models.base import BaseModel
 from pydantic import Field
 from datetime import date
 
@@ -44,8 +44,6 @@ class _UserConfig(BaseModel):
     avatar_url: str = ""
     about: str = ""
     phone: str = ""
-    phone_verified: bool = False
-    email_verified: bool = False
 
 
 class _LanguageConfig(BaseModel):

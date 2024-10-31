@@ -24,11 +24,42 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from os import environ
-from pydantic import ConfigDict, BaseModel as _BaseModel
+from typing import Optional, List, Union
+from pydantic import ConfigDict, Field
+
+from neon_data_models.models.base import BaseModel
+from neon_data_models.models.base.contexts import (SessionContext, KlatContext,
+                                                   TimingContext, MQContext)
+from neon_data_models.models.client import NodeData
+from neon_data_models.models.user import NeonUserConfig
 
 
-class BaseModel(_BaseModel):
-    _allow_extra = "allow" if environ.get("NEON_DATA_MODELS_ALLOW_EXTRA",
-                                          False) else "ignore"
-    model_config = ConfigDict(extra=_allow_extra)
+class MessageContext(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    session: Optional[SessionContext] = Field(description="Session Data",
+                                              default=None)
+    node_data: Optional[NodeData] = Field(description="Node Data", default=None)
+    timing: Optional[TimingContext] = Field(
+        description="User Interaction Timing Information", default=None)
+    user_profiles: Optional[List[NeonUserConfig]] = (
+        Field(description="List of relevant user profiles", default=None))
+    klat_data: Optional[KlatContext] = Field(
+        description="Klat context for Klat-generated messages", default=None)
+    mq: Optional[MQContext] = Field(
+        description="MQ context for messages traversing a RabbitMQ broker",
+        default=None)
+
+    username: str = "local"
+    # TODO: Consider refactoring client/client_name into a single dict
+    #  or merging with `node_data`
+    client_name: str = "unknown"
+    client: str = "unknown"
+    source: Union[str, List[str]] = "unknown"
+    destination: List[str] = ["skills"]
+    neon_should_respond: bool = True
+
+
+class BaseMessage(BaseModel):
+    msg_type: str
+    data: dict
+    context: MessageContext

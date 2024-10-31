@@ -31,7 +31,7 @@ from datetime import date
 from neon_data_models.models.user.database import NeonUserConfig, TokenConfig, User, MQRequest, PermissionsConfig
 
 
-class TestDatabaseValidation(TestCase):
+class TestDatabase(TestCase):
     def test_neon_user_config(self):
         default = NeonUserConfig()
         valid_with_extras = NeonUserConfig(
@@ -80,7 +80,7 @@ class TestDatabaseValidation(TestCase):
         config = NeonUserConfig(user={"dob": "2001-01-01"})
         self.assertIsInstance(config.user.dob, date)
 
-    def test_user_model(self):
+    def test_user(self):
         user_kwargs = dict(username="test",
                            password_hash="test",
                            tokens=[{"username": "test",
@@ -112,3 +112,62 @@ class TestDatabaseValidation(TestCase):
             MQRequest(operation="get", username="test")
         with self.assertRaises(ValidationError):
             MQRequest(operation="delete", username="test_user", user="test_user")
+
+
+class TestNeonProfile(TestCase):
+    def test_create(self):
+        from neon_data_models.models.user import UserProfile
+        default = UserProfile()
+        self.assertIsInstance(default, UserProfile)
+
+        # TODO: Test creation with params
+
+    def test_from_user_object(self):
+        from neon_data_models.models.user import UserProfile
+
+        neon_config = {"user": {"first_name": "Test",
+                                "last_name": "User",
+                                "dob": date.today().replace(year=2000)},
+                       "language": {"input_languages": ["en-us", "uk-ua"],
+                                    "output_languages": ["uk-ua", "en-us"]},
+                       "units": {"measure": "metric"},
+                       "location": {"latitude": 47.48288,
+                                    "longitude": -122.217064,
+                                    "timezone": "America/Los_Angeles"},
+                       "response_mode": {"tts_gender": "male",
+                                         "tts_speed_multiplier": 0.9}
+                       }
+        age = date.today().year - 2000
+        user_from_db = User(username="test_user",
+                            password_hash="test_password",
+                            neon=neon_config)
+
+        user_profile = UserProfile.from_user_object(user_from_db)
+
+        # User
+        self.assertEqual(user_profile.user.username, "test_user")
+        self.assertEqual(user_profile.user.password, "test_password")
+        self.assertEqual(user_profile.user.first_name, "Test")
+        self.assertEqual(user_profile.user.last_name, "User")
+        self.assertEqual(user_profile.user.full_name, "Test User")
+        self.assertEqual(user_profile.user.age, f"{age}")
+        self.assertEqual(user_profile.user.dob,
+                         date.today().replace(year=2000).strftime("%Y/%m/%d"))
+
+        # Speech
+        self.assertEqual(user_profile.speech.stt_language, "en")
+        self.assertEqual(user_profile.speech.alt_languages, ["uk"])
+        self.assertEqual(user_profile.speech.tts_language, "uk-ua")
+        self.assertEqual(user_profile.speech.secondary_tts_language, "en-us")
+        self.assertEqual(user_profile.speech.tts_gender, "male")
+        self.assertEqual(user_profile.speech.secondary_tts_gender, "male")
+        self.assertEqual(user_profile.speech.speed_multiplier, 0.9)
+
+        # Units
+        self.assertEqual(user_profile.units.measure, "metric")
+
+        # Location
+        self.assertIsInstance(user_profile.location.lat, float)
+        self.assertIsInstance(user_profile.location.lng, float)
+        self.assertEqual(user_profile.location.tz, "America/Los_Angeles")
+        self.assertIn(user_profile.location.utc, (-7.0, -8.0))

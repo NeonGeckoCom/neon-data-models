@@ -23,3 +23,11 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+from os import environ
+from pydantic import ConfigDict, BaseModel as _BaseModel
+
+
+class BaseModel(_BaseModel):
+    model_config = ConfigDict(extra="allow" if environ.get(
+            "NEON_DATA_MODELS_ALLOW_EXTRA", "false") != "false" else "ignore")
