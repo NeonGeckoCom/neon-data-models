@@ -24,10 +24,10 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 from typing import Optional, List, Literal
 from neon_data_models.models.client.node import NodeData
-
+from neon_data_models.base import BaseModel
 
 class NodeInputContext(BaseModel):
     node_data: Optional[NodeData] = Field(description="Node Data")

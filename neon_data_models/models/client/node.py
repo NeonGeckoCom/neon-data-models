@@ -25,9 +25,9 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from uuid import uuid4
-from pydantic import BaseModel, Field
+from pydantic import Field
 from typing import Optional, Dict
-
+from neon_data_models.base import BaseModel
 
 class NodeSoftware(BaseModel):
     operating_system: str = ""

@@ -27,7 +27,8 @@
 from time import time
 from typing import Dict, Any, List, Literal, Optional
 from uuid import uuid4
-from pydantic import BaseModel, Field
+from neon_data_models.base import BaseModel
+from pydantic import Field
 from datetime import date
 
 from neon_data_models.enum import AccessRoles
