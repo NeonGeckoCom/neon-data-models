@@ -26,7 +26,7 @@
 
 from datetime import datetime, timedelta
 from pydantic import Field
-from typing import List, Literal, Optional, Annotated
+from typing import List, Literal, Optional, Annotated, Dict
 
 from neon_data_models.enum import UserData, AlertType, Weekdays
 from neon_data_models.models.base import BaseModel
@@ -38,129 +38,118 @@ class AudioInputData(BaseModel):
     lang: str = Field(description="BCP-47 language code")
 
 
-class TextInputData(BaseModel):
-    text: str = Field(description="String text input")
-    lang: str = Field(description="BCP-47 language code")
-
-
-class UtteranceInputData(BaseModel):
-    utterances: List[str] = Field(description="List of input utterance(s)")
-    lang: str = Field(description="BCP-47 language")
-
-
 class KlatResponse(BaseModel):
     sentence: str = Field(description="Text response")
-    audio: dict = {Field(description="Audio Gender",
-                         type=Literal["male", "female"]):
-                   Field(description="b64-encoded audio", type=str)}
+    audio: Dict[Literal["male", "female"], Optional[str]] = Field(
+        description="Mapping of gender to b64-encoded audio")
 
 
-class TtsResponse(KlatResponse):
-    translated: bool = Field(description="True if sentence was translated")
-    phonemes: List[str] = Field(description="List of phonemes")
-    genders: List[str] = Field(description="List of audio genders")
+class AudioInputResponseData(BaseModel):
+    parser_data: dict
+    transcripts: List[str]
+    skills_recv: bool
 
 
-class KlatResponseData(BaseModel):
-    responses: dict = {Field(type=str,
-                             description="BCP-47 language"): KlatResponse}
-
-
-class ClearDataData(BaseModel):
-    username: str
-    data_to_remove: List[UserData]
-
-
-class KlatErrorData(BaseModel):
-    error: str = "unknown error"
-    data: dict = {}
-
-
-class AlertData(BaseModel):
-    next_expiration_time: Optional[datetime]
-    alert_type: AlertType
-    priority: Annotated[int, Field(gt=1, lt=10)]
-    repeat_frequency: Optional[timedelta]
-    repeat_days: Optional[List[Weekdays]]
-    end_repeat: Optional[datetime]
-    alret_name: str
-    audio_file: Optional[str]
-    script_filename: Optional[str]
-    context: MessageContext
+# class TtsResponse(KlatResponse):
+#     translated: bool = Field(description="True if sentence was translated")
+#     phonemes: List[str] = Field(description="List of phonemes")
+#     genders: List[str] = Field(description="List of audio genders")
 
 
 class NodeAudioInput(BaseMessage):
-    msg_type: str = "neon.audio_input"
+    msg_type: Literal["neon.audio_input"] = "neon.audio_input"
     data: AudioInputData
 
 
 class NodeTextInput(BaseMessage):
-    msg_type: str = "recognizer_loop:utterance"
+    class UtteranceInputData(BaseModel):
+        utterances: List[str] = Field(description="List of input utterance(s)")
+        lang: str = Field(description="BCP-47 language")
+
+    msg_type: Literal["recognizer_loop:utterance"] = "recognizer_loop:utterance"
     data: UtteranceInputData
 
 
 class NodeGetStt(BaseMessage):
-    msg_type: str = "neon.get_stt"
+    msg_type: Literal["neon.get_stt"] = "neon.get_stt"
     data: AudioInputData
 
 
 class NodeGetTts(BaseMessage):
-    msg_type: str = "neon.get_tts"
+    class TextInputData(BaseModel):
+        text: str = Field(description="String text input")
+        lang: str = Field(description="BCP-47 language code")
+
+    msg_type: Literal["neon.get_tts"] = "neon.get_tts"
     data: TextInputData
 
 
 class NodeKlatResponse(BaseMessage):
-    msg_type: str = "klat.response"
-    data: dict = {Field(type=str, description="BCP-47 language"): KlatResponse}
+    msg_type: Literal["klat.response"] = "klat.response"
+    data: Dict[str, KlatResponse] = Field(type=Dict[str, KlatResponse],
+                       description="dict of BCP-47 language: KlatResponse")
 
 
 class NodeAudioInputResponse(BaseMessage):
-    msg_type: str = "neon.audio_input.response"
-    data: dict = {"parser_data": Field(description="Dict audio parser data",
-                                       type=dict),
-                  "transcripts": Field(description="Transcribed text",
-                                       type=List[str]),
-                  "skills_recv": Field(description="Skills service acknowledge",
-                                       type=bool)}
+    msg_type: Literal["neon.audio_input.response"] = "neon.audio_input.response"
+    data: AudioInputResponseData
 
 
 class NodeGetSttResponse(BaseMessage):
-    msg_type: str = "neon.get_stt.response"
-    data: dict = {"parser_data": Field(description="Dict audio parser data",
-                                       type=dict),
-                  "transcripts": Field(description="Transcribed text",
-                                       type=List[str]),
-                  "skills_recv": Field(description="Skills service acknowledge",
-                                       type=bool)}
+    msg_type: Literal["neon.get_stt.response"] = "neon.get_stt.response"
+    data: AudioInputResponseData
 
 
 class NodeGetTtsResponse(BaseMessage):
-    msg_type: str = "neon.get_tts.response"
-    data: KlatResponseData
+    msg_type: Literal["neon.get_tts.response"] = "neon.get_tts.response"
+    data: Dict[str, KlatResponse] = (
+        Field(type=Dict[str, KlatResponse],
+              description="dict of BCP-47 language: KlatResponse"))
 
 
 class CoreWWDetected(BaseMessage):
-    msg_type: str = "neon.ww_detected"
+    msg_type: Literal["neon.ww_detected"] = "neon.ww_detected"
+    # TODO: Define/implement schema in neon-speech service
     data: dict
 
 
 class CoreIntentFailure(BaseMessage):
-    msg_type: str = "complete_intent_failure"
+    msg_type: Literal["complete_intent_failure"] = "complete_intent_failure"
     data: dict  # Empty dict
 
 
 class CoreErrorResponse(BaseMessage):
-    msg_type: str = "klat.error"
+    class KlatErrorData(BaseModel):
+        error: str = "unknown error"
+        data: dict = {}
+
+    msg_type: Literal["klat.error"] = "klat.error"
     data: KlatErrorData
 
 
 class CoreClearData(BaseMessage):
-    msg_type: str = "neon.clear_data"
+    class ClearDataData(BaseModel):
+        username: str
+        data_to_remove: List[UserData]
+
+    msg_type: Literal["neon.clear_data"] = "neon.clear_data"
     data: ClearDataData
 
 
 class CoreAlertExpired(BaseMessage):
-    msg_type: str = "neon.alert_expired"
+    class AlertData(BaseModel):
+        next_expiration_time: Optional[datetime]
+        alert_type: AlertType
+        priority: Annotated[int, Field(gt=1, lt=10)]
+        repeat_frequency: Optional[timedelta]
+        repeat_days: Optional[List[Weekdays]]
+        end_repeat: Optional[datetime]
+        alert_name: str
+        audio_file: Optional[str] = None
+        script_filename: Optional[str] = None
+        context: MessageContext
+
+    msg_type: Literal["neon.alert_expired"] = "neon.alert_expired"
     data: AlertData
 
 
