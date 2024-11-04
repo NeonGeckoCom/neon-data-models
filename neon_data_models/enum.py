@@ -72,7 +72,7 @@ class AlertType(IntEnum):
 
 class Weekdays(IntEnum):
     """
-    Defines weekdays.
+    Defines weekdays as used in the Alerts skill.
     """
     MON = 0
     TUE = 1
