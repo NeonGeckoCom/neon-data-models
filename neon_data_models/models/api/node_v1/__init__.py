@@ -50,12 +50,6 @@ class AudioInputResponseData(BaseModel):
     skills_recv: bool
 
 
-# class TtsResponse(KlatResponse):
-#     translated: bool = Field(description="True if sentence was translated")
-#     phonemes: List[str] = Field(description="List of phonemes")
-#     genders: List[str] = Field(description="List of audio genders")
-
-
 class NodeAudioInput(BaseMessage):
     msg_type: Literal["neon.audio_input"] = "neon.audio_input"
     data: AudioInputData
