@@ -37,7 +37,7 @@ class NodeSoftware(BaseModel):
 
 
 class NodeNetworking(BaseModel):
-    local_ip: str = "127.0.0.1"
+    local_ip: str = ""
     public_ip: str = ""
     mac_address: str = ""
 
