@@ -150,15 +150,21 @@ class PermissionsConfig(BaseModel):
 
 @deprecated(f"Use `neon_data_models.models.api.jwt.HanaToken`")
 class TokenConfig(BaseModel):
-    username: str
-    client_id: str
-    permissions: Dict[str, bool]
-    refresh_token: str
-    expiration: int = Field(
-        description="Unix timestamp of auth token expiration")
+    """
+    Data model for storing token data in the user database. Note that the actual
+    tokens are not included here, only metadata used to validate or invalidate a
+    token and present a list of issued tokens to the user.
+    """
+    token_name: str = Field(description="Human-readable token identifier")
+    token_id: str = Field(description="Unique token identifier", alias="jti")
+    user_id: str = Field(description="User ID the token is associated with",
+                         alias="sub")
+    client_id: str = Field(description="Client ID the token is associated with")
+    permissions: PermissionsConfig = Field(
+        description="Permissions for this token "
+                    "(overrides user-level permissions)")
     refresh_expiration: int = Field(
         description="Unix timestamp of refresh token expiration")
-    token_name: str
     creation_timestamp: int = Field(
         description="Unix timestamp of token creation (auth+refresh)")
     last_refresh_timestamp: int = Field(
