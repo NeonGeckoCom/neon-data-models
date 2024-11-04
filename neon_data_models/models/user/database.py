@@ -41,7 +41,9 @@ class _UserConfig(BaseModel):
     preferred_name: str = ""
     dob: Optional[date] = None
     email: str = ""
-    avatar_url: str = ""
+    avatar_url: str = Field(default="",
+                            description="Fully-qualified URI of a user avatar. "
+                                        "(i.e. `https://example.com/avatar.jpg")
     about: str = ""
     phone: str = ""
 
