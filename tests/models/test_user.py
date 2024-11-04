@@ -105,6 +105,36 @@ class TestDatabase(TestCase):
         self.assertNotEqual(default_user, duplicate_user)
         self.assertEqual(default_user.tokens, duplicate_user.tokens)
 
+    def test_permissions_config(self):
+        from neon_data_models.models.user.database import PermissionsConfig
+        from neon_data_models.enum import AccessRoles
+
+        # Test Default
+        default_config = PermissionsConfig()
+        for _, value in default_config.model_dump().items():
+            self.assertEqual(value, AccessRoles.NONE)
+
+        test_config = PermissionsConfig(klat=AccessRoles.USER,
+                                        core=AccessRoles.GUEST,
+                                        diana=AccessRoles.GUEST,
+                                        node=AccessRoles.NODE,
+                                        hub=AccessRoles.NODE,
+                                        llm=AccessRoles.NONE)
+        # Test dump/load
+        self.assertEqual(PermissionsConfig(**test_config.model_dump()),
+                         test_config)
+
+        # Test to/from roles
+        roles = test_config.to_roles()
+        self.assertIsInstance(roles, list)
+        for role in roles:
+            self.assertEqual(len(role.split()), 2)
+        self.assertEqual(PermissionsConfig.from_roles(roles), test_config)
+
+    def test_token_config(self):
+        from neon_data_models.models.user.database import TokenConfig
+        # TODO
+
 
 class TestNeonProfile(TestCase):
     def test_create(self):

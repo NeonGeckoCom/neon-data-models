@@ -124,22 +124,47 @@ class PermissionsConfig(BaseModel):
     class Config:
         use_enum_values = True
 
+    @classmethod
+    def from_roles(cls, roles: List[str]):
+        """
+        Parse PermissionsConfig from standard JWT roles configuration.
+        """
+        kwargs = {}
+        for role in roles:
+            name, value = role.split(' ')
+            kwargs[name] = AccessRoles[value.upper()]
+        return cls(**kwargs)
+
+    def to_roles(self):
+        """
+        Dump a PermissionsConfig to standard JWT roles to be included in a JWT.
+        """
+        roles = []
+        for key, val in self.model_dump().items():
+            roles.append(f"{key} {AccessRoles(val).name}")
+        return roles
+
 
 class TokenConfig(BaseModel):
-    username: str
-    client_id: str
-    permissions: Dict[str, bool]
-    refresh_token: str
-    expiration: int = Field(
-        description="Unix timestamp of auth token expiration")
+    """
+    Data model for storing token data in the user database. Note that the actual
+    tokens are not included here, only metadata used to validate or invalidate a
+    token and present a list of issued tokens to the user.
+    """
+    token_name: str = Field(description="Human-readable token identifier")
+    token_id: str = Field(description="Unique token identifier", alias="jti")
+    user_id: str = Field(description="User ID the token is associated with",
+                         alias="sub")
+    client_id: str = Field(description="Client ID the token is associated with")
+    permissions: PermissionsConfig = Field(
+        description="Permissions for this token "
+                    "(overrides user-level permissions)")
     refresh_expiration: int = Field(
         description="Unix timestamp of refresh token expiration")
-    token_name: str
     creation_timestamp: int = Field(
-        description="Unix timestamp of auth token creation")
+        description="Unix timestamp of refresh token creation")
     last_refresh_timestamp: int = Field(
         description="Unix timestamp of last auth token refresh")
-    access_token: Optional[str] = None
 
 
 class User(BaseModel):
