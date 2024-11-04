@@ -130,11 +130,15 @@ class TokenConfig(BaseModel):
     client_id: str
     permissions: Dict[str, bool]
     refresh_token: str
-    expiration: int
-    refresh_expiration: int
+    expiration: int = Field(
+        description="Unix timestamp of auth token expiration")
+    refresh_expiration: int = Field(
+        description="Unix timestamp of refresh token expiration")
     token_name: str
-    creation_timestamp: int
-    last_refresh_timestamp: int
+    creation_timestamp: int = Field(
+        description="Unix timestamp of auth token creation")
+    last_refresh_timestamp: int = Field(
+        description="Unix timestamp of last auth token refresh")
     access_token: Optional[str] = None
 
 
