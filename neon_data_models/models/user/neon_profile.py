@@ -27,7 +27,10 @@
 import pytz
 import datetime
 
-from typing import Optional, List
+from typing import Optional, List, Literal
+
+from pydantic import Field
+
 from neon_data_models.models.base import BaseModel
 
 from neon_data_models.models.user.database import User
@@ -44,7 +47,9 @@ class ProfileUser(BaseModel):
     email: str = ""
     username: str = ""
     password: str = ""
-    picture: str = ""
+    picture: str = Field(default="",
+                         description="Fully-qualified URI of a user avatar. "
+                                     "(i.e. `https://example.com/avatar.jpg")
     about: str = ""
     phone: str = ""
     phone_verified: bool = False
@@ -64,12 +69,9 @@ class ProfileSpeech(BaseModel):
 
 
 class ProfileUnits(BaseModel):
-    time: int = 12
-    # 12, 24
-    date: str = "MDY"
-    # MDY, YMD, YDM
-    measure: str = "imperial"
-    # imperial, metric
+    time: Literal[12, 24] = 12
+    date: Literal["MDY", "YMD", "YDM", "DMY"] = "MDY"
+    measure: Literal["imperial", "metric"] = "imperial"
 
 
 class ProfileLocation(BaseModel):
