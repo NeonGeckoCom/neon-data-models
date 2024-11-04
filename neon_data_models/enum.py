@@ -50,13 +50,13 @@ class UserData(IntEnum):
     """
     CACHES = 0
     PROFILE = 1
-    ALL_TR = 2
-    CONF_LIKES = 3
-    CONF_DISLIKES = 4
+    TRANSCRIPTS = 2
+    LIKED_BRANDS = 3
+    DISLIKED_BRANDS = 4
     ALL_DATA = 5
     ALL_MEDIA = 6
-    ALL_UNITS = 7
-    ALL_LANGUAGE = 8
+    UNITS_CONFIG = 7
+    LANGUAGE_CONFIG = 8
 
 
 class AlertType(IntEnum):
