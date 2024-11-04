@@ -138,16 +138,16 @@ class CoreClearData(BaseMessage):
 
 class CoreAlertExpired(BaseMessage):
     class AlertData(BaseModel):
-        next_expiration_time: Optional[datetime]
         alert_type: AlertType
         priority: Annotated[int, Field(gt=1, lt=10)]
+        alert_name: str
+        context: MessageContext
+        next_expiration_time: Optional[datetime]
         repeat_frequency: Optional[timedelta]
         repeat_days: Optional[List[Weekdays]]
         end_repeat: Optional[datetime]
-        alert_name: str
         audio_file: Optional[str] = None
         script_filename: Optional[str] = None
-        context: MessageContext
 
     msg_type: Literal["neon.alert_expired"] = "neon.alert_expired"
     data: AlertData
