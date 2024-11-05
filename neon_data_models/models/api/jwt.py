@@ -67,12 +67,5 @@ class HanaToken(JWT):
             kwargs["expire"] = round(kwargs["expire"])
         BaseModel.__init__(self, **kwargs)
 
-    # JWT public parameters
-    sub: str = Field(None, alias="username",
-                     description="Unique User ID. For backwards-compat, "
-                                 "this may be a username.")
-    exp: int = Field(None, alias="expire",
-                     description="Expiration time in epoch seconds")
-
     # Private parameters
     purpose: Literal["access", "refresh"] = "access"
