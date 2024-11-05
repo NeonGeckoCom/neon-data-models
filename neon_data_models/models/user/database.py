@@ -151,15 +151,23 @@ class TokenConfig(BaseModel):
     tokens are not included here, only metadata used to validate or invalidate a
     token and present a list of issued tokens to the user.
     """
+    def __init__(self, **kwargs):
+        # The JWT standard uses "jti" and "sub" for encoded values. Outside of
+        # that context, those keys are not very descriptive, so we use our own
+        if jti := kwargs.get("jti"):
+            kwargs.setdefault("token_id", jti)
+        if sub := kwargs.get("sub"):
+            kwargs.setdefault("user_id", sub)
+        BaseModel.__init__(self, **kwargs)
+
     token_name: str = Field(description="Human-readable token identifier")
-    token_id: str = Field(description="Unique token identifier", alias="jti")
-    user_id: str = Field(description="User ID the token is associated with",
-                         alias="sub")
+    token_id: str = Field(description="Unique token identifier")
+    user_id: str = Field(description="User ID the token is associated with")
     client_id: str = Field(description="Client ID the token is associated with")
     permissions: PermissionsConfig = Field(
         description="Permissions for this token "
                     "(overrides user-level permissions)")
-    refresh_expiration: int = Field(
+    refresh_expiration_timestamp: int = Field(
         description="Unix timestamp of refresh token expiration")
     creation_timestamp: int = Field(
         description="Unix timestamp of refresh token creation")

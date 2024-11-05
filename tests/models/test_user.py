@@ -26,6 +26,8 @@
 
 from time import time
 from unittest import TestCase
+from uuid import uuid4
+
 from pydantic import ValidationError
 from datetime import date
 from neon_data_models.models.user.database import NeonUserConfig, TokenConfig, User
@@ -83,13 +85,12 @@ class TestDatabase(TestCase):
     def test_user(self):
         user_kwargs = dict(username="test",
                            password_hash="test",
-                           tokens=[{"username": "test",
-                                    "client_id": "test_id",
+                           tokens=[{"token_name": "test_token",
+                                    "token_id": str(uuid4()),
+                                    "user_id": str(uuid4()),
+                                    "client_id": str(uuid4()),
                                     "permissions": {},
-                                    "refresh_token": "",
-                                    "expiration": round(time()),
-                                    "refresh_expiration": round(time()),
-                                    "token_name": "test_token",
+                                    "refresh_expiration_timestamp": round(time()),
                                     "creation_timestamp": round(time()),
                                     "last_refresh_timestamp": round(time())}])
         default_user = User(**user_kwargs)

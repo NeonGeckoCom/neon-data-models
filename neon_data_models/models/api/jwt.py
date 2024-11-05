@@ -61,8 +61,8 @@ class HanaToken(JWT):
             node_permissions = AccessRoles.USER if \
                 permissions.get("node") else AccessRoles.NONE
             kwargs["roles"] = [f"core {core_permissions.value}",
-                                     f"diana {diana_permissions.value}",
-                                     f"node {node_permissions.value}"]
+                               f"diana {diana_permissions.value}",
+                               f"node {node_permissions.value}"]
         if kwargs.get("expire") and isinstance(kwargs["expire"], float):
             kwargs["expire"] = round(kwargs["expire"])
         BaseModel.__init__(self, **kwargs)
