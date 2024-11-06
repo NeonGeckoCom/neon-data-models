@@ -170,9 +170,9 @@ class TokenConfig(BaseModel):
     refresh_expiration_timestamp: int = Field(
         description="Unix timestamp of refresh token expiration")
     creation_timestamp: int = Field(
-        description="Unix timestamp of refresh token creation")
+        description="Unix timestamp of token creation (auth+refresh)")
     last_refresh_timestamp: int = Field(
-        description="Unix timestamp of last auth token refresh")
+        description="Unix timestamp of last token issuance (auth+refresh)")
 
 
 class User(BaseModel):
