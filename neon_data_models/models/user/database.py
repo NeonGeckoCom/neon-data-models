@@ -158,6 +158,10 @@ class TokenConfig(BaseModel):
             kwargs.setdefault("token_id", jti)
         if sub := kwargs.get("sub"):
             kwargs.setdefault("user_id", sub)
+        if iat := kwargs.get("iat"):
+            kwargs.setdefault("creation_timestamp", iat)
+        if exp := kwargs.get("exp"):
+            kwargs.setdefault("refresh_expiration_timestamp", exp)
         BaseModel.__init__(self, **kwargs)
 
     token_name: str = Field(description="Human-readable token identifier")

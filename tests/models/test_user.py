@@ -133,8 +133,37 @@ class TestDatabase(TestCase):
         self.assertEqual(PermissionsConfig.from_roles(roles), test_config)
 
     def test_token_config(self):
-        from neon_data_models.models.user.database import TokenConfig
-        # TODO
+        from neon_data_models.models.user.database import PermissionsConfig
+        token_id = str(uuid4())
+        user_id = str(uuid4())
+        client_id = str(uuid4())
+        token_name = "Test Token"
+        permissions = PermissionsConfig()
+        refresh_expiration = round(time()) + 3600
+        creation = round(time()) - 3600
+        last_refresh = round(time())
+
+        from_database = TokenConfig(token_name=token_name,
+                                    token_id=token_id,
+                                    user_id=user_id,
+                                    client_id=client_id,
+                                    permissions=permissions,
+                                    refresh_expiration_timestamp=refresh_expiration,
+                                    creation_timestamp=creation,
+                                    last_refresh_timestamp=last_refresh)
+
+        from_token = TokenConfig(jti=token_id,
+                                 sub=user_id,
+                                 iat=creation,
+                                 exp=refresh_expiration,
+                                 token_name=token_name,
+                                 client_id=client_id,
+                                 permissions=permissions,
+                                 last_refresh_timestamp=last_refresh)
+
+        self.assertEqual(from_database, from_token)
+        self.assertEqual(from_database.model_dump_json(),
+                         from_token.model_dump_json())
 
 
 class TestNeonProfile(TestCase):
