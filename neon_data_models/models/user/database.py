@@ -152,8 +152,8 @@ class TokenConfig(BaseModel):
     token and present a list of issued tokens to the user.
     """
     def __init__(self, **kwargs):
-        # The JWT standard uses "jti" and "sub" for encoded values. Outside of
-        # that context, those keys are not very descriptive, so we use our own
+        # The JWT standard uses these standard keys; outside of that context,
+        # they are not very descriptive, so the database uses its own schema
         if jti := kwargs.get("jti"):
             kwargs.setdefault("token_id", jti)
         if sub := kwargs.get("sub"):
