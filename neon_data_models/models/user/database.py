@@ -124,22 +124,59 @@ class PermissionsConfig(BaseModel):
     class Config:
         use_enum_values = True
 
+    @classmethod
+    def from_roles(cls, roles: List[str]):
+        """
+        Parse PermissionsConfig from standard JWT roles configuration.
+        """
+        kwargs = {}
+        for role in roles:
+            name, value = role.split(' ')
+            kwargs[name] = AccessRoles[value.upper()]
+        return cls(**kwargs)
+
+    def to_roles(self):
+        """
+        Dump a PermissionsConfig to standard JWT roles to be included in a JWT.
+        """
+        roles = []
+        for key, val in self.model_dump().items():
+            roles.append(f"{key} {AccessRoles(val).name}")
+        return roles
+
 
 class TokenConfig(BaseModel):
-    username: str
-    client_id: str
-    permissions: Dict[str, bool]
-    refresh_token: str
-    expiration: int = Field(
-        description="Unix timestamp of auth token expiration")
-    refresh_expiration: int = Field(
+    """
+    Data model for storing token data in the user database. Note that the actual
+    tokens are not included here, only metadata used to validate or invalidate a
+    token and present a list of issued tokens to the user.
+    """
+    def __init__(self, **kwargs):
+        # The JWT standard uses these standard keys; outside of that context,
+        # they are not very descriptive, so the database uses its own schema
+        if jti := kwargs.get("jti"):
+            kwargs.setdefault("token_id", jti)
+        if sub := kwargs.get("sub"):
+            kwargs.setdefault("user_id", sub)
+        if iat := kwargs.get("iat"):
+            kwargs.setdefault("creation_timestamp", iat)
+        if exp := kwargs.get("exp"):
+            kwargs.setdefault("refresh_expiration_timestamp", exp)
+        BaseModel.__init__(self, **kwargs)
+
+    token_name: str = Field(description="Human-readable token identifier")
+    token_id: str = Field(description="Unique token identifier")
+    user_id: str = Field(description="User ID the token is associated with")
+    client_id: str = Field(description="Client ID the token is associated with")
+    permissions: PermissionsConfig = Field(
+        description="Permissions for this token "
+                    "(overrides user-level permissions)")
+    refresh_expiration_timestamp: int = Field(
         description="Unix timestamp of refresh token expiration")
-    token_name: str
     creation_timestamp: int = Field(
-        description="Unix timestamp of auth token creation")
+        description="Unix timestamp of token creation (auth+refresh)")
     last_refresh_timestamp: int = Field(
-        description="Unix timestamp of last auth token refresh")
-    access_token: Optional[str] = None
+        description="Unix timestamp of last token issuance (auth+refresh)")
 
 
 class User(BaseModel):
