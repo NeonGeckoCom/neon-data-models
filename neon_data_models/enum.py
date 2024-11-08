@@ -41,7 +41,8 @@ class AccessRoles(IntEnum):
     ADMIN = 3
     OWNER = 4
 
-    NODE = -1
+    NODE = -1, "Reserved for use by a Node service account"
+    READ_USERS = -2, "Used by service accounts to read users from the database"
 
 
 class UserData(IntEnum):

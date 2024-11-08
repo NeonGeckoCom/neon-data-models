@@ -35,17 +35,25 @@ from neon_data_models.models.user.database import User, TokenConfig
 class CreateUserRequest(MQContext):
     operation: Literal["create"] = "create"
     user: User = Field(description="User object to create")
-    # TODO: Support optional auth
 
 
 class ReadUserRequest(MQContext):
     operation: Literal["read"] = "read"
     user_spec: str = Field(description="Username or User ID to read")
+    auth_user_spec: str = Field(
+        default="", description="Username or ID to authorize database  read. "
+                                "If unset, this will use `user_spec`")
     access_token: Optional[TokenConfig] = Field(
-        None, description="Token associated with `user_spec`")
+        None, description="Token associated with `auth_username`")
     password: Optional[str] = Field(None,
                                     description="Password associated with "
-                                                "`user_spec`")
+                                                "`auth_username`")
+
+    @model_validator(mode="after")
+    def get_auth_username(self) -> 'ReadUserRequest':
+        if not self.auth_user_spec:
+            self.auth_user_spec = self.user_spec
+        return self
 
 
 class UpdateUserRequest(MQContext):
