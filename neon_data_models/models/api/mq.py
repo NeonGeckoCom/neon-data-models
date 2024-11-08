@@ -24,17 +24,55 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Literal, Optional
+from typing import Literal, Optional, Annotated, Union
+
+from pydantic import Field, TypeAdapter
+
 from neon_data_models.models.base.contexts import MQContext
-from neon_data_models.models.user.database import User
+from neon_data_models.models.user.database import User, TokenConfig
 
 
-class UserDbRequest(MQContext):
-    operation: Literal["create", "read", "update", "delete"]
-    username: str
-    password: Optional[str] = None
-    access_token: Optional[str] = None
-    user: Optional[User] = None
+class CreateUserRequest(MQContext):
+    operation: Literal["create"] = "create"
+    user: User = Field(description="User object to create")
+    # TODO: Support optional auth
 
 
-__all__ = [UserDbRequest.__name__]
+class ReadUserRequest(MQContext):
+    operation: Literal["read"] = "read"
+    user_spec: str = Field(description="Username or User ID to read")
+    access_token: Optional[TokenConfig] = Field(
+        None, description="Token associated with `user_spec`")
+    password: Optional[str] = Field(None,
+                                    description="Password associated with "
+                                                "`user_spec`")
+
+
+class UpdateUserRequest(MQContext):
+    operation: Literal["update"] = "update"
+    user: User = Field(description="Updated User object to write to database")
+    password: str = Field(description="Password associated with `user_spec`")
+
+
+class DeleteUserRequest(MQContext):
+    operation: Literal["delete"] = "delete"
+    user: User = Field(description="Exact User object to remove from the "
+                                   "database")
+
+
+class UserDbRequest:
+    """
+    Generic class to dynamically build a UserDB CRUD request object based on the
+    requested `operation`
+    """
+    ta = TypeAdapter(Annotated[Union[CreateUserRequest, ReadUserRequest,
+                                     UpdateUserRequest, DeleteUserRequest],
+                               Field(discriminator='operation')])
+
+    def __new__(cls, *args, **kwargs):
+        return cls.ta.validate_python(kwargs)
+
+
+__all__ = [CreateUserRequest.__name__, ReadUserRequest.__name__,
+           UpdateUserRequest.__name__, DeleteUserRequest.__name__,
+           UserDbRequest.__name__]

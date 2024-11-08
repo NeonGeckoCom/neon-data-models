@@ -42,3 +42,45 @@ class TestMQ(TestCase):
                           user="test_user", message_id="test")
         with self.assertRaises(ValidationError):
             UserDbRequest(operation="create", username="test_user")
+
+    def test_create_user_db_request(self):
+        from neon_data_models.models.api.mq import CreateUserRequest
+
+        # Test create user valid
+        valid_kwargs = {"message_id": "test_id", "operation": "create",
+                        "user": {"username": "test_user"}}
+        create_request = CreateUserRequest(**valid_kwargs)
+        self.assertIsInstance(create_request, CreateUserRequest)
+        generic_request = UserDbRequest(**valid_kwargs)
+        self.assertIsInstance(generic_request, CreateUserRequest)
+        self.assertEqual(generic_request.user.username,
+                         create_request.user.username)
+
+        # Test invalid
+        with self.assertRaises(ValidationError):
+            UserDbRequest(operation="create", message_id="test0")
+
+    def test_read_user_db_request(self):
+        from neon_data_models.models.api.mq import ReadUserRequest
+
+        # Test read user valid
+        valid_kwargs = {"message_id": "test_id", "operation": "read",
+                        "user_spec": "test_user"}
+        read_request = ReadUserRequest(**valid_kwargs)
+        self.assertIsInstance(read_request, ReadUserRequest)
+        generic_request = UserDbRequest(**valid_kwargs)
+        self.assertIsInstance(generic_request, ReadUserRequest)
+        self.assertEqual(generic_request.user_spec,
+                         read_request.user_spec)
+
+        # Test invalid
+        with self.assertRaises(ValidationError):
+            UserDbRequest(operation="create", message_id="test0")
+
+    def test_update_user_db_request(self):
+        from neon_data_models.models.api.mq import UpdateUserRequest
+        # TODO
+
+    def test_delete_user_db_request(self):
+        from neon_data_models.models.api.mq import DeleteUserRequest
+        # TODO
