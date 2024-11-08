@@ -31,18 +31,6 @@ from neon_data_models.models.api.mq import UserDbRequest
 
 
 class TestMQ(TestCase):
-    def test_user_db_request(self):
-        valid_model = UserDbRequest(operation="create", username="test_user",
-                                    message_id="test")
-        self.assertIsInstance(valid_model, UserDbRequest)
-        with self.assertRaises(ValidationError):
-            UserDbRequest(operation="get", username="test", message_id="test")
-        with self.assertRaises(ValidationError):
-            UserDbRequest(operation="delete", username="test_user",
-                          user="test_user", message_id="test")
-        with self.assertRaises(ValidationError):
-            UserDbRequest(operation="create", username="test_user")
-
     def test_create_user_db_request(self):
         from neon_data_models.models.api.mq import CreateUserRequest
 
@@ -58,7 +46,8 @@ class TestMQ(TestCase):
 
         # Test invalid
         with self.assertRaises(ValidationError):
-            UserDbRequest(operation="create", message_id="test0")
+            UserDbRequest(operation="create", username="test",
+                          message_id="test0")
 
     def test_read_user_db_request(self):
         from neon_data_models.models.api.mq import ReadUserRequest
@@ -75,12 +64,65 @@ class TestMQ(TestCase):
 
         # Test invalid
         with self.assertRaises(ValidationError):
-            UserDbRequest(operation="create", message_id="test0")
+            UserDbRequest(operation="read", user={"username": "test"},
+                          message_id="test0")
 
     def test_update_user_db_request(self):
         from neon_data_models.models.api.mq import UpdateUserRequest
-        # TODO
+
+        # Test update user valid
+        valid_kwargs = {"message_id": "test_id", "operation": "update",
+                        "password": "test_password",
+                        "user": {"username": "test_user",
+                                 "skills": {"skill_id": {"test": True}}}}
+        update_request = UpdateUserRequest(**valid_kwargs)
+        self.assertIsInstance(update_request, UpdateUserRequest)
+        self.assertEqual(update_request.auth_username,
+                         update_request.user.username)
+        generic_request = UserDbRequest(**valid_kwargs)
+        self.assertIsInstance(generic_request, UpdateUserRequest)
+        self.assertEqual(generic_request.user.username,
+                         update_request.user.username)
+
+        # Test update read username/password from User object
+        update = UpdateUserRequest(message_id="test_id", operation="update",
+                                   user={"username": "user",
+                                         "password_hash": "password"})
+        self.assertEqual(update.auth_username, "user")
+        self.assertEqual(update.auth_password, "password")
+
+        # Test update with separate authentication user
+        update = UpdateUserRequest(message_id="test_id", operation="update",
+                                   user={"username": "user",
+                                         "password_hash": "password"},
+                                   auth_username="admin", auth_password="admin_pass")
+        self.assertEqual(update.user.username, "user")
+        self.assertEqual(update.user.password_hash, "password")
+
+        self.assertEqual(update.auth_username, "admin")
+        self.assertEqual(update.auth_password, "admin_pass")
+
+        # Test invalid
+        with self.assertRaises(ValidationError):
+            UserDbRequest(operation="update", user={"username": "test_user",
+                                                    "skills": {"skill_id": {
+                                                        "test": True}}},
+                          message_id="test0")
 
     def test_delete_user_db_request(self):
         from neon_data_models.models.api.mq import DeleteUserRequest
-        # TODO
+
+        # Test delete user valid
+        valid_kwargs = {"message_id": "test_id", "operation": "delete",
+                        "user": {"username": "test_user"}}
+        delete_request = DeleteUserRequest(**valid_kwargs)
+        self.assertIsInstance(delete_request, DeleteUserRequest)
+        generic_request = UserDbRequest(**valid_kwargs)
+        self.assertIsInstance(generic_request, DeleteUserRequest)
+        self.assertEqual(generic_request.user.username,
+                         delete_request.user.username)
+
+        # Test invalid
+        with self.assertRaises(ValidationError):
+            UserDbRequest(operation="delete", username="test_user",
+                          message_id="test0")
