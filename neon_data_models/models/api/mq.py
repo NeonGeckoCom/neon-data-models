@@ -26,7 +26,7 @@
 
 from typing import Literal, Optional, Annotated, Union
 
-from pydantic import Field, TypeAdapter
+from pydantic import Field, TypeAdapter, model_validator
 
 from neon_data_models.models.base.contexts import MQContext
 from neon_data_models.models.user.database import User, TokenConfig
@@ -51,7 +51,27 @@ class ReadUserRequest(MQContext):
 class UpdateUserRequest(MQContext):
     operation: Literal["update"] = "update"
     user: User = Field(description="Updated User object to write to database")
-    password: str = Field(description="Password associated with `user_spec`")
+    auth_username: str = Field(default="",
+                               description="Username to authorize database "
+                                           "change. If unset, this will use "
+                                           "`user.username`")
+    auth_password: str = Field(default="",
+                               description="Password (clear or hashed) associated "
+                                      "with `auth_username`. If unset, this "
+                                      "will use `user.password_hash`. If "
+                                      "changing the password, this must "
+                                      "contain the existing password, with "
+                                      "the new password specified in `user`")
+
+    @model_validator(mode="after")
+    def get_auth_username(self) -> 'UpdateUserRequest':
+        if not self.auth_username:
+            self.auth_username = self.user.username
+        if not self.auth_password:
+            self.auth_password = self.user.password_hash
+        if not all((self.auth_username, self.auth_password)):
+            raise ValueError("Missing username or password")
+        return self
 
 
 class DeleteUserRequest(MQContext):
