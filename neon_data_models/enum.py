@@ -49,6 +49,7 @@ class AccessRoles(IntEnum):
     # 50 Reserved for "unlimited access"
 
     NODE = -1
+    READ_USERS = -2, "Used by service accounts to read users from the database"
 
 
 class UserData(IntEnum):
