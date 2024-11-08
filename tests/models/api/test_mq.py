@@ -72,7 +72,7 @@ class TestMQ(TestCase):
 
         # Test update user valid
         valid_kwargs = {"message_id": "test_id", "operation": "update",
-                        "password": "test_password",
+                        "auth_password": "test_password",
                         "user": {"username": "test_user",
                                  "skills": {"skill_id": {"test": True}}}}
         update_request = UpdateUserRequest(**valid_kwargs)
