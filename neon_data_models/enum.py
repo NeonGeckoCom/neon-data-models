@@ -34,6 +34,10 @@ class AccessRoles(IntEnum):
     non-user roles. In this way, an activity can require, for example,
     `permission > AccessRoles.GUEST` to grant access to all registered users,
     admins, and owners.
+
+    Special Roles:
+        NODE: Reserved for use by a Node service account
+        READ_USERS: Used by service accounts to read users from the database
     """
     NONE = 0
     GUEST = 1
@@ -41,8 +45,8 @@ class AccessRoles(IntEnum):
     ADMIN = 3
     OWNER = 4
 
-    NODE = -1, "Reserved for use by a Node service account"
-    READ_USERS = -2, "Used by service accounts to read users from the database"
+    NODE = -1
+    READ_USERS = -2
 
 
 class UserData(IntEnum):
