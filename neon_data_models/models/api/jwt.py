@@ -23,7 +23,7 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+from time import time
 from typing import Optional, List, Literal
 from uuid import uuid4
 
@@ -71,8 +71,16 @@ class HanaToken(JWT):
         BaseModel.__init__(self, **kwargs)
 
     # Private parameters
-    token_name: str = ""
-    last_refresh_timestamp: Optional[int] = None
+    token_name: str = Field(default="",
+                            description="Friendly name to identify this token.")
+    creation_timestamp: int = Field(default_factory=lambda: int(time()),
+                                    description="Timestamp of initial token "
+                                                "creation (not counting "
+                                                "refreshes).")
+    last_refresh_timestamp: Optional[int] = Field(default=None,
+                                                  description="Timestamp of "
+                                                              "most recent "
+                                                              "refresh.")
     purpose: Literal["access", "refresh"] = "access"
 
 
