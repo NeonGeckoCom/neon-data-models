@@ -26,6 +26,7 @@
 
 from time import time
 from typing import Dict, Any, List, Literal, Optional
+from typing_extensions import deprecated
 from uuid import uuid4
 
 from neon_data_models.models.api.jwt import HanaToken
@@ -147,10 +148,8 @@ class PermissionsConfig(BaseModel):
         return roles
 
 
+@deprecated(f"Use `neon_data_models.models.api.jwt.HanaToken`")
 class TokenConfig(BaseModel):
-    from ovos_utils.log import log_deprecation
-    log_deprecation("Use `neon_data_models.models.api.jwt.HanaToken`",
-                    "0.0.1")
     username: str
     client_id: str
     permissions: Dict[str, bool]
