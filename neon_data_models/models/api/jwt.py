@@ -52,8 +52,11 @@ class JWT(BaseModel):
 
 class HanaToken(JWT):
     def __init__(self, **kwargs):
+        from neon_data_models.models.user import PermissionsConfig
         permissions = kwargs.get("permissions")
-        if permissions and isinstance(permissions, dict):
+        if permissions and isinstance(permissions, PermissionsConfig):
+            kwargs["roles"] = permissions.to_roles()
+        elif permissions and isinstance(permissions, dict):
             core_permissions = AccessRoles.GUEST if \
                 permissions.get("assist") else AccessRoles.NONE
             diana_permissions = AccessRoles.GUEST if \
@@ -68,4 +71,9 @@ class HanaToken(JWT):
         BaseModel.__init__(self, **kwargs)
 
     # Private parameters
+    token_name: str = ""
+    last_refresh_timestamp: Optional[int] = None
     purpose: Literal["access", "refresh"] = "access"
+
+
+__all__ = [JWT.__name__, HanaToken.__name__]
