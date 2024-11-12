@@ -150,33 +150,18 @@ class PermissionsConfig(BaseModel):
 
 @deprecated(f"Use `neon_data_models.models.api.jwt.HanaToken`")
 class TokenConfig(BaseModel):
-    """
-    Data model for storing token data in the user database. Note that the actual
-    tokens are not included here, only metadata used to validate or invalidate a
-    token and present a list of issued tokens to the user.
-    """
-    def __init__(self, **kwargs):
-        # The JWT standard uses these standard keys; outside of that context,
-        # they are not very descriptive, so the database uses its own schema
-        if jti := kwargs.get("jti"):
-            kwargs.setdefault("token_id", jti)
-        if sub := kwargs.get("sub"):
-            kwargs.setdefault("user_id", sub)
-        if iat := kwargs.get("iat"):
-            kwargs.setdefault("creation_timestamp", iat)
-        if exp := kwargs.get("exp"):
-            kwargs.setdefault("refresh_expiration_timestamp", exp)
-        BaseModel.__init__(self, **kwargs)
-
-    token_name: str = Field(description="Human-readable token identifier")
-    token_id: str = Field(description="Unique token identifier")
-    user_id: str = Field(description="User ID the token is associated with")
-    client_id: str = Field(description="Client ID the token is associated with")
-    permissions: PermissionsConfig = Field(
-        description="Permissions for this token "
-                    "(overrides user-level permissions)")
-    refresh_expiration_timestamp: int = Field(
+    from ovos_utils.log import log_deprecation
+    log_deprecation("Use `neon_data_models.models.api.jwt.HanaToken`",
+                    "0.0.1")
+    username: str
+    client_id: str
+    permissions: Dict[str, bool]
+    refresh_token: str
+    expiration: int = Field(
+        description="Unix timestamp of auth token expiration")
+    refresh_expiration: int = Field(
         description="Unix timestamp of refresh token expiration")
+    token_name: str
     creation_timestamp: int = Field(
         description="Unix timestamp of token creation (auth+refresh)")
     last_refresh_timestamp: int = Field(
