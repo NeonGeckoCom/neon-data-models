@@ -33,19 +33,17 @@ from neon_data_models.models.base import BaseModel
 
 
 class JWT(BaseModel):
-    iss: Optional[str] = Field(None, description="Token issuer")
-    sub: Optional[str] = Field(None,
+    iss: Optional[str] = Field(None, validate_default=True,
+                               description="Token issuer")
+    sub: Optional[str] = Field(None, validate_default=True,
                                description="Unique token subject, ie a user ID")
-    exp: int = Field(None,
-                     description="Expiration time in epoch seconds")
-    iat: int = Field(None,
-                     description="Token creation time in epoch seconds")
+    exp: int = Field(description="Expiration time in epoch seconds")
+    iat: int = Field(description="Token creation time in epoch seconds")
     jti: str = Field(description="Unique token identifier",
                      default_factory=lambda: str(uuid4()))
 
-    client_id: str = Field(None, description="Client identifier")
-    roles: List[str] = Field(None,
-                             description="List of roles, "
+    client_id: str = Field(description="Client identifier")
+    roles: List[str] = Field(description="List of roles, "
                                          "formatted as `<name> <AccessRole>`. "
                                          "See PermissionsConfig for role names")
 

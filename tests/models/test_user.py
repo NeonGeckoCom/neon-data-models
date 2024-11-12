@@ -32,7 +32,7 @@ from pydantic import ValidationError
 from datetime import date
 
 from neon_data_models.models.api.jwt import HanaToken
-from neon_data_models.models.user.database import NeonUserConfig, User
+from neon_data_models.models.user.database import NeonUserConfig, User, PermissionsConfig
 
 
 class TestDatabase(TestCase):
@@ -88,11 +88,12 @@ class TestDatabase(TestCase):
         user_kwargs = dict(username="test",
                            password_hash="test",
                            tokens=[{"token_name": "test_token",
-                                    "token_id": str(uuid4()),
-                                    "user_id": str(uuid4()),
+                                    "jti": str(uuid4()),
+                                    "sub": str(uuid4()),
                                     "client_id": str(uuid4()),
-                                    "permissions": {},
-                                    "refresh_expiration_timestamp": round(time()),
+                                    "roles": PermissionsConfig().to_roles(),
+                                    "iat": round(time()) - 1,
+                                    "exp": round(time()) + 1,
                                     "creation_timestamp": round(time()),
                                     "last_refresh_timestamp": round(time())}])
         default_user = User(**user_kwargs)
