@@ -150,9 +150,6 @@ class PermissionsConfig(BaseModel):
 
 @deprecated(f"Use `neon_data_models.models.api.jwt.HanaToken`")
 class TokenConfig(BaseModel):
-    from ovos_utils.log import log_deprecation
-    log_deprecation("Use `neon_data_models.models.api.jwt.HanaToken`",
-                    "0.0.1")
     username: str
     client_id: str
     permissions: Dict[str, bool]
