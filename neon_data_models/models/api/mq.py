@@ -28,8 +28,9 @@ from typing import Literal, Optional, Annotated, Union
 
 from pydantic import Field, TypeAdapter, model_validator
 
+from neon_data_models.models.api.jwt import HanaToken
 from neon_data_models.models.base.contexts import MQContext
-from neon_data_models.models.user.database import User, TokenConfig
+from neon_data_models.models.user.database import User
 
 
 class CreateUserRequest(MQContext):
@@ -43,16 +44,19 @@ class ReadUserRequest(MQContext):
     auth_user_spec: str = Field(
         default="", description="Username or ID to authorize database  read. "
                                 "If unset, this will use `user_spec`")
-    access_token: Optional[TokenConfig] = Field(
+    access_token: Optional[HanaToken] = Field(
         None, description="Token associated with `auth_username`")
     password: Optional[str] = Field(None,
                                     description="Password associated with "
                                                 "`auth_username`")
 
     @model_validator(mode="after")
-    def get_auth_username(self) -> 'ReadUserRequest':
+    def validate_params(self) -> 'ReadUserRequest':
         if not self.auth_user_spec:
             self.auth_user_spec = self.user_spec
+        if self.access_token and self.access_token.purpose != "access":
+            raise ValueError(f"Expected an access token but got: "
+                             f"{self.access_token.purpose}")
         return self
 
 
