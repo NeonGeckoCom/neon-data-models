@@ -30,7 +30,9 @@ from uuid import uuid4
 
 from pydantic import ValidationError
 from datetime import date
-from neon_data_models.models.user.database import NeonUserConfig, TokenConfig, User
+
+from neon_data_models.models.api.jwt import HanaToken
+from neon_data_models.models.user.database import NeonUserConfig, User
 
 
 class TestDatabase(TestCase):
@@ -94,7 +96,7 @@ class TestDatabase(TestCase):
                                     "creation_timestamp": round(time()),
                                     "last_refresh_timestamp": round(time())}])
         default_user = User(**user_kwargs)
-        self.assertIsInstance(default_user.tokens[0], TokenConfig)
+        self.assertIsInstance(default_user.tokens[0], HanaToken)
         with self.assertRaises(ValidationError):
             User()
 
@@ -143,23 +145,23 @@ class TestDatabase(TestCase):
         creation = round(time()) - 3600
         last_refresh = round(time())
 
-        from_database = TokenConfig(token_name=token_name,
-                                    token_id=token_id,
-                                    user_id=user_id,
-                                    client_id=client_id,
-                                    permissions=permissions,
-                                    refresh_expiration_timestamp=refresh_expiration,
-                                    creation_timestamp=creation,
-                                    last_refresh_timestamp=last_refresh)
+        from_database = HanaToken(token_name=token_name,
+                                  jti=token_id,
+                                  sub=user_id,
+                                  client_id=client_id,
+                                  roles=permissions.to_roles(),
+                                  exp=refresh_expiration,
+                                  iat=creation,
+                                  last_refresh_timestamp=last_refresh)
 
-        from_token = TokenConfig(jti=token_id,
-                                 sub=user_id,
-                                 iat=creation,
-                                 exp=refresh_expiration,
-                                 token_name=token_name,
-                                 client_id=client_id,
-                                 permissions=permissions,
-                                 last_refresh_timestamp=last_refresh)
+        from_token = HanaToken(jti=token_id,
+                               sub=user_id,
+                               iat=creation,
+                               exp=refresh_expiration,
+                               token_name=token_name,
+                               client_id=client_id,
+                               permissions=permissions,
+                               last_refresh_timestamp=last_refresh)
 
         self.assertEqual(from_database, from_token)
         self.assertEqual(from_database.model_dump_json(),
