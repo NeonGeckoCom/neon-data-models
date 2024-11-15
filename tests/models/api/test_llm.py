@@ -126,3 +126,28 @@ class TestLLM(TestCase):
             LLMRequest(query=test_query, history=test_history,
                        persona=test_persona, model=test_model)
         test_history.pop()
+
+    def test_llm_response(self):
+        from neon_data_models.models.api.llm import LLMResponse
+        valid_response = "hello"
+        valid_history = [("user", "hello"), ("assistant", "How can I help?")]
+        legacy_history = [("user", "hello"), ("llm", "How can I help?")]
+
+        # Valid response with valid history
+        response = LLMResponse(response=valid_response, history=valid_history)
+        self.assertEqual(response.response, valid_response)
+        self.assertEqual(response.history, valid_history)
+
+        # Valid response with legacy history
+        response = LLMResponse(response=valid_response, history=legacy_history)
+        self.assertEqual(response.response, valid_response)
+        self.assertEqual(response.history, valid_history)
+
+        # Invalid response
+        with self.assertRaises(ValidationError):
+            LLMResponse(response=None, history=valid_history)
+
+        # Invalid history
+        valid_history.append(("invalid", "response"))
+        with self.assertRaises(ValidationError):
+            LLMResponse(response=valid_response, history=valid_history)

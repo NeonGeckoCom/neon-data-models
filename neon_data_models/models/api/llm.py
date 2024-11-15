@@ -142,3 +142,23 @@ class LLMRequest(BaseModel):
                                "repetition_penalty": self.repetition_penalty,
                                "use_beam_search": self.beam_search,
                                "best_of": self.best_of}}
+
+
+class LLMResponse(BaseModel):
+    response: str = Field(description="LLM Response to the input query")
+    history: List[Tuple[Literal["user", "assistant"], str]] = Field(
+        description="List of (role, content) tuples in chronological order "
+                    "(`response` is in the last list element)")
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_inputs(cls, values):
+        # Neon modules previously defined `user` and `llm` keys, but Open AI
+        # specifies `assistant` in place of `llm` and is the de-facto standard
+        for idx, itm in enumerate(values.get('history', [])):
+            if itm[0] == "llm":
+                values['history'][idx] = ("assistant", itm[1])
+        return values
+
+
+__all__ = [LLMPersona.__name__, LLMRequest.__name__, LLMResponse.__name__]
