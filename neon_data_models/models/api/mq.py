@@ -29,6 +29,7 @@ from typing import Literal, Optional, Annotated, Union
 from pydantic import Field, TypeAdapter, model_validator
 
 from neon_data_models.models.api.jwt import HanaToken
+from neon_data_models.models.api.llm import LLMRequest, LLMPersona
 from neon_data_models.models.base.contexts import MQContext
 from neon_data_models.models.user.database import User
 
@@ -104,6 +105,18 @@ class UserDbRequest:
         return cls.ta.validate_python(kwargs)
 
 
+class MqLlmRequest(MQContext, LLMRequest):
+    model: Optional[str] = Field(
+        default=None,
+        description="MQ implementation defines `model` as optional because the "
+                    "queue defines the requested model in most cases.")
+    persona: Optional[LLMPersona] = Field(
+        default=None,
+        description="MQ implementation defines `persona` as an optional "
+                    "parameter, with default behavior hard-coded into each "
+                    "LLM module.")
+
+
 __all__ = [CreateUserRequest.__name__, ReadUserRequest.__name__,
            UpdateUserRequest.__name__, DeleteUserRequest.__name__,
-           UserDbRequest.__name__]
+           UserDbRequest.__name__, MqLlmRequest.__name__]

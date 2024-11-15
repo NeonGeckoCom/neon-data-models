@@ -30,6 +30,9 @@ from pydantic import Field, model_validator
 from neon_data_models.models.base import BaseModel
 
 
+_DEFAULT_MQ_TO_ROLE = {"user": "user", "llm": "assistant"}
+
+
 class LLMPersona(BaseModel):
     name: str = Field(description="Unique name for this persona")
     description: Optional[str] = Field(
@@ -48,7 +51,8 @@ class LLMPersona(BaseModel):
 
 class LLMRequest(BaseModel):
     query: str = Field(description="Incoming user prompt")
-    history: List[Tuple[Literal["user", "assistant"], str]] = Field(
+    # TODO: History may support more options in the future
+    history: List[Tuple[Literal["user", "llm"], str]] = Field(
         description="OpenAI-formatted chat history (excluding system prompt)")
     persona: LLMPersona = Field(
         description="Requested persona to respond to this message")
@@ -83,8 +87,8 @@ class LLMRequest(BaseModel):
         # Neon modules previously defined `user` and `llm` keys, but Open AI
         # specifies `assistant` in place of `llm` and is the de-facto standard
         for idx, itm in enumerate(values.get('history', [])):
-            if itm[0] == "llm":
-                values['history'][idx] = ("assistant", itm[1])
+            if itm[0] == "assistant":
+                values['history'][idx] = ("llm", itm[1])
         return values
 
     @model_validator(mode='after')
@@ -126,11 +130,16 @@ class LLMRequest(BaseModel):
         """
         return [{"role": m[0], "content": m[1]} for m in self.history]
 
-    def to_completion_kwargs(self) -> dict:
+    def to_completion_kwargs(self, mq2role: dict = None) -> dict:
         """
-        Get kwargs to pass to an OpenAI completion request
+        Get kwargs to pass to an OpenAI completion request.
+        @param mq2role: dict mapping `llm` and `user` keys to `role` values to
+            use in message history.
         """
+        mq2role = mq2role or _DEFAULT_MQ_TO_ROLE
         history = self.messages[-2*self.max_history:]
+        for msg in history:
+            msg["role"] = mq2role.get(msg["role"]) or msg["role"]
         history.insert(0, {"role": "system",
                            "content": self.persona.system_prompt})
         return {"model": self.model,
@@ -146,7 +155,7 @@ class LLMRequest(BaseModel):
 
 class LLMResponse(BaseModel):
     response: str = Field(description="LLM Response to the input query")
-    history: List[Tuple[Literal["user", "assistant"], str]] = Field(
+    history: List[Tuple[Literal["user", "llm"], str]] = Field(
         description="List of (role, content) tuples in chronological order "
                     "(`response` is in the last list element)")
 
@@ -156,8 +165,8 @@ class LLMResponse(BaseModel):
         # Neon modules previously defined `user` and `llm` keys, but Open AI
         # specifies `assistant` in place of `llm` and is the de-facto standard
         for idx, itm in enumerate(values.get('history', [])):
-            if itm[0] == "llm":
-                values['history'][idx] = ("assistant", itm[1])
+            if itm[0] == "assistant":
+                values['history'][idx] = ("llm", itm[1])
         return values
 
 

@@ -126,3 +126,44 @@ class TestMQ(TestCase):
         with self.assertRaises(ValidationError):
             UserDbRequest(operation="delete", username="test_user",
                           message_id="test0")
+
+    def test_mq_llm_request(self):
+        from neon_data_models.models.api.mq import MqLlmRequest
+        from neon_data_models.models.api.llm import LLMRequest
+        from neon_data_models.models.base.contexts import MQContext
+
+        query = "who are you"
+        history = []
+        model_name = "test_model"
+        persona = {"name": "test_persona", "system_prompt": "Test prompt."}
+        message_id = "test_mid"
+
+        # Valid fully-defined
+        valid_request = MqLlmRequest(query=query, history=history,
+                                     persona=persona, model=model_name,
+                                     message_id=message_id)
+        self.assertIsInstance(valid_request, MqLlmRequest)
+        self.assertIsInstance(valid_request, LLMRequest)
+        self.assertIsInstance(valid_request, MQContext)
+
+        # Valid backwards-compat (no model or persona)
+        backwards_compat = MqLlmRequest(query=query, history=history,
+                                        message_id=message_id)
+        self.assertIsInstance(backwards_compat, MqLlmRequest)
+        self.assertIsInstance(backwards_compat, LLMRequest)
+        self.assertIsInstance(backwards_compat, MQContext)
+        self.assertIsNone(backwards_compat.model)
+        self.assertIsNone(backwards_compat.persona)
+
+        # Invalid Persona defined
+        with self.assertRaises(ValidationError):
+            MqLlmRequest(query=query, history=history,  message_id=message_id,
+                         persona={})
+
+        # Invalid MQ Context
+        with self.assertRaises(ValidationError):
+            MqLlmRequest(query=query, history=history)
+
+        # Invalid LLM Request
+        with self.assertRaises(ValidationError):
+            MqLlmRequest(history=history, message_id=message_id)
