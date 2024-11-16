@@ -25,7 +25,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from typing import List, Tuple, Optional, Literal
-from pydantic import Field, model_validator
+from pydantic import Field, model_validator, computed_field
 
 from neon_data_models.models.base import BaseModel
 
@@ -40,6 +40,11 @@ class LLMPersona(BaseModel):
     system_prompt: str = Field(
         None, description="System prompt associated with this persona. "
                           "If None, `description` will be used.")
+    enabled: bool = Field(
+        True, description="Flag used to mark a defined persona as "
+                          "available for use.")
+    user_id: Optional[str] = Field(
+        None, description="`user_id` of the user who created this persona.")
 
     @model_validator(mode='after')
     def validate_request(self):
@@ -47,6 +52,14 @@ class LLMPersona(BaseModel):
         if self.system_prompt is None:
             self.system_prompt = self.description
         return self
+
+    @computed_field
+    @property
+    def id(self) -> str:
+        persona_id = self.name
+        if self.user_id:
+            persona_id += f"_{self.user_id}"
+        return persona_id
 
 
 class LLMRequest(BaseModel):

@@ -24,7 +24,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Literal, Optional, Annotated, Union
+from typing import Literal, Optional, Annotated, Union, Dict, List
 
 from pydantic import Field, TypeAdapter, model_validator
 
@@ -105,7 +105,7 @@ class UserDbRequest:
         return cls.ta.validate_python(kwargs)
 
 
-class MqLlmRequest(MQContext, LLMRequest):
+class LLMProposeRequest(MQContext, LLMRequest):
     model: Optional[str] = Field(
         default=None,
         description="MQ implementation defines `model` as optional because the "
@@ -117,6 +117,32 @@ class MqLlmRequest(MQContext, LLMRequest):
                     "LLM module.")
 
 
+class LLMProposeResponse(MQContext):
+    response: str = Field(description="LLM response to the prompt")
+
+
+class LLMDiscussRequest(LLMProposeRequest):
+    options: Dict[str, str] = Field(
+        description="Mapping of participant name to response to be discussed.")
+
+
+class LLMDiscussResponse(MQContext):
+    opinion: str = Field(description="LLM response to the available options.")
+
+
+class LLMVoteRequest(LLMProposeRequest):
+    responses: List[str] = Field(
+        description="List of responses to choose from.")
+
+
+class LLMVoteResponse(MQContext):
+    sorted_answer_indexes: List[int] = Field(
+        description="Indices of `responses` ordered high to low by preference.")
+
+
 __all__ = [CreateUserRequest.__name__, ReadUserRequest.__name__,
            UpdateUserRequest.__name__, DeleteUserRequest.__name__,
-           UserDbRequest.__name__, MqLlmRequest.__name__]
+           UserDbRequest.__name__, LLMProposeRequest.__name__,
+           LLMProposeResponse.__name__, LLMDiscussRequest.__name__,
+           LLMDiscussResponse.__name__, LLMVoteRequest.__name__,
+           LLMVoteResponse.__name__]

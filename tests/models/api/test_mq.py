@@ -128,7 +128,7 @@ class TestMQ(TestCase):
                           message_id="test0")
 
     def test_mq_llm_request(self):
-        from neon_data_models.models.api.mq import MqLlmRequest
+        from neon_data_models.models.api.mq import LLMProposeRequest
         from neon_data_models.models.api.llm import LLMRequest
         from neon_data_models.models.base.contexts import MQContext
 
@@ -139,17 +139,17 @@ class TestMQ(TestCase):
         message_id = "test_mid"
 
         # Valid fully-defined
-        valid_request = MqLlmRequest(query=query, history=history,
-                                     persona=persona, model=model_name,
-                                     message_id=message_id)
-        self.assertIsInstance(valid_request, MqLlmRequest)
+        valid_request = LLMProposeRequest(query=query, history=history,
+                                          persona=persona, model=model_name,
+                                          message_id=message_id)
+        self.assertIsInstance(valid_request, LLMProposeRequest)
         self.assertIsInstance(valid_request, LLMRequest)
         self.assertIsInstance(valid_request, MQContext)
 
         # Valid backwards-compat (no model or persona)
-        backwards_compat = MqLlmRequest(query=query, history=history,
-                                        message_id=message_id)
-        self.assertIsInstance(backwards_compat, MqLlmRequest)
+        backwards_compat = LLMProposeRequest(query=query, history=history,
+                                             message_id=message_id)
+        self.assertIsInstance(backwards_compat, LLMProposeRequest)
         self.assertIsInstance(backwards_compat, LLMRequest)
         self.assertIsInstance(backwards_compat, MQContext)
         self.assertIsNone(backwards_compat.model)
@@ -157,13 +157,13 @@ class TestMQ(TestCase):
 
         # Invalid Persona defined
         with self.assertRaises(ValidationError):
-            MqLlmRequest(query=query, history=history,  message_id=message_id,
-                         persona={})
+            LLMProposeRequest(query=query, history=history, message_id=message_id,
+                              persona={})
 
         # Invalid MQ Context
         with self.assertRaises(ValidationError):
-            MqLlmRequest(query=query, history=history)
+            LLMProposeRequest(query=query, history=history)
 
         # Invalid LLM Request
         with self.assertRaises(ValidationError):
-            MqLlmRequest(history=history, message_id=message_id)
+            LLMProposeRequest(history=history, message_id=message_id)
