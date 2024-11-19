@@ -36,13 +36,18 @@ class AccessRoles(IntEnum):
     admins, and owners.
     """
     NONE = 0
-    GUEST = 1
-    USER = 2
-    # 3-5 Reserved for "premium users"
-    ADMIN = 6
-    # 7-8 Reserved for "restricted owners"
-    OWNER = 9
-    # 10 Reserved for "unlimited access"
+    # 1-9 reserved for unauthenticated connections
+    GUEST = 10
+    # 11-19 reserved for unverified user roles
+    USER = 20
+    # 21-29 Reserved for "premium users"
+    ADMIN = 30
+    # 31-39 Reserved for "restricted owners"
+    OWNER = 40
+    # 41-49 Reserved for "escalated owners"
+
+    # 50 Reserved for "unlimited access"
+
     NODE = -1
 
 
