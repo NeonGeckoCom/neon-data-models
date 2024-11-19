@@ -80,8 +80,8 @@ class NodeGetTts(BaseMessage):
 
 class NodeKlatResponse(BaseMessage):
     msg_type: Literal["klat.response"] = "klat.response"
-    data: Dict[str, KlatResponse] = Field(type=Dict[str, KlatResponse],
-                       description="dict of BCP-47 language: KlatResponse")
+    data: Dict[str, KlatResponse] = Field(
+        description="dict of BCP-47 language: KlatResponse")
 
 
 class NodeAudioInputResponse(BaseMessage):
@@ -97,8 +97,7 @@ class NodeGetSttResponse(BaseMessage):
 class NodeGetTtsResponse(BaseMessage):
     msg_type: Literal["neon.get_tts.response"] = "neon.get_tts.response"
     data: Dict[str, KlatResponse] = (
-        Field(type=Dict[str, KlatResponse],
-              description="dict of BCP-47 language: KlatResponse"))
+        Field(description="dict of BCP-47 language: KlatResponse"))
 
 
 class CoreWWDetected(BaseMessage):

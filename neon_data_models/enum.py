@@ -38,9 +38,11 @@ class AccessRoles(IntEnum):
     NONE = 0
     GUEST = 1
     USER = 2
-    ADMIN = 3
-    OWNER = 4
-
+    # 3-5 Reserved for "premium users"
+    ADMIN = 6
+    # 7-8 Reserved for "restricted owners"
+    OWNER = 9
+    # 10 Reserved for "unlimited access"
     NODE = -1
 
 

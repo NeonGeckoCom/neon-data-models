@@ -26,9 +26,13 @@
 
 from time import time
 from unittest import TestCase
+from uuid import uuid4
+
 from pydantic import ValidationError
 from datetime import date
-from neon_data_models.models.user.database import NeonUserConfig, TokenConfig, User
+
+from neon_data_models.models.api.jwt import HanaToken
+from neon_data_models.models.user.database import NeonUserConfig, User, PermissionsConfig
 
 
 class TestDatabase(TestCase):
@@ -83,17 +87,17 @@ class TestDatabase(TestCase):
     def test_user(self):
         user_kwargs = dict(username="test",
                            password_hash="test",
-                           tokens=[{"username": "test",
-                                    "client_id": "test_id",
-                                    "permissions": {},
-                                    "refresh_token": "",
-                                    "expiration": round(time()),
-                                    "refresh_expiration": round(time()),
-                                    "token_name": "test_token",
+                           tokens=[{"token_name": "test_token",
+                                    "jti": str(uuid4()),
+                                    "sub": str(uuid4()),
+                                    "client_id": str(uuid4()),
+                                    "roles": PermissionsConfig().to_roles(),
+                                    "iat": round(time()) - 1,
+                                    "exp": round(time()) + 1,
                                     "creation_timestamp": round(time()),
                                     "last_refresh_timestamp": round(time())}])
         default_user = User(**user_kwargs)
-        self.assertIsInstance(default_user.tokens[0], TokenConfig)
+        self.assertIsInstance(default_user.tokens[0], HanaToken)
         with self.assertRaises(ValidationError):
             User()
 
@@ -104,6 +108,65 @@ class TestDatabase(TestCase):
         duplicate_user = User(**user_kwargs)
         self.assertNotEqual(default_user, duplicate_user)
         self.assertEqual(default_user.tokens, duplicate_user.tokens)
+
+    def test_permissions_config(self):
+        from neon_data_models.models.user.database import PermissionsConfig
+        from neon_data_models.enum import AccessRoles
+
+        # Test Default
+        default_config = PermissionsConfig()
+        for _, value in default_config.model_dump().items():
+            self.assertEqual(value, AccessRoles.NONE)
+
+        test_config = PermissionsConfig(klat=AccessRoles.USER,
+                                        core=AccessRoles.GUEST,
+                                        diana=AccessRoles.GUEST,
+                                        node=AccessRoles.NODE,
+                                        hub=AccessRoles.NODE,
+                                        llm=AccessRoles.NONE)
+        # Test dump/load
+        self.assertEqual(PermissionsConfig(**test_config.model_dump()),
+                         test_config)
+
+        # Test to/from roles
+        roles = test_config.to_roles()
+        self.assertIsInstance(roles, list)
+        for role in roles:
+            self.assertEqual(len(role.split()), 2)
+        self.assertEqual(PermissionsConfig.from_roles(roles), test_config)
+
+    def test_token_config(self):
+        from neon_data_models.models.user.database import PermissionsConfig
+        token_id = str(uuid4())
+        user_id = str(uuid4())
+        client_id = str(uuid4())
+        token_name = "Test Token"
+        permissions = PermissionsConfig()
+        refresh_expiration = round(time()) + 3600
+        creation = round(time()) - 3600
+        last_refresh = round(time())
+
+        from_database = HanaToken(token_name=token_name,
+                                  jti=token_id,
+                                  sub=user_id,
+                                  client_id=client_id,
+                                  roles=permissions.to_roles(),
+                                  exp=refresh_expiration,
+                                  iat=creation,
+                                  last_refresh_timestamp=last_refresh)
+
+        from_token = HanaToken(jti=token_id,
+                               sub=user_id,
+                               iat=creation,
+                               exp=refresh_expiration,
+                               token_name=token_name,
+                               client_id=client_id,
+                               permissions=permissions,
+                               last_refresh_timestamp=last_refresh)
+
+        self.assertEqual(from_database, from_token)
+        self.assertEqual(from_database.model_dump_json(),
+                         from_token.model_dump_json())
 
 
 class TestNeonProfile(TestCase):
