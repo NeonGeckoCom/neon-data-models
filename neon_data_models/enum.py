@@ -38,8 +38,6 @@ class AccessRoles(IntEnum):
     Special Roles:
         NODE: Reserved for use by a Node device service account to access
             various services
-        RW_USERS: Reserved for use by service accounts to access and modify the
-            users database
     """
     NONE = 0
     # 1-9 reserved for unauthenticated connections
@@ -55,7 +53,6 @@ class AccessRoles(IntEnum):
     # 50 Reserved for "unlimited access"
 
     NODE = -1
-    RW_USERS = -2
 
 
 class UserData(IntEnum):
