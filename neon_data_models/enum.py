@@ -36,8 +36,10 @@ class AccessRoles(IntEnum):
     admins, and owners.
 
     Special Roles:
-        NODE: Reserved for use by a Node service account
-        READ_USERS: Used by service accounts to read users from the database
+        NODE: Reserved for use by a Node device service account to access
+            various services
+        RW_USERS: Reserved for use by service accounts to access and modify the
+            users database
     """
     NONE = 0
     # 1-9 reserved for unauthenticated connections
@@ -53,7 +55,7 @@ class AccessRoles(IntEnum):
     # 50 Reserved for "unlimited access"
 
     NODE = -1
-    READ_USERS = -2, "Used by service accounts to read users from the database"
+    RW_USERS = -2
 
 
 class UserData(IntEnum):

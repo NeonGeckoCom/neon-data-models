@@ -115,14 +115,28 @@ class BrainForgeConfig(BaseModel):
 
 class PermissionsConfig(BaseModel):
     """
-    Defines roles for supported projects/service families.
+    Defines roles for supported projects/services.
     """
-    klat: AccessRoles = AccessRoles.NONE
-    core: AccessRoles = AccessRoles.NONE
-    diana: AccessRoles = AccessRoles.NONE
-    node: AccessRoles = AccessRoles.NONE
-    hub: AccessRoles = AccessRoles.NONE
-    llm: AccessRoles = AccessRoles.NONE
+    klat: AccessRoles = Field(
+        AccessRoles.NONE, description="Defines access to Klat chat services.")
+    core: AccessRoles = Field(
+        AccessRoles.NONE, description="Defines access to Neon core services.")
+    diana: AccessRoles = Field(
+        AccessRoles.NONE,
+        description="Defines access to DIANA backend services. "
+                    "(i.e. API proxy, email proxy).")
+    users: AccessRoles = Field(
+        AccessRoles.NONE, description="Defines access to the users service.")
+    node: AccessRoles = Field(
+        AccessRoles.NONE,
+        description="Defines access to the node websocket in HANA.")
+    hub: AccessRoles = Field(
+        AccessRoles.NONE, description="Defines access to a hub device.")
+    llm: AccessRoles = Field(
+        AccessRoles.NONE,
+        description="Defines access to the BrainForge LLM backend. Note that "
+                    "per-model permissions may also apply and further restrict "
+                    "a user's access to some models for inference.")
 
     class Config:
         use_enum_values = True
