@@ -29,7 +29,7 @@ from typing import Dict, Any, List, Literal, Optional
 from typing_extensions import deprecated
 from uuid import uuid4
 
-from neon_data_models.models.api.jwt import HanaToken
+# from neon_data_models.models.api import HanaToken
 from neon_data_models.models.base import BaseModel
 from pydantic import Field
 from datetime import date
@@ -189,7 +189,7 @@ class User(BaseModel):
     klat: KlatConfig = KlatConfig()
     llm: BrainForgeConfig = BrainForgeConfig()
     permissions: PermissionsConfig = PermissionsConfig()
-    tokens: Optional[List[HanaToken]] = []
+    tokens: Optional[List['HanaToken']] = []
 
     def __eq__(self, other):
         return self.model_dump() == other.model_dump()
