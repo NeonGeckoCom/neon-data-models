@@ -181,6 +181,11 @@ class TokenConfig(BaseModel):
 
 
 class User(BaseModel):
+    def __init__(self, **kwargs):
+        # Ensure `HanaToken` is populated from the import space
+        self.model_rebuild()
+        BaseModel.__init__(self, **kwargs)
+
     username: str
     password_hash: Optional[str] = None
     user_id: str = Field(default_factory=lambda: str(uuid4()))

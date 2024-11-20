@@ -42,6 +42,8 @@ class TestImports(TestCase):
         from neon_data_models.models.user import User
         from neon_data_models.models.user.database import User as _User
         self.assertEqual(User, _User)
+        user = User(username="test_user", password_hash="test_pass")
+        self.assertIsInstance(user, User)
 
     def test_import_subclasses(self):
         # Addressing circular import noted in users service unit tests
