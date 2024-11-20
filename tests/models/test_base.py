@@ -27,7 +27,6 @@
 import importlib
 import os
 from datetime import datetime, timedelta
-
 from unittest import TestCase
 from time import time
 from pydantic import ValidationError
@@ -57,7 +56,11 @@ class TestBaseModel(TestCase):
         self.assertEqual(model.model_config["extra"], "ignore")
         self.assertEqual(allowed.model_config["extra"], "allow")
 
-        importlib.reload(neon_data_models.models.base)
+        # Ensure modules are unloaded for future inheritance tests
+        import sys
+        for module in list(sys.modules.keys()):
+            if module.startswith("neon_data_models"):
+                del sys.modules[module]
 
     def test_base_model_inheritance(self):
         from neon_data_models.models.base import BaseModel
