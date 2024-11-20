@@ -183,6 +183,7 @@ class TokenConfig(BaseModel):
 class User(BaseModel):
     def __init__(self, **kwargs):
         # Ensure `HanaToken` is populated from the import space
+        from neon_data_models.models.api.jwt import HanaToken
         self.model_rebuild()
         BaseModel.__init__(self, **kwargs)
 
