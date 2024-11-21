@@ -29,7 +29,7 @@ from typing import Dict, Any, List, Literal, Optional
 from typing_extensions import deprecated
 from uuid import uuid4
 
-from neon_data_models.models.api.jwt import HanaToken
+# from neon_data_models.models.api import HanaToken
 from neon_data_models.models.base import BaseModel
 from pydantic import Field
 from datetime import date
@@ -115,14 +115,28 @@ class BrainForgeConfig(BaseModel):
 
 class PermissionsConfig(BaseModel):
     """
-    Defines roles for supported projects/service families.
+    Defines roles for supported projects/services.
     """
-    klat: AccessRoles = AccessRoles.NONE
-    core: AccessRoles = AccessRoles.NONE
-    diana: AccessRoles = AccessRoles.NONE
-    node: AccessRoles = AccessRoles.NONE
-    hub: AccessRoles = AccessRoles.NONE
-    llm: AccessRoles = AccessRoles.NONE
+    klat: AccessRoles = Field(
+        AccessRoles.NONE, description="Defines access to Klat chat services.")
+    core: AccessRoles = Field(
+        AccessRoles.NONE, description="Defines access to Neon core services.")
+    diana: AccessRoles = Field(
+        AccessRoles.NONE,
+        description="Defines access to DIANA backend services. "
+                    "(i.e. API proxy, email proxy).")
+    users: AccessRoles = Field(
+        AccessRoles.NONE, description="Defines access to the users service.")
+    node: AccessRoles = Field(
+        AccessRoles.NONE,
+        description="Defines access to the node websocket in HANA.")
+    hub: AccessRoles = Field(
+        AccessRoles.NONE, description="Defines access to a hub device.")
+    llm: AccessRoles = Field(
+        AccessRoles.NONE,
+        description="Defines access to the BrainForge LLM backend. Note that "
+                    "per-model permissions may also apply and further restrict "
+                    "a user's access to some models for inference.")
 
     class Config:
         use_enum_values = True
@@ -167,6 +181,12 @@ class TokenConfig(BaseModel):
 
 
 class User(BaseModel):
+    def __init__(self, **kwargs):
+        # Ensure `HanaToken` is populated from the import space
+        from neon_data_models.models.api.jwt import HanaToken
+        self.model_rebuild()
+        BaseModel.__init__(self, **kwargs)
+
     username: str
     password_hash: Optional[str] = None
     user_id: str = Field(default_factory=lambda: str(uuid4()))
@@ -175,7 +195,7 @@ class User(BaseModel):
     klat: KlatConfig = KlatConfig()
     llm: BrainForgeConfig = BrainForgeConfig()
     permissions: PermissionsConfig = PermissionsConfig()
-    tokens: Optional[List[HanaToken]] = []
+    tokens: Optional[List['HanaToken']] = []
 
     def __eq__(self, other):
         return self.model_dump() == other.model_dump()

@@ -27,13 +27,9 @@
 import importlib
 import os
 from datetime import datetime, timedelta
-
 from unittest import TestCase
 from time import time
 from pydantic import ValidationError
-
-from neon_data_models.models.client import NodeData
-from neon_data_models.models.user import NeonUserConfig
 
 
 class TestBaseModel(TestCase):
@@ -59,6 +55,19 @@ class TestBaseModel(TestCase):
         self.assertEqual(ignored.model_config["extra"], "ignore")
         self.assertEqual(model.model_config["extra"], "ignore")
         self.assertEqual(allowed.model_config["extra"], "allow")
+
+        # Ensure modules are unloaded for future inheritance tests
+        import sys
+        for module in list(sys.modules.keys()):
+            if module.startswith("neon_data_models"):
+                del sys.modules[module]
+
+    def test_base_model_inheritance(self):
+        from neon_data_models.models.base import BaseModel
+        from neon_data_models.models.user.database import PermissionsConfig
+        config = PermissionsConfig()
+        self.assertTrue(isinstance(config, BaseModel))
+        self.assertIsInstance(config.model_config["extra"], str)
 
 
 class TestContexts(TestCase):
@@ -135,6 +144,8 @@ class TestContexts(TestCase):
 class TestMessagebus(TestCase):
     def test_base_model(self):
         from neon_data_models.models.base.messagebus import BaseMessage
+        from neon_data_models.models.client import NodeData
+        from neon_data_models.models.user import NeonUserConfig
 
         with self.assertRaises(ValidationError):
             BaseMessage()
@@ -162,6 +173,8 @@ class TestMessagebus(TestCase):
 
     def test_message_context(self):
         from neon_data_models.models.base.messagebus import MessageContext
+        from neon_data_models.models.client import NodeData
+        from neon_data_models.models.user import NeonUserConfig
 
         # Default Behavior
         default_context = MessageContext()

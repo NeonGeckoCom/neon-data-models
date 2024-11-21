@@ -24,42 +24,33 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Optional, List, Union
-from pydantic import ConfigDict, Field
-
-from neon_data_models.models.base import BaseModel
-from neon_data_models.models.base.contexts import (SessionContext, KlatContext,
-                                                   TimingContext, MQContext)
-from neon_data_models.models.client.node import NodeData
-from neon_data_models.models.user.database import NeonUserConfig
+from unittest import TestCase
 
 
-class MessageContext(BaseModel):
-    model_config = ConfigDict(extra="allow")
-    session: Optional[SessionContext] = Field(description="Session Data",
-                                              default=None)
-    node_data: Optional[NodeData] = Field(description="Node Data", default=None)
-    timing: Optional[TimingContext] = Field(
-        description="User Interaction Timing Information", default=None)
-    user_profiles: Optional[List[NeonUserConfig]] = (
-        Field(description="List of relevant user profiles", default=None))
-    klat_data: Optional[KlatContext] = Field(
-        description="Klat context for Klat-generated messages", default=None)
-    mq: Optional[MQContext] = Field(
-        description="MQ context for messages traversing a RabbitMQ broker",
-        default=None)
+class TestImports(TestCase):
+    def test_import_api(self):
+        from neon_data_models.models.api import CreateUserRequest
+        from neon_data_models.models.api.mq import CreateUserRequest as _CUR
+        self.assertEqual(CreateUserRequest, _CUR)
 
-    username: str = "local"
-    # TODO: Consider refactoring client/client_name into a single dict
-    #  or merging with `node_data`
-    client_name: str = "unknown"
-    client: str = "unknown"
-    source: Union[str, List[str]] = "unknown"
-    destination: List[str] = ["skills"]
-    neon_should_respond: bool = True
+    def test_import_client(self):
+        from neon_data_models.models.client import NodeData
+        from neon_data_models.models.client.node import NodeData as _ND
+        self.assertEqual(NodeData, _ND)
 
+    def test_import_user(self):
+        from neon_data_models.models.user import User
+        from neon_data_models.models.user.database import User as _User
+        self.assertEqual(User, _User)
+        user = User(username="test_user", password_hash="test_pass")
+        self.assertIsInstance(user, User)
 
-class BaseMessage(BaseModel):
-    msg_type: str
-    data: dict
-    context: MessageContext
+    def test_import_subclasses(self):
+        # Addressing circular import noted in users service unit tests
+        from neon_data_models.models.user.database import User
+        from neon_data_models.models.client.node import NodeData
+        from neon_data_models.models.api.mq import CreateUserRequest
+        from neon_data_models.models.base import BaseModel
+        self.assertTrue(issubclass(CreateUserRequest, BaseModel))
+        self.assertTrue(issubclass(NodeData, BaseModel))
+        self.assertTrue(issubclass(User, BaseModel))
