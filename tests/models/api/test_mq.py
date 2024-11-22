@@ -95,7 +95,8 @@ class TestMQ(TestCase):
         update = UpdateUserRequest(message_id="test_id", operation="update",
                                    user={"username": "user",
                                          "password_hash": "password"},
-                                   auth_username="admin", auth_password="admin_pass")
+                                   auth_username="admin",
+                                   auth_password="admin_pass")
         self.assertEqual(update.user.username, "user")
         self.assertEqual(update.user.password_hash, "password")
 
@@ -157,8 +158,8 @@ class TestMQ(TestCase):
 
         # Invalid Persona defined
         with self.assertRaises(ValidationError):
-            LLMProposeRequest(query=query, history=history, message_id=message_id,
-                              persona={})
+            LLMProposeRequest(query=query, history=history,
+                              message_id=message_id, persona={})
 
         # Invalid MQ Context
         with self.assertRaises(ValidationError):
