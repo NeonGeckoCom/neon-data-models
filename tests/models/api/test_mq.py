@@ -128,7 +128,7 @@ class TestMQ(TestCase):
             UserDbRequest(operation="delete", username="test_user",
                           message_id="test0")
 
-    def test_mq_llm_request(self):
+    def test_mq_llm_propose_request(self):
         from neon_data_models.models.api.mq import LLMProposeRequest
         from neon_data_models.models.api.llm import LLMRequest
         from neon_data_models.models.base.contexts import MQContext
@@ -168,3 +168,111 @@ class TestMQ(TestCase):
         # Invalid LLM Request
         with self.assertRaises(ValidationError):
             LLMProposeRequest(history=history, message_id=message_id)
+
+    def test_mq_llm_propose_response(self):
+        from neon_data_models.models.api.mq import LLMProposeResponse
+
+        # Valid response
+        self.assertIsInstance(LLMProposeResponse(response="test response",
+                                                 message_id=""),
+                              LLMProposeResponse)
+
+        # Missing MQ required data
+        with self.assertRaises(ValidationError):
+            LLMProposeResponse(response="test response")
+
+        # Missing response required data
+        with self.assertRaises(ValidationError):
+            LLMProposeResponse(message_id="")
+
+    def test_mq_llm_discuss_request(self):
+        from neon_data_models.models.api.mq import LLMDiscussRequest
+        query = "who are you"
+        history = []
+        message_id = "test_mid"
+        opts = {"bot 1": "resp 1", "bot 2": "resp 2"}
+        invalid_opts = {"bot 1": "resp 1", "bot 2": None}
+
+        # Valid request
+        valid_request = LLMDiscussRequest(query=query, history=history,
+                                          message_id=message_id, options=opts)
+        self.assertIsInstance(valid_request, LLMDiscussRequest)
+
+        # Invalid options
+        with self.assertRaises(ValidationError):
+            LLMDiscussRequest(query=query, history=history,
+                              message_id=message_id, options=invalid_opts)
+
+        # Invalid MQ Context
+        with self.assertRaises(ValidationError):
+            LLMDiscussRequest(query=query, history=history, options=opts)
+
+        # Invalid LLM Request
+        with self.assertRaises(ValidationError):
+            LLMDiscussRequest(query=query, message_id=message_id, options=opts)
+
+    def test_mq_llm_discuss_response(self):
+        from neon_data_models.models.api.mq import LLMDiscussResponse
+
+        # Valid response
+        self.assertIsInstance(LLMDiscussResponse(opinion="test opinion",
+                                                 message_id=""),
+                              LLMDiscussResponse)
+
+        # Missing MQ required data
+        with self.assertRaises(ValidationError):
+            LLMDiscussResponse(opinion="test opinion")
+
+        # Missing response required data
+        with self.assertRaises(ValidationError):
+            LLMDiscussResponse(message_id="")
+
+    def test_mq_llm_vote_request(self):
+        from neon_data_models.models.api.mq import LLMVoteRequest
+        query = "who are you"
+        history = []
+        message_id = "test_mid"
+        responses = ["resp 1", "resp 2"]
+        invalid_responses = ["resp 1", "resp 2", None]
+
+        # Valid request
+        valid_request = LLMVoteRequest(query=query, history=history,
+                                       message_id=message_id,
+                                       responses=responses)
+        self.assertIsInstance(valid_request, LLMVoteRequest)
+
+        # Invalid options
+        with self.assertRaises(ValidationError):
+            LLMVoteRequest(query=query, history=history, message_id=message_id,
+                           responses=invalid_responses)
+
+        # Invalid MQ Context
+        with self.assertRaises(ValidationError):
+            LLMVoteRequest(query=query, history=history, responses=responses)
+
+        # Invalid LLM Request
+        with self.assertRaises(ValidationError):
+            LLMVoteRequest(query=query, message_id=message_id,
+                           responses=responses)
+
+    def test_mq_llm_vote_response(self):
+        from neon_data_models.models.api.mq import LLMVoteResponse
+
+        # Valid response
+        self.assertIsInstance(LLMVoteResponse(sorted_answer_indexes=[2, 0, 1],
+                                              message_id=""),
+                              LLMVoteResponse)
+
+        # Missing MQ required data
+        with self.assertRaises(ValidationError):
+            LLMVoteResponse(sorted_answer_indexes=[2, 0, 1])
+
+        # Missing response required data
+        with self.assertRaises(ValidationError):
+            LLMVoteResponse(message_id="")
+
+        # Invalid response data
+        with self.assertRaises(ValidationError):
+            LLMVoteResponse(sorted_answer_indexes=[2, 0, 1, "invalid"],
+                            message_id=""),
+
