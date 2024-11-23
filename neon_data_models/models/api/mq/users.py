@@ -35,6 +35,7 @@ from neon_data_models.models.user.database import User
 class CreateUserRequest(MQContext):
     def __init__(self, **kwargs):
         # `User` may be rebuilt upon init, so make sure this model is too
+        User.model_rebuild()
         self.model_rebuild()
         MQContext.__init__(self, **kwargs)
 
@@ -67,6 +68,7 @@ class ReadUserRequest(MQContext):
 class UpdateUserRequest(MQContext):
     def __init__(self, **kwargs):
         # `User` may be rebuilt upon init, so make sure this model is too
+        User.model_rebuild()
         self.model_rebuild()
         MQContext.__init__(self, **kwargs)
 
@@ -97,6 +99,7 @@ class UpdateUserRequest(MQContext):
 class DeleteUserRequest(MQContext):
     def __init__(self, **kwargs):
         # `User` may be rebuilt upon init, so make sure this model is too
+        User.model_rebuild()
         self.model_rebuild()
         MQContext.__init__(self, **kwargs)
 
