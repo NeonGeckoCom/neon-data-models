@@ -25,5 +25,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from neon_data_models.models.user import *
+User.rebuild_model()
+
 from neon_data_models.models.client import *
 from neon_data_models.models.api import *

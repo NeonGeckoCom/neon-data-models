@@ -181,11 +181,12 @@ class TokenConfig(BaseModel):
 
 
 class User(BaseModel):
-    def __init__(self, **kwargs):
+
+    @classmethod
+    def rebuild_model(cls):
         # Ensure `HanaToken` is populated from the import space
         from neon_data_models.models.api.jwt import HanaToken
-        self.model_rebuild()
-        BaseModel.__init__(self, **kwargs)
+        cls.model_rebuild()
 
     username: str
     password_hash: Optional[str] = None

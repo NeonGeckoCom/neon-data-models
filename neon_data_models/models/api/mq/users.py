@@ -33,12 +33,6 @@ from neon_data_models.models.user.database import User
 
 
 class CreateUserRequest(MQContext):
-    def __init__(self, **kwargs):
-        # `User` may be rebuilt upon init, so make sure this model is too
-        User.model_rebuild()
-        self.model_rebuild()
-        MQContext.__init__(self, **kwargs)
-
     operation: Literal["create"] = "create"
     user: User = Field(description="User object to create")
 
@@ -66,12 +60,6 @@ class ReadUserRequest(MQContext):
 
 
 class UpdateUserRequest(MQContext):
-    def __init__(self, **kwargs):
-        # `User` may be rebuilt upon init, so make sure this model is too
-        User.model_rebuild()
-        self.model_rebuild()
-        MQContext.__init__(self, **kwargs)
-
     operation: Literal["update"] = "update"
     user: User = Field(description="Updated User object to write to database")
     auth_username: str = Field(
@@ -97,12 +85,6 @@ class UpdateUserRequest(MQContext):
 
 
 class DeleteUserRequest(MQContext):
-    def __init__(self, **kwargs):
-        # `User` may be rebuilt upon init, so make sure this model is too
-        User.model_rebuild()
-        self.model_rebuild()
-        MQContext.__init__(self, **kwargs)
-
     operation: Literal["delete"] = "delete"
     user: User = Field(description="Exact User object to remove from the "
                                    "database")
