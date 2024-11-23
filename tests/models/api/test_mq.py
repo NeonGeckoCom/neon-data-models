@@ -27,12 +27,10 @@
 from unittest import TestCase
 from pydantic import ValidationError
 
-from neon_data_models.models.api.mq import UserDbRequest
-
 
 class TestMQ(TestCase):
     def test_create_user_db_request(self):
-        from neon_data_models.models.api.mq import CreateUserRequest
+        from neon_data_models.models.api.mq.users import UserDbRequest, CreateUserRequest
 
         # Test create user valid
         valid_kwargs = {"message_id": "test_id", "operation": "create",
@@ -50,7 +48,7 @@ class TestMQ(TestCase):
                           message_id="test0")
 
     def test_read_user_db_request(self):
-        from neon_data_models.models.api.mq import ReadUserRequest
+        from neon_data_models.models.api.mq.users import UserDbRequest, ReadUserRequest
 
         # Test read user valid
         valid_kwargs = {"message_id": "test_id", "operation": "read",
@@ -68,7 +66,7 @@ class TestMQ(TestCase):
                           message_id="test0")
 
     def test_update_user_db_request(self):
-        from neon_data_models.models.api.mq import UpdateUserRequest
+        from neon_data_models.models.api.mq.users import UserDbRequest, UpdateUserRequest
 
         # Test update user valid
         valid_kwargs = {"message_id": "test_id", "operation": "update",
@@ -111,7 +109,7 @@ class TestMQ(TestCase):
                           message_id="test0")
 
     def test_delete_user_db_request(self):
-        from neon_data_models.models.api.mq import DeleteUserRequest
+        from neon_data_models.models.api.mq.users import UserDbRequest, DeleteUserRequest
 
         # Test delete user valid
         valid_kwargs = {"message_id": "test_id", "operation": "delete",
@@ -129,7 +127,7 @@ class TestMQ(TestCase):
                           message_id="test0")
 
     def test_mq_llm_propose_request(self):
-        from neon_data_models.models.api.mq import LLMProposeRequest
+        from neon_data_models.models.api.mq.llm import LLMProposeRequest
         from neon_data_models.models.api.llm import LLMRequest
         from neon_data_models.models.base.contexts import MQContext
 
@@ -170,7 +168,7 @@ class TestMQ(TestCase):
             LLMProposeRequest(history=history, message_id=message_id)
 
     def test_mq_llm_propose_response(self):
-        from neon_data_models.models.api.mq import LLMProposeResponse
+        from neon_data_models.models.api.mq.llm import LLMProposeResponse
 
         # Valid response
         self.assertIsInstance(LLMProposeResponse(response="test response",
@@ -186,7 +184,7 @@ class TestMQ(TestCase):
             LLMProposeResponse(message_id="")
 
     def test_mq_llm_discuss_request(self):
-        from neon_data_models.models.api.mq import LLMDiscussRequest
+        from neon_data_models.models.api.mq.llm import LLMDiscussRequest
         query = "who are you"
         history = []
         message_id = "test_mid"
@@ -212,7 +210,7 @@ class TestMQ(TestCase):
             LLMDiscussRequest(query=query, message_id=message_id, options=opts)
 
     def test_mq_llm_discuss_response(self):
-        from neon_data_models.models.api.mq import LLMDiscussResponse
+        from neon_data_models.models.api.mq.llm import LLMDiscussResponse
 
         # Valid response
         self.assertIsInstance(LLMDiscussResponse(opinion="test opinion",
@@ -228,7 +226,7 @@ class TestMQ(TestCase):
             LLMDiscussResponse(message_id="")
 
     def test_mq_llm_vote_request(self):
-        from neon_data_models.models.api.mq import LLMVoteRequest
+        from neon_data_models.models.api.mq.llm import LLMVoteRequest
         query = "who are you"
         history = []
         message_id = "test_mid"
@@ -256,7 +254,7 @@ class TestMQ(TestCase):
                            responses=responses)
 
     def test_mq_llm_vote_response(self):
-        from neon_data_models.models.api.mq import LLMVoteResponse
+        from neon_data_models.models.api.mq.llm import LLMVoteResponse
 
         # Valid response
         self.assertIsInstance(LLMVoteResponse(sorted_answer_indexes=[2, 0, 1],
