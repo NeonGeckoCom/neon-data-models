@@ -76,7 +76,8 @@ class LLMRequest(BaseModel):
     temperature: float = Field(
         default=0.0, ge=0.0, le=1.0,
         description="Temperature of response. 0 guarantees reproducibility, "
-                    "higher values increase variability.")
+                    "higher values increase variability. Must be `0.0` if "
+                    "`beam_search` is True")
     repetition_penalty: float = Field(
         default=1.0, ge=1.0, le=2.0,
         description="Repetition penalty. Higher values limit repeated "
@@ -132,8 +133,13 @@ class LLMRequest(BaseModel):
         if self.stream is None and self.beam_search is None:
             self.stream = True
             self.beam_search = False
+
         assert isinstance(self.stream, bool)
         assert isinstance(self.beam_search, bool)
+
+        # If beam search is enabled, temperature must be set to 0.0
+        if self.beam_search:
+            assert self.temperature == 0.0
         return self
 
     @property

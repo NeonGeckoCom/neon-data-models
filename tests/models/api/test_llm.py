@@ -119,7 +119,11 @@ class TestLLM(TestCase):
             LLMRequest(query=test_query, history=test_history,
                        persona=test_persona, model=test_model, stream=True,
                        best_of=2)
-
+        # Invalid temperature with beam search
+        with self.assertRaises(ValidationError):
+            LLMRequest(query=test_query, history=test_history,
+                       persona=test_persona, model=test_model, stream=False,
+                       temperature=0.8)
         # Invalid history
         test_history.append(("invalid_key", "okay"))
         with self.assertRaises(ValidationError):
