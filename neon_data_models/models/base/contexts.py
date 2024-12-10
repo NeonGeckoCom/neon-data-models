@@ -137,6 +137,10 @@ class KlatContext(BaseModel):
         return values
 
 class MQContext(BaseModel):
+    """
+    MQ context information that is included in all MQ message bodies and in
+    `Message.context['MQ']` for Message objects originating at MQ handlers.
+    """
     routing_key: Optional[str] = None
     message_id: str = Field(default_factory=lambda: uuid4().hex,
                             description="MQ unique message ID")
