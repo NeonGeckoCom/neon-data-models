@@ -86,7 +86,7 @@ class LLMRequest(BaseModel):
                     "OpenAI-compatible requests.")
     persona: LLMPersona = Field(
         description="Requested persona to respond to this message")
-    model: str = Field(description="Model to request")
+    model: str = Field(description="Model to request (<name>@<revision>)")
     max_tokens: int = Field(
         default=512, ge=64, le=2048,
         description="Maximum number of tokens to include in the response")
@@ -212,5 +212,12 @@ class LLMResponse(BaseModel):
         return values
 
 
+class BrainForgeLLM(BaseModel):
+    name: str = Field("LLM Name")
+    version: str = Field("LLM Version")
+    personas: List[LLMPersona] = Field("List of personas defined in this model")
+
+
 __all__ = [LLMPersonaIdentity.__name__, LLMPersona.__name__,
-           LLMRequest.__name__, LLMResponse.__name__]
+           LLMRequest.__name__, LLMResponse.__name__,
+           BrainForgeLLM.__name__]
