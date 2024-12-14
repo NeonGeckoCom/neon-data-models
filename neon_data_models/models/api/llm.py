@@ -71,7 +71,7 @@ class LLMPersona(LLMPersonaIdentity):
             self.system_prompt = None
             return self
 
-        assert any((self.description, self.system_prompt))
+        assert any(x is not None for x in (self.description, self.system_prompt))
         if self.system_prompt is None:
             self.system_prompt = self.description
         return self
