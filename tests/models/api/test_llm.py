@@ -128,7 +128,7 @@ class TestLLM(TestCase):
         with self.assertRaises(ValidationError):
             LLMRequest(query=test_query, history=test_history,
                        persona=test_persona, model=test_model, stream=False,
-                       temperature=0.8, beam_search=True, best_of=1)
+                       beam_search=True, best_of=1)
         # Invalid history
         test_history.append(("invalid_key", "okay"))
         with self.assertRaises(ValidationError):
