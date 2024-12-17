@@ -213,9 +213,10 @@ class LLMResponse(BaseModel):
 
 
 class BrainForgeLLM(BaseModel):
-    name: str = Field("LLM Name")
-    version: str = Field("LLM Version")
-    personas: List[LLMPersona] = Field("List of personas defined in this model")
+    name: str = Field(description="LLM Name")
+    version: str = Field(description="LLM Version")
+    personas: List[LLMPersona] = Field(
+        default=[], description="List of personas defined in this model")
 
 
 __all__ = [LLMPersonaIdentity.__name__, LLMPersona.__name__,

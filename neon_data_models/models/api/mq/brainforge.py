@@ -7,7 +7,8 @@ from neon_data_models.models.api.llm import BrainForgeLLM, LLMRequest, LLMRespon
 
 
 class LLMGetModels(MQContext):
-    user_id: str = Field("ID of user to get models for")
+    user_id: str = Field(
+        description="ID of user to get models for")
 
 
 class LLMGetModelsResponse(MQContext):
@@ -15,7 +16,8 @@ class LLMGetModelsResponse(MQContext):
 
 
 class LLMGetPersonas(LLMGetModels):
-    model_id: str = Field("Model ID (<name>@<version>) to get personas for")
+    model_id: str = Field(
+        description="Model ID (<name>@<version>) to get personas for")
 
     @property
     def model_name(self):
