@@ -179,6 +179,8 @@ class LLMResponse(BaseModel):
     history: List[Tuple[Literal["user", "llm"], str]] = Field(
         description="List of (role, content) tuples in chronological order "
                     "(`response` is in the last list element)")
+    finish_reason: Literal["length", "stop"] = Field(
+        "stop", description="Reason response generation ended.")
 
     @model_validator(mode='before')
     @classmethod
