@@ -82,7 +82,7 @@ class TestLLM(TestCase):
         # Valid explicit beam search
         beam_search_request = LLMRequest(query=test_query, history=test_history,
                                          persona=test_persona, model=test_model,
-                                         beam_search=True)
+                                         beam_search=True, best_of=2)
         self.assertTrue(beam_search_request.beam_search)
         self.assertFalse(beam_search_request.stream)
 
@@ -123,7 +123,12 @@ class TestLLM(TestCase):
         with self.assertRaises(ValidationError):
             LLMRequest(query=test_query, history=test_history,
                        persona=test_persona, model=test_model, stream=False,
-                       temperature=0.8)
+                       temperature=0.8, best_of=2)
+        # Invalid beam search with best_of=1
+        with self.assertRaises(ValidationError):
+            LLMRequest(query=test_query, history=test_history,
+                       persona=test_persona, model=test_model, stream=False,
+                       temperature=0.8, beam_search=True, best_of=1)
         # Invalid history
         test_history.append(("invalid_key", "okay"))
         with self.assertRaises(ValidationError):

@@ -88,7 +88,7 @@ class LLMRequest(BaseModel):
         default=None, description="Enable streaming responses. "
                                   "Mutually exclusive with `beam_search`.")
     best_of: int = Field(
-        default=1,
+        default=1, ge=1,
         description="Number of beams to use if `beam_search` is enabled.")
     beam_search: bool = Field(
         default=None, description="Enable beam search. "
@@ -126,6 +126,10 @@ class LLMRequest(BaseModel):
                 raise ValueError("Cannot enable both `stream` and "
                                  "`beam_search`")
             self.beam_search = False
+        # If beam search is enabled, `best_of` must be >1
+        if self.beam_search is True and self.best_of <= 1:
+            raise ValueError(f"best_of must be greater than 1 when using "
+                             f"beam search. Got {self.best_of}")
         # If beam search is enabled, streaming must be False
         if self.beam_search is True:
             if self.stream is True:
