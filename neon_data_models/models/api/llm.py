@@ -182,6 +182,7 @@ class LLMRequest(BaseModel):
             msg["role"] = mq2role.get(msg["role"]) or msg["role"]
         history.insert(0, {"role": "system",
                            "content": self.persona.system_prompt})
+        history.append({"role": "user", "content": self.query})
         return {"model": self.model,
                 "messages": history,
                 "max_tokens": self.max_tokens,
