@@ -25,3 +25,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from neon_data_models.models.api.http.brainforge import *
+
+"""
+This module contains models for interacting via HANA (HTTP).
+"""

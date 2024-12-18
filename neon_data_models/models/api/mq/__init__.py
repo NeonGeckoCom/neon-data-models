@@ -28,3 +28,7 @@ from neon_data_models.models.api.mq.chatbots import *
 from neon_data_models.models.api.mq.llm import *
 from neon_data_models.models.api.mq.neon import *
 from neon_data_models.models.api.mq.users import *
+
+"""
+This module contains models for interacting via the MQ bus.
+"""
