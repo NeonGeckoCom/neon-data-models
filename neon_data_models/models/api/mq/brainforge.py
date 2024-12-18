@@ -4,6 +4,7 @@ from pydantic import Field
 
 from neon_data_models.models.base.contexts import MQContext
 from neon_data_models.models.api.llm import BrainForgeLLM, LLMRequest, LLMResponse, LLMPersona
+from neon_data_models.models.api.http.brainforge import LLMGetModelsHttpResponse
 
 
 class LLMGetModels(MQContext):
@@ -11,8 +12,8 @@ class LLMGetModels(MQContext):
         description="ID of user to get models for")
 
 
-class LLMGetModelsResponse(MQContext):
-    models: List[BrainForgeLLM]
+class LLMGetModelsResponse(MQContext, LLMGetModelsHttpResponse):
+    pass
 
 
 class LLMGetPersonas(LLMGetModels):
