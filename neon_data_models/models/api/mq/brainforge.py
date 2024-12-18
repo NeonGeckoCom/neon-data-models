@@ -44,6 +44,12 @@ class LLMGetPersonasResponse(MQContext):
 class LLMGetInference(LLMRequest, MQContext):
     user_id: str = Field("ID of user making the request")
 
+    def as_llm_request(self):
+        """
+        Get a plain `LLMRequest` object from this `LLMGetInference` object.
+        """
+        return LLMRequest(**self.model_dump())
+
 
 class LLMGetInferenceResponse(LLMResponse, MQContext):
     pass

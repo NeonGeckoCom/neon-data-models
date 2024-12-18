@@ -218,6 +218,13 @@ class BrainForgeLLM(BaseModel):
     personas: List[LLMPersona] = Field(
         default=[], description="List of personas defined in this model")
 
+    @property
+    def vllm_spec(self):
+        """
+        Model identifier used by vllm (<name>@<version>)
+        """
+        return f"{self.name}@{self.version}"
+
 
 __all__ = [LLMPersonaIdentity.__name__, LLMPersona.__name__,
            LLMRequest.__name__, LLMResponse.__name__,
