@@ -25,7 +25,6 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from typing import Literal, Optional, Annotated, Union
-
 from pydantic import Field, TypeAdapter, model_validator
 
 from neon_data_models.models.api.jwt import HanaToken

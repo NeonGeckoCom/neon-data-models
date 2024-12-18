@@ -24,8 +24,48 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from neon_data_models.models.user import *
-User.rebuild_model()
+from typing import Optional, Dict, List
+from pydantic import Field
 
-from neon_data_models.models.client import *
-from neon_data_models.models.api import *
+from neon_data_models.models.api.llm import LLMRequest, LLMPersona
+from neon_data_models.models.base.contexts import MQContext
+
+
+class LLMProposeRequest(MQContext, LLMRequest):
+    model: Optional[str] = Field(
+        default=None,
+        description="MQ implementation defines `model` as optional because the "
+                    "queue defines the requested model in most cases.")
+    persona: Optional[LLMPersona] = Field(
+        default=None,
+        description="MQ implementation defines `persona` as an optional "
+                    "parameter, with default behavior hard-coded into each "
+                    "LLM module.")
+
+
+class LLMProposeResponse(MQContext):
+    response: str = Field(description="LLM response to the prompt")
+
+
+class LLMDiscussRequest(LLMProposeRequest):
+    options: Dict[str, str] = Field(
+        description="Mapping of participant name to response to be discussed.")
+
+
+class LLMDiscussResponse(MQContext):
+    opinion: str = Field(description="LLM response to the available options.")
+
+
+class LLMVoteRequest(LLMProposeRequest):
+    responses: List[str] = Field(
+        description="List of responses to choose from.")
+
+
+class LLMVoteResponse(MQContext):
+    sorted_answer_indexes: List[int] = Field(
+        description="Indices of `responses` ordered high to low by preference.")
+
+
+__all__ = [LLMProposeRequest.__name__, LLMProposeResponse.__name__,
+           LLMDiscussRequest.__name__, LLMDiscussResponse.__name__,
+           LLMVoteRequest.__name__, LLMVoteResponse.__name__]
