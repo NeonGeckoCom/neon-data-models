@@ -181,8 +181,9 @@ class LLMRequest(BaseModel):
         history = self.messages[-2*self.max_history:]
         for msg in history:
             msg["role"] = mq2role.get(msg["role"]) or msg["role"]
-        history.insert(0, {"role": "system",
-                           "content": self.persona.system_prompt})
+        if self.persona.system_prompt:
+            history.insert(0, {"role": "system",
+                               "content": self.persona.system_prompt})
         history.append({"role": "user", "content": self.query})
         return {"model": self.model,
                 "messages": history,
