@@ -92,7 +92,7 @@ class TestLLM(TestCase):
         self.assertEqual(len(valid_request.history), len(test_history))
         self.assertEqual(len(valid_request.to_completion_kwargs()['messages']),
                          2 * valid_request.max_history + 2)
-        self.assertEqual(valid_request.to_completion_kwargs()['messages'][-1],
+        self.assertEqual(valid_request.to_completion_kwargs()['messages'][-1]['content'],
                          test_query)
 
         # Valid explicit streaming
