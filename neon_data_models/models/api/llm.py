@@ -57,7 +57,7 @@ class LLMPersona(LLMPersonaIdentity):
     """
     description: Optional[str] = Field(
         None, description="Human-readable description of this persona")
-    system_prompt: str = Field(
+    system_prompt: Optional[str] = Field(
         None, description="System prompt associated with this persona. "
                           "If None, `description` will be used.")
     enabled: bool = Field(

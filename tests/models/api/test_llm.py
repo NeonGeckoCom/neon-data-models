@@ -60,7 +60,7 @@ class TestLLM(TestCase):
 
         # Under-defined persona
         with self.assertRaises(ValidationError):
-            LLMPersona(name="underdefined persona")
+            LLMPersona(description="underdefined persona")
 
         # Valid vanilla persona
         vanilla = LLMPersona(name="vanilla")
