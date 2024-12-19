@@ -24,8 +24,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import List, Optional
-
+from typing import List, Optional, Any, Dict
 from pydantic import Field
 
 from neon_data_models.models.base.contexts import MQContext
@@ -73,6 +72,17 @@ class LLMGetInference(LLMRequest, MQContext):
         Get a plain `LLMRequest` object from this `LLMGetInference` object.
         """
         return LLMRequest(**self.model_dump())
+
+
+class LLMGetCompletion(LLMGetModels):
+    model: str = Field(description="Model to request (<name>@<revision>)")
+    completion_kwargs: Dict[str, Any] = Field(
+        description="Dictionary of kwargs to pass to OpenAI completion request")
+
+
+class LLMGetCompletionResponse(MQContext):
+    openai_response: dict = Field(
+        description="Raw completion response from an OpenAI endpoint")
 
 
 class LLMGetInferenceResponse(LLMResponse, MQContext):
