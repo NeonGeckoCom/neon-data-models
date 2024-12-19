@@ -110,7 +110,8 @@ class LLMRequest(BaseModel):
                                   "Mutually exclusive with `stream`.")
     max_history: int = Field(
         default=2, description="Maximum number of user/assistant "
-                               "message pairs to include in history context.")
+                               "message pairs to include in history context. "
+                               "Excludes system prompt and incoming query.")
 
     @model_validator(mode='before')
     @classmethod

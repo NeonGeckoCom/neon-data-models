@@ -91,7 +91,9 @@ class TestLLM(TestCase):
         self.assertFalse(valid_request.beam_search)
         self.assertEqual(len(valid_request.history), len(test_history))
         self.assertEqual(len(valid_request.to_completion_kwargs()['messages']),
-                         2 * valid_request.max_history + 1)
+                         2 * valid_request.max_history + 2)
+        self.assertEqual(valid_request.to_completion_kwargs()['messages'][-1],
+                         test_query)
 
         # Valid explicit streaming
         streaming_request = LLMRequest(query=test_query, history=test_history,
