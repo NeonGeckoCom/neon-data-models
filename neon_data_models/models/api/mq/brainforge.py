@@ -82,7 +82,7 @@ class LLMGetCompletion(LLMGetModels):
 
 class LLMGetCompletionResponse(MQContext):
     openai_response: dict = Field(
-        description="Raw completion response from an OpenAI endpoint")
+        description="OpenAI ChatCompletion model")
 
 
 class LLMGetTokenizerChatTemplate(LLMGetModels):
@@ -90,7 +90,6 @@ class LLMGetTokenizerChatTemplate(LLMGetModels):
     messages: List[Dict[Literal["role", "content"], str]] = Field(
         description="List of dict messages in OpenAI format")
     tokenize: bool = Field(False)
-    add_generation_prompt: bool = Field(True)
 
 
 class LLMGetTokenizerChatTemplateResponse(MQContext):
