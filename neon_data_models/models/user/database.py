@@ -126,8 +126,7 @@ class PermissionsConfig(BaseModel):
         description="Defines access to DIANA backend services. "
                     "(i.e. API proxy, email proxy).")
     users: AccessRoles = Field(
-        default_factory=lambda: AccessRoles.NONE,
-        description="Defines access to the users service.")
+        AccessRoles.NONE, description="Defines access to the users service.")
     node: AccessRoles = Field(
         AccessRoles.NONE,
         description="Defines access to the node websocket in HANA.")
