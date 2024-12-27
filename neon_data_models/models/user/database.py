@@ -31,7 +31,7 @@ from uuid import uuid4
 
 # from neon_data_models.models.api import HanaToken
 from neon_data_models.models.base import BaseModel
-from pydantic import Field
+from pydantic import Field, ConfigDict
 from datetime import date
 
 from neon_data_models.enum import AccessRoles
@@ -126,7 +126,8 @@ class PermissionsConfig(BaseModel):
         description="Defines access to DIANA backend services. "
                     "(i.e. API proxy, email proxy).")
     users: AccessRoles = Field(
-        AccessRoles.NONE, description="Defines access to the users service.")
+        default_factory=lambda: AccessRoles.NONE,
+        description="Defines access to the users service.")
     node: AccessRoles = Field(
         AccessRoles.NONE,
         description="Defines access to the node websocket in HANA.")
@@ -140,6 +141,7 @@ class PermissionsConfig(BaseModel):
 
     class Config:
         use_enum_values = True
+        validate_default = True
 
     @classmethod
     def from_roles(cls, roles: List[str]):
