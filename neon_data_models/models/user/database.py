@@ -31,7 +31,7 @@ from uuid import uuid4
 
 # from neon_data_models.models.api import HanaToken
 from neon_data_models.models.base import BaseModel
-from pydantic import Field, ConfigDict
+from pydantic import Field
 from datetime import date
 
 from neon_data_models.enum import AccessRoles
