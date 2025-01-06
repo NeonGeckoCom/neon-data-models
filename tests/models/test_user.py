@@ -85,6 +85,7 @@ class TestDatabase(TestCase):
         self.assertIsInstance(config.user.dob, date)
 
     def test_user(self):
+        from neon_data_models.enum import AccessRoles
         user_kwargs = dict(username="test",
                            password_hash="test",
                            tokens=[{"token_name": "test_token",
@@ -98,6 +99,11 @@ class TestDatabase(TestCase):
                                     "last_refresh_timestamp": round(time())}])
         default_user = User(**user_kwargs)
         self.assertIsInstance(default_user.tokens[0], HanaToken)
+
+        dumped = default_user.model_dump()
+        for perm in dumped['permissions']:
+            self.assertEqual(int, type(dumped['permissions'][perm]), perm)
+            self.assertIsInstance(AccessRoles(dumped['permissions'][perm]), AccessRoles, perm)
         with self.assertRaises(ValidationError):
             User()
 
@@ -124,8 +130,14 @@ class TestDatabase(TestCase):
                                         node=AccessRoles.NODE,
                                         hub=AccessRoles.NODE,
                                         llm=AccessRoles.NONE)
+
+        # Test dumped enums
+        dumped = test_config.model_dump()
+        for key, value in dumped.items():
+            self.assertEqual(type(value), int, key)
+
         # Test dump/load
-        self.assertEqual(PermissionsConfig(**test_config.model_dump()),
+        self.assertEqual(PermissionsConfig(**dumped),
                          test_config)
 
         # Test to/from roles

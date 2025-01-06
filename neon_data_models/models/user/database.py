@@ -140,6 +140,7 @@ class PermissionsConfig(BaseModel):
 
     class Config:
         use_enum_values = True
+        validate_default = True
 
     @classmethod
     def from_roles(cls, roles: List[str]):
