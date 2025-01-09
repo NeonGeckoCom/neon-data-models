@@ -53,7 +53,7 @@ class GetTtsRequest(BaseModel):
     lang: str = Field(description="BCP-47 Language code associated with `text`")
 
 
-class UserMessage(BaseModel):
+class NewMessage(BaseModel):
     cid: str = Field(description="Conversation ID associated with the message")
     userID: str = Field(description="User ID associated with the message")
     prompt_id: Optional[str] = Field(
@@ -103,7 +103,7 @@ class PromptData(BaseModel):
     request_id = Field()
 
 
-class GetTranslationsRequest(BaseModel):
+class RequestNeonTranslations(BaseModel):
     class CidTranslationRequest(BaseModel):
         lang: str = Field(description="Translation target language")
         source_lang: str = Field(description="Source language of shouts")
@@ -121,13 +121,19 @@ class AuthExpired(BaseModel):
     handler: str = Field(description="Name of the requested function")
 
 
-class PersonasChanged(BaseModel):
+class ConfiguredPersonasChanged(BaseModel):
     personas: Dict[str, List[LLMPersona]] = (
         Field(description="Dict of LLM name to list of supported personas"))
     update_time: int = Field(
         description="Unix timestamp when the change occurred")
 
 
-__all__ = [GetSttRequest.__name__, GetTtsRequest.__name__, UserMessage.__name__,
-           PromptData.__name__, GetTranslationsRequest.__name__,
-           AuthExpired.__name__]
+class BanSubmindFromConversation(BaseModel):
+    # This model is used to both ban and revoke a ban
+    cid: str = Field(description="Conversation ID to (un-)ban submind from")
+    nick: str = Field(description="Username of the submind to (un-)ban")
+
+
+__all__ = [GetSttRequest.__name__, GetTtsRequest.__name__, NewMessage.__name__,
+           PromptData.__name__, RequestNeonTranslations.__name__,
+           AuthExpired.__name__, BanSubmindFromConversation.__name__]
