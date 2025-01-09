@@ -23,8 +23,8 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-from typing import Optional, Dict, List, Literal
+import uuid
+from typing import Optional, Dict, List, Literal, Union
 
 from neon_data_models.models.api.llm import LLMPersona
 from pydantic import Field
@@ -95,12 +95,41 @@ class NewMessage(BaseModel):
         validate_default = True
 
 
-class PromptData(BaseModel):
-    # TODO: Determine and document descriptions and a model for `data`
-    data: dict = Field(description="Prompt data")
-    receiver: str = Field()
+class GetPromptData(BaseModel):
+    nick: str = Field(description="Nickname of user requesting prompt data")
     cid: str = Field(description="Conversation ID associated with the prompt")
-    request_id = Field()
+    limit: int = Field(
+        default=5,
+        description="Maximum number of prompts to return if `prompt_id` "
+                    "is unset")
+    prompt_id: Optional[str] = Field(
+        default=None, description="Optional prompt ID to get data for")
+
+
+class PromptData(BaseModel):
+    class _PromptData(BaseModel):
+        id: str = Field(alias="_id", description="Unique ID for the prompt")
+        is_completed: Literal['0', '1'] = Field(
+            description="'1' if a response to the prompt has been determined")
+        proposed_responses: Dict[str, str] = Field(
+            default={},
+            description="Dict of participant name to proposed response")
+        submind_opinions: Dict[str, str] = Field(
+            default={},
+            description="Dict of participant name to opinion response")
+        votes: Dict[str, str] = Field(
+            default={},
+            description="Dict of participant name to vote")
+        participating_subminds: List[str] = Field(
+            default=[],
+            description="List of subminds that participated in this prompt")
+
+    data: Union[_PromptData, List[_PromptData]] = Field(description="Prompt data")
+    receiver: str = Field(description="Nickname of user requesting prompt data")
+    cid: str = Field(description="Conversation ID associated with the prompt")
+    request_id: str = Field(
+        default_factory=lambda: str(uuid.uuid4()),
+        description="Unique ID of the request to identify the response")
 
 
 class RequestNeonTranslations(BaseModel):
@@ -135,5 +164,6 @@ class BanSubmindFromConversation(BaseModel):
 
 
 __all__ = [GetSttRequest.__name__, GetTtsRequest.__name__, NewMessage.__name__,
-           PromptData.__name__, RequestNeonTranslations.__name__,
-           AuthExpired.__name__, BanSubmindFromConversation.__name__]
+           GetPromptData.__name__, PromptData.__name__,
+           RequestNeonTranslations.__name__, AuthExpired.__name__,
+           BanSubmindFromConversation.__name__]
