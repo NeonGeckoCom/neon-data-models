@@ -27,7 +27,7 @@ import uuid
 from typing import Optional, Dict, List, Literal, Union
 
 from neon_data_models.models.api.llm import LLMPersona
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from neon_data_models.enum import CcaiPromptStates
 from neon_data_models.models.base import BaseModel
@@ -89,6 +89,15 @@ class NewMessage(BaseModel):
     timeCreated: int = Field(description="Unix timestamp (epoch seconds)")
     message_id: str = Field(description="UUID for this message")
     bound_service: str = Field(default="", description="Service this message is targeting")
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_inputs(cls, values):
+        # Prefer the proper `messageText` key, but accept `message_body` for
+        # backwards-compat.
+        values['messageText'] = values.get('messageText') or \
+                                values.pop('message_body')
+        return values
 
     class Config:
         use_enum_values = True
