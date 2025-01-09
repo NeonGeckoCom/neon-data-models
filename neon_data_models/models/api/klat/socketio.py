@@ -58,7 +58,7 @@ class NewMessage(BaseModel):
     userID: str = Field(description="User ID associated with the message")
     prompt_id: Optional[str] = Field(
         default=None, description="Prompt ID this message is in response to")
-    promptState: CcaiPromptStates = Field(
+    promptState: Optional[CcaiPromptStates] = Field(
         default=None,
         description="Associated CCAI state if `prompt_id` is defined")
     source: str = Field(description="Username associated with the message")
