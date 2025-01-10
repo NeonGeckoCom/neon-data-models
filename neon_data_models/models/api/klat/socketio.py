@@ -117,7 +117,7 @@ class GetPromptData(BaseModel):
 
 class PromptData(BaseModel):
     class _PromptData(BaseModel):
-        _id: str = Field(description="Unique ID for the prompt")
+        id: str = Field(alias="_id", description="Unique ID for the prompt")
         is_completed: Literal['0', '1'] = Field(
             description="'1' if a response to the prompt has been determined")
         proposed_responses: Dict[str, str] = Field(
@@ -132,6 +132,10 @@ class PromptData(BaseModel):
         participating_subminds: List[str] = Field(
             default=[],
             description="List of subminds that participated in this prompt")
+
+        def model_dump(self, *args, **kwargs):
+            kwargs.setdefault('by_alias', True)
+            return BaseModel.model_dump(self, *args, **kwargs)
 
     data: Union[_PromptData, List[_PromptData]] = Field(description="Prompt data")
     receiver: str = Field(description="Nickname of user requesting prompt data")
