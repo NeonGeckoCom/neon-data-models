@@ -117,7 +117,7 @@ class GetPromptData(BaseModel):
 
 class PromptData(BaseModel):
     class _PromptData(BaseModel):
-        id: str = Field(alias="_id", description="Unique ID for the prompt")
+        _id: str = Field(description="Unique ID for the prompt")
         is_completed: Literal['0', '1'] = Field(
             description="'1' if a response to the prompt has been determined")
         proposed_responses: Dict[str, str] = Field(
