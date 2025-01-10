@@ -27,7 +27,7 @@ import uuid
 from typing import Optional, Dict, List, Literal, Union
 
 from neon_data_models.models.api.llm import LLMPersona
-from pydantic import Field, model_validator
+from pydantic import Field, model_validator, model_serializer
 
 from neon_data_models.enum import CcaiPromptStates
 from neon_data_models.models.base import BaseModel
@@ -133,9 +133,14 @@ class PromptData(BaseModel):
             default=[],
             description="List of subminds that participated in this prompt")
 
-        def model_dump(self, *args, **kwargs):
-            kwargs.setdefault('by_alias', True)
-            return BaseModel.model_dump(self, *args, **kwargs)
+        @model_serializer
+        def alias_serialize(self):
+            return {"_id": self.id,
+                    "is_completed": self.is_completed,
+                    "proposed_responses": self.proposed_responses,
+                    "submind_opinions": self.submind_opinions,
+                    "votes": self.votes,
+                    "participating_subminds": self.participating_subminds}
 
     data: Union[_PromptData, List[_PromptData]] = Field(description="Prompt data")
     receiver: str = Field(description="Nickname of user requesting prompt data")

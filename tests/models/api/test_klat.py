@@ -35,3 +35,9 @@ class TestKlat(TestCase):
         self.assertIsInstance(test_object, PromptData._PromptData)
         self.assertEqual(test_object,
                          PromptData._PromptData(**test_object.model_dump()))
+
+        valid_prompt_data = PromptData(data=test_object,
+                                       receiver="mock_username",
+                                       cid="mock_conversation")
+        self.assertEqual(valid_prompt_data,
+                         PromptData(**valid_prompt_data.model_dump()))
