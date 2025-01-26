@@ -63,14 +63,6 @@ class LLMPersona(LLMPersonaIdentity):
             self.system_prompt = self.description
         return self
 
-    @computed_field
-    @property
-    def id(self) -> str:
-        persona_id = self.name
-        if self.user_id:
-            persona_id += f"_{self.user_id}"
-        return persona_id
-
 
 class LLMRequest(BaseModel):
     query: str = Field(description="Incoming user prompt")
