@@ -46,7 +46,7 @@ class LLMPersonaIdentity(BaseModel):
         return persona_id
 
 
-class LLMPersona(LLMPersonaBase):
+class LLMPersona(LLMPersonaIdentity):
     description: Optional[str] = Field(
         None, description="Human-readable description of this persona")
     system_prompt: str = Field(
