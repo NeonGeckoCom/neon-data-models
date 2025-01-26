@@ -23,7 +23,6 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 from typing import List, Tuple, Optional, Literal
 from pydantic import Field, model_validator, computed_field
 
@@ -33,25 +32,10 @@ from neon_data_models.models.base import BaseModel
 _DEFAULT_MQ_TO_ROLE = {"user": "user", "llm": "assistant"}
 
 
-class LLMPersona(BaseModel):
+class LLMPersonaIdentity(BaseModel):
     name: str = Field(description="Unique name for this persona")
-    description: Optional[str] = Field(
-        None, description="Human-readable description of this persona")
-    system_prompt: str = Field(
-        None, description="System prompt associated with this persona. "
-                          "If None, `description` will be used.")
-    enabled: bool = Field(
-        True, description="Flag used to mark a defined persona as "
-                          "available for use.")
     user_id: Optional[str] = Field(
         None, description="`user_id` of the user who created this persona.")
-
-    @model_validator(mode='after')
-    def validate_request(self):
-        assert any((self.description, self.system_prompt))
-        if self.system_prompt is None:
-            self.system_prompt = self.description
-        return self
 
     @computed_field
     @property
@@ -60,6 +44,24 @@ class LLMPersona(BaseModel):
         if self.user_id:
             persona_id += f"_{self.user_id}"
         return persona_id
+
+
+class LLMPersona(LLMPersonaIdentity):
+    description: Optional[str] = Field(
+        None, description="Human-readable description of this persona")
+    system_prompt: str = Field(
+        None, description="System prompt associated with this persona. "
+                          "If None, `description` will be used.")
+    enabled: bool = Field(
+        True, description="Flag used to mark a defined persona as "
+                          "available for use.")
+
+    @model_validator(mode='after')
+    def validate_request(self):
+        assert any((self.description, self.system_prompt))
+        if self.system_prompt is None:
+            self.system_prompt = self.description
+        return self
 
 
 class LLMRequest(BaseModel):
