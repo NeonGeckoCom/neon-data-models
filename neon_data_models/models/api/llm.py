@@ -199,4 +199,4 @@ class LLMResponse(BaseModel):
         return values
 
 
-__all__ = [LLMPersona.__name__, LLMRequest.__name__, LLMResponse.__name__]
+__all__ = [LLMPersonaIdentity.__name__, LLMPersona.__name__, LLMRequest.__name__, LLMResponse.__name__]
