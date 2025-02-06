@@ -58,6 +58,11 @@ class LLMPersona(LLMPersonaIdentity):
 
     @model_validator(mode='after')
     def validate_request(self):
+        if self.name == "vanilla":
+            assert self.system_prompt in (None, "")
+            self.system_prompt = None
+            return self
+
         assert any((self.description, self.system_prompt))
         if self.system_prompt is None:
             self.system_prompt = self.description
