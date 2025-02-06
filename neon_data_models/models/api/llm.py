@@ -33,6 +33,9 @@ _DEFAULT_MQ_TO_ROLE = {"user": "user", "llm": "assistant"}
 
 
 class LLMPersonaIdentity(BaseModel):
+    """
+    Defines metadata for a unique persona.
+    """
     name: str = Field(description="Unique name for this persona")
     user_id: Optional[str] = Field(
         None, description="`user_id` of the user who created this persona.")
@@ -47,6 +50,10 @@ class LLMPersonaIdentity(BaseModel):
 
 
 class LLMPersona(LLMPersonaIdentity):
+    """
+    Complete persona definition that may be applied to LLM inference or
+    committed to a database.
+    """
     description: Optional[str] = Field(
         None, description="Human-readable description of this persona")
     system_prompt: str = Field(
@@ -199,4 +206,5 @@ class LLMResponse(BaseModel):
         return values
 
 
-__all__ = [LLMPersonaIdentity.__name__, LLMPersona.__name__, LLMRequest.__name__, LLMResponse.__name__]
+__all__ = [LLMPersonaIdentity.__name__, LLMPersona.__name__,
+           LLMRequest.__name__, LLMResponse.__name__]
