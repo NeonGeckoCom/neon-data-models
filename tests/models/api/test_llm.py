@@ -31,17 +31,20 @@ from pydantic import ValidationError
 class TestLLM(TestCase):
     def test_llm_persona(self):
         from neon_data_models.models.api.llm import LLMPersona
+        # Valid description
         legacy_mq_persona = LLMPersona(name="my persona",
                                        description="You are a helpful chatbot.")
         self.assertEqual(legacy_mq_persona.system_prompt,
                          legacy_mq_persona.description)
 
+        # Valid system prompt
         legacy_bf_persona = LLMPersona(name="neon",
                                        system_prompt="You are NeonLLM.")
         self.assertIsNone(legacy_bf_persona.description)
         self.assertEqual(legacy_bf_persona.system_prompt,
                          "You are NeonLLM.")
 
+        # Fully-defined persona
         full_persona = LLMPersona(name="custom chatbot",
                                   description="A customized bot for something",
                                   system_prompt="You are a custom chatbot.")
@@ -50,8 +53,20 @@ class TestLLM(TestCase):
         self.assertEqual(full_persona.description,
                          "A customized bot for something")
 
+        # Under-defined persona
         with self.assertRaises(ValidationError):
             LLMPersona(name="underdefined persona")
+
+        # Valid vanilla persona
+        vanilla = LLMPersona(name="vanilla")
+        self.assertIsNone(vanilla.system_prompt)
+
+        vanilla_2 = LLMPersona(name="vanilla", description="A vanilla chatbot")
+        self.assertIsNone(vanilla_2.system_prompt)
+
+        # Invalid vanilla persona
+        with self.assertRaises(ValidationError):
+            LLMPersona(name="vanilla", system_prompt="This should be empty")
 
     def test_llm_request(self):
         from neon_data_models.models.api.llm import LLMRequest, LLMPersona
