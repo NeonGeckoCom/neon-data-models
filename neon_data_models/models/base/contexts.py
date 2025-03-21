@@ -25,16 +25,18 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from datetime import datetime, timedelta
-from typing import Literal, List, Optional, Any
+from typing import Literal, List, Optional, Any, Tuple
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 
 from neon_data_models.models.base import BaseModel
 
 
 class SessionContext(BaseModel):
     session_id: str = "default"
-    active_skills: List[str] = []
+    active_skills: List[Tuple[str, float]] = Field(
+        default=[], 
+        description="List of tuple `skill_id` and last used timestamp")
     utterance_states: dict = {}
     lang: Optional[str] = None
     context: dict = {}
