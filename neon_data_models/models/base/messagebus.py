@@ -39,8 +39,9 @@ class MessageContext(BaseModel):
     session: Optional[SessionContext] = Field(description="Session Data",
                                               default=None)
     node_data: Optional[NodeData] = Field(description="Node Data", default=None)
-    timing: Optional[TimingContext] = Field(
-        description="User Interaction Timing Information", default=None)
+    timing: TimingContext = Field(
+        description="User Interaction Timing Information", 
+        default=TimingContext())
     user_profiles: Optional[List[NeonUserConfig]] = (
         Field(description="List of relevant user profiles", default=None))
     klat_data: Optional[KlatContext] = Field(
