@@ -27,6 +27,8 @@
 from datetime import datetime, timedelta
 from typing import Literal, List, Optional
 
+from pydantic import model_validator
+
 from neon_data_models.models.base import BaseModel
 
 
@@ -95,3 +97,13 @@ class KlatContext(BaseModel):
 class MQContext(BaseModel):
     routing_key: Optional[str] = None
     message_id: str
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_inputs(cls, values):
+        """
+        Validate MQContext inputs to normalize messageID to message_id.
+        """
+        if not values.get("message_id"):
+            values["message_id"] = values.get("messageID")
+        return values
