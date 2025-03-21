@@ -25,7 +25,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from datetime import datetime, timedelta
-from typing import Literal, List, Optional
+from typing import Literal, List, Optional, Any
 
 from pydantic import model_validator
 
@@ -87,18 +87,6 @@ class TimingContext(BaseModel):
     transform_utterance: Optional[timedelta] = None
     wait_in_queue: Optional[timedelta] = None
     
-    def model_dump(self, *args, **kwargs) -> dict:
-        data = super().model_dump(*args, **kwargs)
-        
-        # Convert datetime objects to timestamps and timedelta to seconds
-        for field, value in list(data.items()):
-            if isinstance(value, datetime):
-                data[field] = value.timestamp()
-            elif isinstance(value, timedelta):
-                data[field] = value.total_seconds()
-        
-        return data
-
     @model_validator(mode='before')
     @classmethod
     def convert_timestamps(cls, data):

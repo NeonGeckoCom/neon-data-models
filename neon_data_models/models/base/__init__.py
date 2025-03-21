@@ -25,9 +25,28 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from os import environ
+from datetime import datetime, timedelta
 from pydantic import ConfigDict, BaseModel as _BaseModel
 
 
 class BaseModel(_BaseModel):
     model_config = ConfigDict(extra="allow" if environ.get(
             "NEON_DATA_MODELS_ALLOW_EXTRA", "false") != "false" else "ignore")
+
+        
+    def model_dump(self, *args, **kwargs) -> dict:
+        """
+        Global `model_dump` overrides to ensure model serialization.
+        """
+        data = super().model_dump(*args, **kwargs)
+        
+        # Convert datetime objects to timestamps and timedelta to seconds
+        for field, value in list(data.items()):
+            if isinstance(value, datetime):
+                data[field] = value.timestamp()
+            elif isinstance(value, timedelta):
+                data[field] = value.total_seconds()
+        
+        return data
+
+
