@@ -24,43 +24,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Optional, List, Union
-from pydantic import ConfigDict, Field
-
-from neon_data_models.models.base import BaseModel
-from neon_data_models.models.base.contexts import (SessionContext, KlatContext,
-                                                   TimingContext, MQContext)
-from neon_data_models.models.client.node import NodeData
-from neon_data_models.models.user.database import NeonUserConfig
+from typing import Literal
 
 
-class MessageContext(BaseModel):
-    model_config = ConfigDict(extra="allow")
-    session: SessionContext = Field(description="Session Data",
-                                              default=SessionContext())
-    node_data: Optional[NodeData] = Field(description="Node Data", default=None)
-    timing: TimingContext = Field(
-        description="User Interaction Timing Information", 
-        default=TimingContext())
-    user_profiles: Optional[List[NeonUserConfig]] = (
-        Field(description="List of relevant user profiles", default=None))
-    klat_data: Optional[KlatContext] = Field(
-        description="Klat context for Klat-generated messages", default=None)
-    mq: Optional[MQContext] = Field(
-        description="MQ context for messages traversing a RabbitMQ broker",
-        default=None)
-
-    username: str = "local"
-    # TODO: Consider refactoring client/client_name into a single dict
-    #  or merging with `node_data`
-    client_name: str = "unknown"
-    client: str = "unknown"
-    source: Union[str, List[str]] = "unknown"
-    destination: List[str] = ["skills"]
-    neon_should_respond: bool = True
-
-
-class BaseMessage(BaseModel):
-    msg_type: str
-    data: dict
-    context: MessageContext
+gender = Literal["male", "female"]
