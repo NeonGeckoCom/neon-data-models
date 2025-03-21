@@ -86,6 +86,54 @@ class TimingContext(BaseModel):
     transform_audio: Optional[timedelta] = None
     transform_utterance: Optional[timedelta] = None
     wait_in_queue: Optional[timedelta] = None
+    
+    def model_dump(self, *args, **kwargs) -> dict:
+        data = super().model_dump(*args, **kwargs)
+        
+        # Convert datetime objects to timestamps and timedelta to seconds
+        for field, value in list(data.items()):
+            if isinstance(value, datetime):
+                data[field] = value.timestamp()
+            elif isinstance(value, timedelta):
+                data[field] = value.total_seconds()
+        
+        return data
+
+    @model_validator(mode='before')
+    @classmethod
+    def convert_timestamps(cls, data):
+        if not isinstance(data, dict):
+            return data
+        
+        datetime_fields = [
+            'audio_begin', 'audio_end', 'client_sent', 'gradio_sent',
+            'handle_utterance', 'response_sent', 'speech_start'
+        ]
+        
+        timedelta_fields = [
+            'get_stt', 'get_tts', 'iris_input_handling', 'mq_response_handler',
+            'mq_from_core', 'mq_from_client', 'mq_input_handler', 'client_to_core',
+            'client_from_core', 'save_transcript', 'transform_audio',
+            'transform_utterance', 'wait_in_queue'
+        ]
+        
+        for field in datetime_fields:
+            if field in data and data[field] is not None and not isinstance(data[field], datetime):
+                try:
+                    data[field] = datetime.fromtimestamp(float(data[field]))
+                except (ValueError, TypeError):
+                    # Leave it as is if conversion fails, let pydantic handle validation
+                    pass
+        
+        for field in timedelta_fields:
+            if field in data and data[field] is not None and not isinstance(data[field], timedelta):
+                try:
+                    data[field] = timedelta(seconds=float(data[field]))
+                except (ValueError, TypeError):
+                    # Leave it as is if conversion fails, let pydantic handle validation
+                    pass
+        
+        return data
 
 
 class KlatContext(BaseModel):

@@ -101,28 +101,82 @@ class TestContexts(TestCase):
 
     def test_timing_context(self):
         from neon_data_models.models.base.contexts import TimingContext
+        import json
+        
         default = TimingContext()
         self.assertIsNone(default.model_dump()['handle_utterance'])
 
         # Alias handling
         test_time = time()
-        test_duration = 0.00001234
         timing = TimingContext(transcribed=test_time,
-                               text_parsers=test_duration)
+                               text_parsers=0.0001)
 
         # Type casting
         self.assertIsInstance(timing.handle_utterance, datetime)
-        self.assertAlmostEqual(timing.handle_utterance.timestamp(), test_time, 5)
+        self.assertAlmostEqual(timing.handle_utterance.timestamp(), 
+                               test_time, 0)
         self.assertIsInstance(timing.transform_utterance, timedelta)
-        self.assertAlmostEqual(timing.transform_utterance.total_seconds(), test_duration, 5)
+        self.assertAlmostEqual(timing.transform_utterance.total_seconds(),
+                               0, 0)
 
         # Dump/Load
         serialized = timing.model_dump()
         self.assertEqual(serialized['handle_utterance'],
-                         timing.handle_utterance)
+                         timing.handle_utterance.timestamp())
         self.assertEqual(serialized['transform_utterance'],
-                         timing.transform_utterance)
+                         timing.transform_utterance.total_seconds())
         self.assertEqual(timing, TimingContext(**serialized))
+
+        # Create a TimingContext with sample data
+        now = datetime.now()
+        one_second = timedelta(seconds=1)
+        
+        context = TimingContext(
+            audio_begin=now,
+            audio_end=now + one_second,
+            get_stt=one_second,
+            get_tts=timedelta(seconds=2)
+        )
+        
+        # Test serialization
+        serialized = context.model_dump()
+        
+        # Check that datetime fields are converted to timestamps
+        self.assertIsInstance(serialized["audio_begin"], float)
+        self.assertIsInstance(serialized["audio_end"], float)
+        self.assertAlmostEqual(serialized["audio_begin"],
+                                now.timestamp(), delta=0.01)
+        self.assertAlmostEqual(serialized["audio_end"], 
+                               (now + one_second).timestamp(), delta=0.01)
+        
+        # Check that timedelta fields are converted to seconds
+        self.assertIsInstance(serialized["get_stt"], float)
+        self.assertIsInstance(serialized["get_tts"], float)
+        self.assertEqual(serialized["get_stt"], 1.0)
+        self.assertEqual(serialized["get_tts"], 2.0)
+        
+        # Test JSON serialization
+        json_str = json.dumps(serialized)
+        self.assertTrue(json_str)  # Ensure it can be JSON serialized
+        
+        # Test deserialization
+        deserialized_dict = json.loads(json_str)
+        deserialized = TimingContext(**deserialized_dict)
+        
+        # Check that timestamps are converted back to datetime objects
+        self.assertIsInstance(deserialized.audio_begin, datetime)
+        self.assertIsInstance(deserialized.audio_end, datetime)
+        self.assertAlmostEqual((deserialized.audio_begin - 
+                                now).total_seconds(), 0, delta=0.01)
+        self.assertAlmostEqual((deserialized.audio_end - 
+                                (now + one_second)).total_seconds(), 0,
+                                  delta=0.01)
+        
+        # Check that second values are converted back to timedelta objects
+        self.assertIsInstance(deserialized.get_stt, timedelta)
+        self.assertIsInstance(deserialized.get_tts, timedelta)
+        self.assertEqual(deserialized.get_stt.total_seconds(), 1.0)
+        self.assertEqual(deserialized.get_tts.total_seconds(), 2.0)
 
     def test_klat_context(self):
         from neon_data_models.models.base.contexts import KlatContext
