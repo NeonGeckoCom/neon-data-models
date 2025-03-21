@@ -28,3 +28,4 @@ from neon_data_models.models.api.node_v1 import *
 from neon_data_models.models.api.jwt import *
 from neon_data_models.models.api.llm import *
 from neon_data_models.models.api.mq import *
+from neon_data_models.models.api.messagebus import *
