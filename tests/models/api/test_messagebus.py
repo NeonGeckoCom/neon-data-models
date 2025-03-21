@@ -81,7 +81,7 @@ class TestMessagebusModels(TestCase):
         self.assertIsInstance(tts_response_no_phonemes, TtsResponse)
         self.assertEqual(tts_response_no_phonemes.sentence, "Hello world")
         self.assertEqual(tts_response_no_phonemes.translated, False)
-        self.assertIsInstance(tts_response_no_phonemes.phonemes, str)
+        self.assertIsNone(tts_response_no_phonemes.phonemes)
         self.assertEqual(tts_response_no_phonemes.genders, ["female", "male"])
         self.assertEqual(tts_response_no_phonemes.audio["female"], "base64audio1")
         self.assertEqual(tts_response_no_phonemes.audio["male"], "base64audio2")

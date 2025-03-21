@@ -383,26 +383,26 @@ class TestNeonMQ(TestCase):
             NeonMqGetStt(message_id=message_id)
 
     def test_neon_mq_get_response(self):
-        from neon_data_models.models.api.mq.neon import NeonMqGetResponse, GetResponseData
+        from neon_data_models.models.api.mq.neon import NeonMqTextInput, GetResponseData
         from neon_data_models.models.base.contexts import MQContext
 
         # Test valid request
         message_id = "test_mid"
         data = GetResponseData(utterances=["How are you?"])
-        valid_request = NeonMqGetResponse(data=data, message_id=message_id,
+        valid_request = NeonMqTextInput(data=data, message_id=message_id,
                                           context={})
-        self.assertIsInstance(valid_request, NeonMqGetResponse)
+        self.assertIsInstance(valid_request, NeonMqTextInput)
         self.assertIsInstance(valid_request, MQContext)
         self.assertEqual(valid_request.data.utterances, ["How are you?"])
         self.assertEqual(valid_request.message_id, message_id)
 
         # Test missing MQ required data
         with self.assertRaises(ValidationError):
-            NeonMqGetResponse(data=data)
+            NeonMqTextInput(data=data)
 
         # Test missing data required
         with self.assertRaises(ValidationError):
-            NeonMqGetResponse(message_id=message_id)
+            NeonMqTextInput(message_id=message_id)
 
     def test_neon_mq_stt_response(self):
         from neon_data_models.models.api.mq.neon import NeonMqSttResponse
@@ -446,7 +446,7 @@ class TestNeonMQ(TestCase):
 
     def test_neon_api_message(self):
         from neon_data_models.models.api.mq.neon import NeonApiMessage, GetTtsData, GetSttData, GetResponseData
-        from neon_data_models.models.api.mq.neon import NeonMqGetTts, NeonMqGetStt, NeonMqGetResponse
+        from neon_data_models.models.api.mq.neon import NeonMqGetTts, NeonMqGetStt, NeonMqTextInput
         from neon_data_models.models.api.mq.neon import NeonMqSttResponse, NeonMqTtsResponse
 
         # Test TTS message
@@ -474,7 +474,7 @@ class TestNeonMQ(TestCase):
             context={},
             message_id="test_mid"
         )
-        self.assertIsInstance(response_message, NeonMqGetResponse)
+        self.assertIsInstance(response_message, NeonMqTextInput)
 
         # Test STT response
         stt_response = NeonApiMessage(
@@ -489,9 +489,12 @@ class TestNeonMQ(TestCase):
         # Test TTS response
         tts_response = NeonApiMessage(
             msg_type="neon.get_tts.response",
-            data={"responses": {"en-us": {"female": {"sentence": "test",
-                                                     "translated": False,
-                                                     "phonemes": ""}}}},
+            data={"responses": {"en-us": {"sentence": "test",
+                                          "translated": False,
+                                          "phonemes": "",
+                                          "genders": ["female"],
+                                          "audio": {
+                                          "female": "fake_b64_audio"}}}},
             context={},
             message_id="test_mid"
         )
@@ -539,7 +542,7 @@ class TestNeonMQ(TestCase):
             "message_id": "test_mid"
         }
         recognizer_req = NeonApiMessage.from_sio_message(sio_recognizer)
-        self.assertIsInstance(recognizer_req, NeonMqGetResponse)
+        self.assertIsInstance(recognizer_req, NeonMqTextInput)
         self.assertEqual(recognizer_req.data.utterances, ["How are you?"])
 
         # Test invalid requested_skill
