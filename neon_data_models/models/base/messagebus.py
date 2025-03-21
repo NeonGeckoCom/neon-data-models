@@ -68,7 +68,11 @@ class BaseMessage(BaseModel):
     def as_message(self):
         try:
             from ovos_bus_client.message import Message
-            return Message(self.msg_type, self.data, self.context.model_dump())
+            if hasattr(self.data, 'model_dump'):
+                data = self.data.model_dump()
+            else:
+                data = self.data
+            return Message(self.msg_type, data, self.context.model_dump())
         except ImportError:
             raise RuntimeError("pip install ovos-bus-client to enable Message "
                                "deserialization.")
