@@ -107,9 +107,14 @@ class NeonGetStt(BaseMessage):
     data: GetSttData
 
 
-class NeonGetResponse(BaseMessage):
+class NeonTextInput(BaseMessage):
     msg_type: Literal["recognizer_loop:utterance"] = "recognizer_loop:utterance"
     data: GetResponseData
+
+
+class NeonAudioInput(BaseMessage):
+    msg_type: Literal["neon.audio_input"] = "neon.audio_input"
+    data: GetSttData
 
 
 class NeonSttResponse(BaseMessage):
@@ -122,5 +127,6 @@ class NeonTtsResponse(BaseMessage):
                       "klat.response"] = "neon.get_tts.response"
     data: TtsReponseData
 
-__all__ = [NeonGetTts.__name__, NeonGetStt.__name__, NeonGetResponse.__name__,
-           NeonSttResponse.__name__, NeonTtsResponse.__name__]
+__all__ = [NeonGetTts.__name__, NeonGetStt.__name__, NeonTextInput.__name__,
+           NeonAudioInput.__name__, NeonSttResponse.__name__,
+           NeonTtsResponse.__name__]

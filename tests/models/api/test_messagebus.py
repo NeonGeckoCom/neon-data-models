@@ -179,21 +179,21 @@ class TestMessagebusModels(TestCase):
             NeonGetStt(message_id=message_id, context={})  # Missing data
 
     def test_neon_get_response(self):
-        from neon_data_models.models.api.messagebus import NeonGetResponse, GetResponseData
+        from neon_data_models.models.api.messagebus import NeonTextInput, GetResponseData
         from neon_data_models.models.base.messagebus import BaseMessage
 
         # Test valid message
         message_id = "test_mid"
         data = GetResponseData(utterances=["How are you?"])
-        valid_message = NeonGetResponse(data=data, context={})
-        self.assertIsInstance(valid_message, NeonGetResponse)
+        valid_message = NeonTextInput(data=data, context={})
+        self.assertIsInstance(valid_message, NeonTextInput)
         self.assertIsInstance(valid_message, BaseMessage)
         self.assertEqual(valid_message.data.utterances, ["How are you?"])
         self.assertEqual(valid_message.msg_type, "recognizer_loop:utterance")
 
         # Test missing required fields
         with self.assertRaises(ValidationError):
-            NeonGetResponse(message_id=message_id, context={})  # Missing data
+            NeonTextInput(message_id=message_id, context={})  # Missing data
 
     def test_neon_stt_response(self):
         from neon_data_models.models.api.messagebus import NeonSttResponse, SttReponseData
@@ -234,3 +234,26 @@ class TestMessagebusModels(TestCase):
         # Test missing required fields
         with self.assertRaises(ValidationError):
             NeonTtsResponse(message_id=message_id, context={})  # Missing data
+
+    def test_neon_audio_input(self):
+        from neon_data_models.models.api.messagebus import NeonAudioInput, GetSttData
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid message
+        message_id = "test_mid"
+        data = GetSttData(audio_data="base64encodedstring")
+        valid_message = NeonAudioInput(data=data, context={})
+        self.assertIsInstance(valid_message, NeonAudioInput)
+        self.assertIsInstance(valid_message, BaseMessage)
+        self.assertEqual(valid_message.data.audio_data, "base64encodedstring")
+        self.assertEqual(valid_message.data.lang, "en-us")  # Default value
+        self.assertEqual(valid_message.msg_type, "neon.audio_input")
+
+        # Test with message_body instead of audio_data (backward compatibility)
+        compat_data = GetSttData(message_body="different_base64string")
+        compat_message = NeonAudioInput(data=compat_data, context={})
+        self.assertEqual(compat_message.data.audio_data, "different_base64string")
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            NeonAudioInput(message_id=message_id, context={})  # Missing data
