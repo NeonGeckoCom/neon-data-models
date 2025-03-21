@@ -135,7 +135,7 @@ class KlatContext(BaseModel):
         """
         Validate KlatContext inputs to normalize messageID to sid.
         """
-        if not values.get("sid"):
+        if "sid" not in values:
             values["sid"] = values.get("messageID")
         return values
 
@@ -149,6 +149,6 @@ class MQContext(BaseModel):
         """
         Validate MQContext inputs to normalize messageID to message_id.
         """
-        if not values.get("message_id"):
+        if "message_id" not in values:
             values["message_id"] = values.get("messageID")
         return values
