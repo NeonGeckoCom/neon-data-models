@@ -57,6 +57,13 @@ class GetSTTData(BaseModel):
 class GetResponseData(BaseModel):
     utterances: List[str] = Field(description="List of input utterance(s)")
 
+    @model_validator(mode='before')
+    @classmethod
+    def validate_inputs(cls, values):
+        if 'utterances' not in values:
+            values['utterances'] = [values.pop('messageText', '')]
+        return values
+
 class NeonGetTTS(BaseModel):
     data: GetTTSData
     context: MessageContext
