@@ -27,4 +27,4 @@
 from typing import Literal
 
 
-gender = Literal["male", "female"]
+Gender = Literal["male", "female"]

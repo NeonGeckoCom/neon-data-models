@@ -51,34 +51,42 @@ class TestMessagebusModels(TestCase):
 
     def test_tts_response_data(self):
         from neon_data_models.models.api.messagebus import TtsResponse, TtsReponseData
+        from neon_data_models.types import Gender
 
         # Test valid response data
         valid_response = {
             "sentence": "Hello world",
             "translated": False,
-            "phonemes": "HH AH L OW W ER L D"
+            "phonemes": "HH AH L OW W ER L D",
+            "genders": ["female", "male"],
+            "audio": {"female": "base64audio1", "male": "base64audio2"}
         }
         tts_response = TtsResponse(**valid_response)
         self.assertIsInstance(tts_response, TtsResponse)
         self.assertEqual(tts_response.sentence, "Hello world")
         self.assertEqual(tts_response.translated, False)
         self.assertEqual(tts_response.phonemes, "HH AH L OW W ER L D")
+        self.assertEqual(tts_response.genders, ["female", "male"])
+        self.assertEqual(tts_response.audio["female"], "base64audio1")
+        self.assertEqual(tts_response.audio["male"], "base64audio2")
 
         # Test valid responses data
         valid_responses_data = {
             "responses": {
-                "en-us": {
-                    "female": valid_response
-                }
+                "en-us": tts_response
             }
         }
         tts_responses = TtsReponseData(**valid_responses_data)
         self.assertIsInstance(tts_responses, TtsReponseData)
-        self.assertEqual(tts_responses.responses["en-us"]["female"].sentence, "Hello world")
+        self.assertEqual(tts_responses.responses["en-us"].sentence, "Hello world")
+        self.assertEqual(tts_responses.responses["en-us"].genders, ["female", "male"])
 
         # Test missing required fields
         with self.assertRaises(ValidationError):
-            TtsResponse(sentence="Hello", phonemes="HH AH L OW")  # Missing translated
+            TtsResponse(sentence="Hello", phonemes="HH AH L OW", translated=False)  # Missing genders and audio
+        
+        with self.assertRaises(ValidationError):
+            TtsResponse(sentence="Hello", phonemes="HH AH L OW", translated=False, genders=["female"])  # Missing audio
         
         with self.assertRaises(ValidationError):
             TtsReponseData()  # Missing responses
@@ -218,12 +226,20 @@ class TestMessagebusModels(TestCase):
 
         # Test valid message
         message_id = "test_mid"
-        response = TtsResponse(sentence="Hello world", translated=False, phonemes="")
-        data = TtsReponseData(responses={"en-us": {"female": response}})
+        response = TtsResponse(
+            sentence="Hello world", 
+            translated=False, 
+            phonemes="HH EH L OW",
+            genders=["female", "male"],
+            audio={"female": "base64audio1", "male": "base64audio2"}
+        )
+        data = TtsReponseData(responses={"en-us": response})
         valid_message = NeonTtsResponse(data=data, context={})
         self.assertIsInstance(valid_message, NeonTtsResponse)
         self.assertIsInstance(valid_message, BaseMessage)
-        self.assertEqual(valid_message.data.responses["en-us"]["female"].sentence, "Hello world")
+        self.assertEqual(valid_message.data.responses["en-us"].sentence, "Hello world")
+        self.assertEqual(valid_message.data.responses["en-us"].genders, ["female", "male"])
+        self.assertEqual(valid_message.data.responses["en-us"].audio["female"], "base64audio1")
         self.assertEqual(valid_message.msg_type, "neon.get_tts.response")
 
         # Test alternate msg_type

@@ -30,7 +30,7 @@ Defines models for `Message` objects sent on the Neon messagebus.
 from typing import Any, List, Literal, Dict
 from pydantic import Field, model_validator
 
-from neon_data_models.types import gender
+from neon_data_models.types import Gender
 from neon_data_models.models.base import BaseModel
 from neon_data_models.models.base.messagebus import BaseMessage
 
@@ -55,10 +55,12 @@ class TtsResponse(BaseModel):
     sentence: str
     translated: bool
     phonemes: str
+    genders: List[Gender]
+    audio: Dict[Gender, str]
 
 
 class TtsReponseData(BaseModel):
-    responses: Dict[str, Dict[gender, TtsResponse]]
+    responses: Dict[str, TtsResponse]
 
 
 class GetSttData(BaseModel):
