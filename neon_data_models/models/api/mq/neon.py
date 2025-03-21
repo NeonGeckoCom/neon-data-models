@@ -94,15 +94,15 @@ class NeonApiMessage(BaseModel):
         if requested_service == "stt":
             context.destination = ["speech"]
             return NeonGetSTT(data=GetSTTData(**sio_message), context=context,
-                              **mq_context)
+                              **mq_context.model_dump())
         elif requested_service == "tts":
             context.destination = ["audio"]
             return NeonGetTTS(data=GetTTSData(**sio_message), context=context,
-                              **mq_context)
+                              **mq_context.model_dump())
         elif requested_service == "recognizer":
             context.destination = ["skills"]
             return NeonGetResponse(data=GetResponseData(**sio_message),
-                                   context=context, **mq_context)
+                                   context=context, **mq_context.model_dump())
 
 __all__ = [NeonGetTTS.__name__, NeonGetSTT.__name__, NeonGetResponse.__name__,
            NeonApiMessage.__name__]
