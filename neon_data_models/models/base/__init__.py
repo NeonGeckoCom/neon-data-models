@@ -37,16 +37,31 @@ class BaseModel(_BaseModel):
     def model_dump(self, *args, **kwargs) -> dict:
         """
         Global `model_dump` overrides to ensure model serialization.
+        Recursively processes nested dictionaries, lists, and BaseModel instances.
         """
         data = super().model_dump(*args, **kwargs)
-        
-        # Convert datetime objects to timestamps and timedelta to seconds
-        for field, value in list(data.items()):
-            if isinstance(value, datetime):
-                data[field] = value.timestamp()
-            elif isinstance(value, timedelta):
-                data[field] = value.total_seconds()
-        
-        return data
+        return self._process_data(data)
+    
+    def _process_data(self, data):
+        """
+        Recursively process data to convert datetime and timedelta objects.
+        """
+        if isinstance(data, dict):
+            # Process dictionary values
+            for key, value in list(data.items()):
+                data[key] = self._process_data(value)
+            return data
+        elif isinstance(data, list):
+            # Process list elements
+            return [self._process_data(item) for item in data]
+        elif isinstance(data, datetime):
+            # Convert datetime to timestamp
+            return data.timestamp()
+        elif isinstance(data, timedelta):
+            # Convert timedelta to seconds
+            return data.total_seconds()
+        else:
+            # Return other types unchanged
+            return data
 
 
