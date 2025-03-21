@@ -64,3 +64,11 @@ class BaseMessage(BaseModel):
     msg_type: str
     data: dict
     context: MessageContext
+
+    def as_message(self):
+        try:
+            from ovos_bus_client.message import Message
+            return Message(self.msg_type, self.data, self.context.model_dump())
+        except ImportError:
+            raise RuntimeError("pip install ovos-bus-client to enable Message "
+                               "deserialization.")
