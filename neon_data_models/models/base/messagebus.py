@@ -64,6 +64,14 @@ class BaseMessage(BaseModel):
     msg_type: str
     data: dict
     context: MessageContext
+    
+    @classmethod
+    def model_validate(cls, obj, *args, **kwargs):
+        """Normalize message inputs that use 'type' instead of 'msg_type'."""
+        if isinstance(obj, dict) and "type" in obj and "msg_type" not in obj:
+            obj = obj.copy()
+            obj["msg_type"] = obj.pop("type")
+        return BaseMessage.model_validate(cls, obj, *args, **kwargs)
 
     def as_message(self):
         try:
