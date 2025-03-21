@@ -93,6 +93,15 @@ class KlatContext(BaseModel):
     cid: str
     title: Optional[str] = ""
 
+    @model_validator(mode='before')
+    @classmethod
+    def validate_inputs(cls, values):
+        """
+        Validate KlatContext inputs to normalize messageID to sid.
+        """
+        if not values.get("sid"):
+            values["sid"] = values.get("messageID")
+        return values
 
 class MQContext(BaseModel):
     routing_key: Optional[str] = None
