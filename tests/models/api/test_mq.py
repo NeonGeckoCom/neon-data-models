@@ -546,3 +546,51 @@ class TestNeonMQ(TestCase):
         with self.assertRaises(ValueError):
             NeonApiMessage.from_sio_message({"requested_skill": "invalid"})
 
+    def test_neon_mq_text_input(self):
+        from neon_data_models.models.api.mq.neon import NeonMqTextInput, GetResponseData
+        from neon_data_models.models.base.contexts import MQContext
+
+        # Test valid request
+        message_id = "test_mid"
+        data = GetResponseData(utterances=["How are you?"])
+        valid_request = NeonMqTextInput(data=data, message_id=message_id,
+                                       context={})
+        self.assertIsInstance(valid_request, NeonMqTextInput)
+        self.assertIsInstance(valid_request, MQContext)
+        self.assertEqual(valid_request.data.utterances, ["How are you?"])
+        self.assertEqual(valid_request.message_id, message_id)
+
+        # Test missing MQ required data
+        with self.assertRaises(ValidationError):
+            NeonMqTextInput(data=data)
+
+        # Test missing data required
+        with self.assertRaises(ValidationError):
+            NeonMqTextInput(message_id=message_id)
+
+    def test_neon_api_message_validation(self):
+        from neon_data_models.models.api.mq.neon import NeonApiMessage, GetTtsData
+
+        # Test parse_from_messagebus validator with MQ context in a nested field
+        message_with_mq = {
+            "msg_type": "neon.get_tts",
+            "data": {"text": "Hello world"},
+            "context": {"mq": {
+                "message_id": "mq_mid"
+            }}
+        }
+        
+        api_message = NeonApiMessage(**message_with_mq)
+        self.assertEqual(api_message.message_id, "mq_mid")
+        
+        # Test with direct MQ context fields
+        direct_message = {
+            "msg_type": "neon.get_tts",
+            "data": {"text": "Hello world"},
+            "context": {},
+            "message_id": "direct_mid"
+        }
+        
+        direct_api_message = NeonApiMessage(**direct_message)
+        self.assertEqual(direct_api_message.message_id, "direct_mid")
+

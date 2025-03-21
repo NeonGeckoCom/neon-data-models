@@ -33,7 +33,7 @@ from neon_data_models.models.base.contexts import KlatContext, MQContext, \
 from neon_data_models.models.base.messagebus import BaseMessage, MessageContext
 from neon_data_models.models.user.database import NeonUserConfig
 from neon_data_models.models.api.messagebus import NeonGetTts, NeonGetStt, \
-    NeonGetResponse, NeonSttResponse, NeonTtsResponse
+    NeonAudioInput, NeonTextInput, NeonSttResponse, NeonTtsResponse
 
 
 class GetTtsData(BaseModel):
@@ -81,7 +81,11 @@ class NeonMqGetTts(NeonGetTts, MQContext):
 class NeonMqGetStt(NeonGetStt, MQContext):
     pass
 
-class NeonMqGetResponse(NeonGetResponse, MQContext):
+class NeonMqTextInput(NeonTextInput, MQContext):
+    pass
+
+
+class NeonMqAudioInput(NeonAudioInput, MQContext):
     pass
 
 
@@ -95,15 +99,22 @@ class NeonMqTtsResponse(NeonTtsResponse, MQContext):
 
 class NeonApiMessage:
     ta = TypeAdapter(Annotated[Union[NeonMqGetStt, NeonMqGetTts,
-                                     NeonMqGetResponse, NeonMqSttResponse,
+                                     NeonMqTextInput, NeonMqSttResponse,
                                      NeonMqTtsResponse],
                                Field(discriminator='msg_type')])
 
     @classmethod
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs) -> BaseMessage:
+        # Parse the MQ Context from a `Message` input to create a proper API message
+        if 'message_id' not in kwargs:
+            # Extract MQ context data from the message
+            mq_data = kwargs.get('context', {}).get('mq', {})
+            # Update values with MQ context data
+            kwargs.update(mq_data)
         return cls.ta.validate_python(kwargs)
 
-    def from_sio_message(sio_message: dict):
+    @staticmethod
+    def from_sio_message(sio_message: dict) -> BaseMessage:
         requested_service = sio_message.get("requested_skill",
                                          "recognizer").lower()
         if requested_service not in ["stt", "tts", "recognizer"]:
@@ -130,17 +141,10 @@ class NeonApiMessage:
                               **mq_context.model_dump())
         elif requested_service == "recognizer":
             context.destination = ["skills"]
-            return NeonMqGetResponse(data=GetResponseData(**sio_message),
+            return NeonMqTextInput(data=GetResponseData(**sio_message),
                                    context=context, **mq_context.model_dump())
-
-    @model_validator(mode='before')
-    @classmethod
-    def parse_from_messagebus(cls, values):
-        # Parse the MQ Context from a `Message` input to 
-        if 'message_id' not in values:
-            values = {**values, **values.get('mq', {})}
 
 
 __all__ = [NeonMqGetTts.__name__, NeonMqGetStt.__name__, 
-           NeonMqGetResponse.__name__, NeonMqSttResponse.__name__,
+           NeonMqTextInput.__name__, NeonMqSttResponse.__name__,
            NeonMqTtsResponse.__name__, NeonApiMessage.__name__]
