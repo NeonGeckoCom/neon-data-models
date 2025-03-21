@@ -70,6 +70,22 @@ class TestMessagebusModels(TestCase):
         self.assertEqual(tts_response.audio["female"], "base64audio1")
         self.assertEqual(tts_response.audio["male"], "base64audio2")
 
+        # Test valid response data without phonemes
+        valid_response_no_phonemes = {
+            "sentence": "Hello world",
+            "translated": False,
+            "genders": ["female", "male"],
+            "audio": {"female": "base64audio1", "male": "base64audio2"}
+        }
+        tts_response_no_phonemes = TtsResponse(**valid_response_no_phonemes)
+        self.assertIsInstance(tts_response_no_phonemes, TtsResponse)
+        self.assertEqual(tts_response_no_phonemes.sentence, "Hello world")
+        self.assertEqual(tts_response_no_phonemes.translated, False)
+        self.assertIsInstance(tts_response_no_phonemes.phonemes, str)
+        self.assertEqual(tts_response_no_phonemes.genders, ["female", "male"])
+        self.assertEqual(tts_response_no_phonemes.audio["female"], "base64audio1")
+        self.assertEqual(tts_response_no_phonemes.audio["male"], "base64audio2")
+
         # Test valid responses data
         valid_responses_data = {
             "responses": {

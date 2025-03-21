@@ -54,7 +54,8 @@ class GetTtsData(BaseModel):
 class TtsResponse(BaseModel):
     sentence: str
     translated: bool
-    phonemes: str
+    phonemes: str = Field(default="",
+                           description="Phoneme representation of the sentence")
     genders: List[Gender]
     audio: Dict[Gender, str]
 
