@@ -28,8 +28,9 @@ from typing import List, Literal, Optional, Annotated, Union
 from pydantic import Field, TypeAdapter, model_validator
 
 from neon_data_models.models.base import BaseModel
-from neon_data_models.models.base.contexts import KlatContext, MQContext
+from neon_data_models.models.base.contexts import KlatContext, MQContext, TimingContext
 from neon_data_models.models.base.messagebus import BaseMessage, MessageContext
+from neon_data_models.models.user.database import NeonUserConfig
 
 
 class GetTTSData(BaseModel):
@@ -97,7 +98,11 @@ class NeonApiMessage(BaseModel):
         context = MessageContext(source="mq_api",
                                  client=sio_message.get("client", "unknown"),
                                  username=sio_message.get("nick", "guest"),
-                                 klat_data=klat_context, mq=mq_context)
+                                 klat_data=klat_context, mq=mq_context,
+                                 user_profiles=[NeonUserConfig()],
+                                 timing=TimingContext(
+                                     client_sent=sio_message.get("timeCreated"))
+        )
         if requested_service == "stt":
             context.destination = ["speech"]
             return NeonGetSTT(data=GetSTTData(**sio_message), context=context,
