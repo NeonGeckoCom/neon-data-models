@@ -24,16 +24,19 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import List, Literal, Optional, Annotated, Union
+from typing import Annotated, List, Literal, Union
 from pydantic import Field, TypeAdapter, model_validator
 
 from neon_data_models.models.base import BaseModel
-from neon_data_models.models.base.contexts import KlatContext, MQContext, SessionContext, TimingContext
+from neon_data_models.models.base.contexts import KlatContext, MQContext, \
+    SessionContext, TimingContext
 from neon_data_models.models.base.messagebus import BaseMessage, MessageContext
 from neon_data_models.models.user.database import NeonUserConfig
+from neon_data_models.models.api.messagebus import NeonGetTts, NeonGetStt, \
+    NeonGetResponse, NeonSttResponse, NeonTtsResponse
 
 
-class GetTTSData(BaseModel):
+class GetTtsData(BaseModel):
     text: str = Field(description="Text to be spoken")
     lang: str = Field(default="en-us",
                       description="BCP-47 language code for TTS")
@@ -42,11 +45,11 @@ class GetTTSData(BaseModel):
     @classmethod
     def validate_inputs(cls, values):
         if 'text' not in values:
-            values['text'] = values.pop('utterance')
+            values['text'] = values.pop('utterance', None)
         return values
 
 
-class GetSTTData(BaseModel):
+class GetSttData(BaseModel):
     audio_data: str = Field(description="Base64-encoded audio data")
     lang: str = Field(default="en-us",
                       description="BCP-47 language code for STT")
@@ -71,24 +74,36 @@ class GetResponseData(BaseModel):
             values['utterances'] = [values.pop('messageText', '')]
         return values
 
-class NeonGetTTS(BaseMessage, MQContext):
-    msg_type: Literal["neon.get_tts"] = "neon.get_tts"
-    data: GetTTSData
+class NeonMqGetTts(NeonGetTts, MQContext):
+    pass
 
 
-class NeonGetSTT(BaseMessage, MQContext):
-    msg_type: Literal["neon.get_stt"] = "neon.get_stt"
-    data: GetSTTData
+class NeonMqGetStt(NeonGetStt, MQContext):
+    pass
+
+class NeonMqGetResponse(NeonGetResponse, MQContext):
+    pass
 
 
-class NeonGetResponse(BaseMessage, MQContext):
-    # TODO: Should be neon.get_response
-    msg_type: Literal["recognizer_loop:utterance"] = "recognizer_loop:utterance"
-    data: GetResponseData
+class NeonMqSttResponse(NeonSttResponse, MQContext):
+    pass
 
 
-class NeonApiMessage(BaseModel):
-    def from_sio_message(sio_message):
+class NeonMqTtsResponse(NeonTtsResponse, MQContext):
+    pass
+
+
+class NeonApiMessage:
+    ta = TypeAdapter(Annotated[Union[NeonMqGetStt, NeonMqGetTts,
+                                     NeonMqGetResponse, NeonMqSttResponse,
+                                     NeonMqTtsResponse],
+                               Field(discriminator='msg_type')])
+
+    @classmethod
+    def __new__(cls, *args, **kwargs):
+        return cls.ta.validate_python(kwargs)
+
+    def from_sio_message(sio_message: dict):
         requested_service = sio_message.get("requested_skill",
                                          "recognizer").lower()
         if requested_service not in ["stt", "tts", "recognizer"]:
@@ -107,16 +122,25 @@ class NeonApiMessage(BaseModel):
         )
         if requested_service == "stt":
             context.destination = ["speech"]
-            return NeonGetSTT(data=GetSTTData(**sio_message), context=context,
+            return NeonMqGetStt(data=GetSttData(**sio_message), context=context,
                               **mq_context.model_dump())
         elif requested_service == "tts":
             context.destination = ["audio"]
-            return NeonGetTTS(data=GetTTSData(**sio_message), context=context,
+            return NeonMqGetTts(data=GetTtsData(**sio_message), context=context,
                               **mq_context.model_dump())
         elif requested_service == "recognizer":
             context.destination = ["skills"]
-            return NeonGetResponse(data=GetResponseData(**sio_message),
+            return NeonMqGetResponse(data=GetResponseData(**sio_message),
                                    context=context, **mq_context.model_dump())
 
-__all__ = [NeonGetTTS.__name__, NeonGetSTT.__name__, NeonGetResponse.__name__,
-           NeonApiMessage.__name__]
+    @model_validator(mode='before')
+    @classmethod
+    def parse_from_messagebus(cls, values):
+        # Parse the MQ Context from a `Message` input to 
+        if 'message_id' not in values:
+            values = {**values, **values.get('mq', {})}
+
+
+__all__ = [NeonMqGetTts.__name__, NeonMqGetStt.__name__, 
+           NeonMqGetResponse.__name__, NeonMqSttResponse.__name__,
+           NeonMqTtsResponse.__name__, NeonApiMessage.__name__]
