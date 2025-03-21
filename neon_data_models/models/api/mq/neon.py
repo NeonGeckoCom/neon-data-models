@@ -34,6 +34,8 @@ from neon_data_models.models.base.messagebus import BaseMessage, MessageContext
 
 class GetTTSData(BaseModel):
     text: str = Field(description="Text to be spoken")
+    lang: str = Field(default="en-us",
+                      description="BCP-47 language code for TTS")
 
     @model_validator(mode='before')
     @classmethod
@@ -45,6 +47,8 @@ class GetTTSData(BaseModel):
 
 class GetSTTData(BaseModel):
     audio_data: str = Field(description="Base64-encoded audio data")
+    lang: str = Field(default="en-us",
+                      description="BCP-47 language code for STT")
 
     @model_validator(mode='before')
     @classmethod
@@ -56,6 +60,8 @@ class GetSTTData(BaseModel):
 
 class GetResponseData(BaseModel):
     utterances: List[str] = Field(description="List of input utterance(s)")
+    lang: str = Field(default="en-us",
+                      description="BCP-47 language code for input/response")
 
     @model_validator(mode='before')
     @classmethod
@@ -75,7 +81,8 @@ class NeonGetSTT(BaseMessage, MQContext):
 
 
 class NeonGetResponse(BaseMessage, MQContext):
-    msg_type: Literal["neon.get_response"] = "neon.get_response"
+    # TODO: Should be neon.get_response
+    msg_type: Literal["recognizer_loop:utterance"] = "recognizer_loop:utterance"
     data: GetResponseData
 
 
