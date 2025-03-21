@@ -29,7 +29,7 @@ from pydantic import Field, TypeAdapter, model_validator
 
 from neon_data_models.models.base import BaseModel
 from neon_data_models.models.base.contexts import KlatContext, MQContext
-from neon_data_models.models.base.messagebus import MessageContext
+from neon_data_models.models.base.messagebus import BaseMessage, MessageContext
 
 
 class GetTTSData(BaseModel):
@@ -64,19 +64,19 @@ class GetResponseData(BaseModel):
             values['utterances'] = [values.pop('messageText', '')]
         return values
 
-class NeonGetTTS(BaseModel):
+class NeonGetTTS(BaseMessage, MQContext):
+    msg_type: Literal["neon.get_tts"] = "neon.get_tts"
     data: GetTTSData
-    context: MessageContext
 
 
-class NeonGetSTT(BaseModel):
+class NeonGetSTT(BaseMessage, MQContext):
+    msg_type: Literal["neon.get_stt"] = "neon.get_stt"
     data: GetSTTData
-    context: MessageContext
 
 
-class NeonGetResponse(BaseModel):
+class NeonGetResponse(BaseMessage, MQContext):
+    msg_type: Literal["neon.get_response"] = "neon.get_response"
     data: GetResponseData
-    context: MessageContext
 
 
 class NeonApiMessage(BaseModel):
@@ -93,14 +93,16 @@ class NeonApiMessage(BaseModel):
                                  klat_data=klat_context, mq=mq_context)
         if requested_service == "stt":
             context.destination = ["speech"]
-            return NeonGetSTT(data=GetSTTData(**sio_message), context=context)
+            return NeonGetSTT(data=GetSTTData(**sio_message), context=context,
+                              **mq_context)
         elif requested_service == "tts":
             context.destination = ["audio"]
-            return NeonGetTTS(data=GetTTSData(**sio_message), context=context)
+            return NeonGetTTS(data=GetTTSData(**sio_message), context=context,
+                              **mq_context)
         elif requested_service == "recognizer":
             context.destination = ["skills"]
             return NeonGetResponse(data=GetResponseData(**sio_message),
-                                   context=context)
+                                   context=context, **mq_context)
 
 __all__ = [NeonGetTTS.__name__, NeonGetSTT.__name__, NeonGetResponse.__name__,
            NeonApiMessage.__name__]
