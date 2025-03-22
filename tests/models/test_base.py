@@ -259,3 +259,24 @@ class TestMessagebus(TestCase):
 
         # Round-trip serialization results in the same object
         self.assertEqual(extra_context, MessageContext(**serialized))
+    
+        # Test destination validation
+        # Test default initialization
+        default_context = MessageContext()
+        self.assertEqual(default_context.destination, ["skills"])
+        
+        # Test string input gets converted to list
+        string_context = MessageContext(destination="test")
+        self.assertEqual(string_context.destination, ["test"])
+        
+        # Test list input remains a list
+        list_context = MessageContext(destination=["test1", "test2"])
+        self.assertEqual(list_context.destination, ["test1", "test2"])
+        
+        # Test serialization/deserialization
+        serialized = string_context.model_dump()
+        self.assertEqual(serialized["destination"], ["test"])
+        
+        # Test round-trip
+        deserialized = MessageContext(**serialized)
+        self.assertEqual(deserialized.destination, ["test"])

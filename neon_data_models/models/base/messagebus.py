@@ -25,7 +25,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from typing import Optional, List, Union
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 
 from neon_data_models.models.base import BaseModel
 from neon_data_models.models.base.contexts import (SessionContext, KlatContext,
@@ -56,8 +56,17 @@ class MessageContext(BaseModel):
     client_name: str = "unknown"
     client: str = "unknown"
     source: Union[str, List[str]] = "unknown"
-    destination: List[str] = ["skills"]
+    destination: Union[str, List[str]] = Field(
+        default=["skills"],
+        description="List of destination modules expected to handle the message"
+        )
     neon_should_respond: bool = True
+    
+    @field_validator('destination')
+    def validate_destination(cls, v):
+        if isinstance(v, str):
+            return [v]
+        return v
 
 
 class BaseMessage(BaseModel):
