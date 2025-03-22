@@ -99,6 +99,12 @@ class GetResponseData(BaseModel):
         return values
 
 
+class NeonLanguagesData(BaseModel):
+    stt: List[str] = Field(description="List of supported STT languages")
+    tts: List[str] = Field(description="List of supported TTS languages")
+    skills: List[str] = Field(description="List of supported skill languages")
+
+
 # Message models
 class NeonGetTts(BaseMessage):
     msg_type: Literal["neon.get_tts"] = "neon.get_tts"
@@ -130,6 +136,17 @@ class NeonTtsResponse(BaseMessage):
                       "klat.response"] = "neon.get_tts.response"
     data: TtsReponseData
 
+
+class NeonGetLanguages(BaseMessage):
+    msg_type: Literal["neon.languages.get"] = "neon.languages.get"
+    
+
+class NeonLanguagesResponse(BaseMessage):
+    msg_type: Literal["neon.languages.get.response"] = "neon.languages.get.response"
+    data: NeonLanguagesData
+
+
 __all__ = [NeonGetTts.__name__, NeonGetStt.__name__, NeonTextInput.__name__,
            NeonAudioInput.__name__, NeonSttResponse.__name__,
-           NeonTtsResponse.__name__]
+           NeonTtsResponse.__name__, NeonGetLanguages.__name__,
+           NeonLanguagesResponse.__name__]

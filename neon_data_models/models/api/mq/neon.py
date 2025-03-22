@@ -32,8 +32,8 @@ from neon_data_models.models.base.contexts import KlatContext, MQContext, \
     SessionContext, TimingContext
 from neon_data_models.models.base.messagebus import BaseMessage, MessageContext
 from neon_data_models.models.user.database import NeonUserConfig
-from neon_data_models.models.api.messagebus import NeonGetTts, NeonGetStt, \
-    NeonAudioInput, NeonTextInput, NeonSttResponse, NeonTtsResponse
+from neon_data_models.models.api.messagebus import NeonGetLanguages, NeonGetTts, NeonGetStt, \
+    NeonAudioInput, NeonLanguagesResponse, NeonTextInput, NeonSttResponse, NeonTtsResponse
 
 
 class GetTtsData(BaseModel):
@@ -97,10 +97,19 @@ class NeonMqTtsResponse(NeonTtsResponse, MQContext):
     pass
 
 
+class NeonMqGetLanguages(NeonGetLanguages, MQContext):
+    pass
+
+
+class NeonMqLanguagesResponse(NeonLanguagesResponse, MQContext):
+    pass
+
+
 class NeonApiMessage:
     ta = TypeAdapter(Annotated[Union[NeonMqGetStt, NeonMqGetTts,
                                      NeonMqTextInput, NeonMqSttResponse,
-                                     NeonMqTtsResponse],
+                                     NeonMqTtsResponse, NeonMqGetLanguages,
+                                     NeonMqLanguagesResponse],
                                Field(discriminator='msg_type')])
 
     @classmethod
@@ -147,4 +156,5 @@ class NeonApiMessage:
 
 __all__ = [NeonMqGetTts.__name__, NeonMqGetStt.__name__, 
            NeonMqTextInput.__name__, NeonMqSttResponse.__name__,
-           NeonMqTtsResponse.__name__, NeonApiMessage.__name__]
+           NeonMqTtsResponse.__name__, NeonMqGetLanguages.__name__,
+           NeonMqLanguagesResponse.__name__, NeonApiMessage.__name__]

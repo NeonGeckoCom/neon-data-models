@@ -289,3 +289,65 @@ class TestMessagebusModels(TestCase):
         # Test missing required fields
         with self.assertRaises(ValidationError):
             NeonAudioInput(message_id=message_id, context={})  # Missing data
+
+    def test_neon_languages_data(self):
+        from neon_data_models.models.api.messagebus import NeonLanguagesData
+
+        # Test valid data
+        valid_data = {
+            "stt": ["en-us", "es-es", "fr-fr"],
+            "tts": ["en-us", "es-es"],
+            "skills": ["en-us"]
+        }
+        languages_data = NeonLanguagesData(**valid_data)
+        self.assertIsInstance(languages_data, NeonLanguagesData)
+        self.assertEqual(languages_data.stt, ["en-us", "es-es", "fr-fr"])
+        self.assertEqual(languages_data.tts, ["en-us", "es-es"])
+        self.assertEqual(languages_data.skills, ["en-us"])
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            NeonLanguagesData(stt=["en-us"], tts=["en-us"])  # Missing skills
+
+        with self.assertRaises(ValidationError):
+            NeonLanguagesData(stt=["en-us"], skills=["en-us"])  # Missing tts
+
+        with self.assertRaises(ValidationError):
+            NeonLanguagesData(tts=["en-us"], skills=["en-us"])  # Missing stt
+
+    def test_neon_get_languages(self):
+        from neon_data_models.models.api.messagebus import NeonGetLanguages
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid message
+        valid_message = NeonGetLanguages(data={}, context={})
+        self.assertIsInstance(valid_message, NeonGetLanguages)
+        self.assertIsInstance(valid_message, BaseMessage)
+        self.assertEqual(valid_message.msg_type, "neon.languages.get")
+
+        # Test with invalid msg_type
+        with self.assertRaises(ValidationError):
+            message_with_id = NeonGetLanguages(msg_type="test_mid",
+                                               data={}, context={})
+
+    def test_neon_languages_response(self):
+        from neon_data_models.models.api.messagebus import NeonLanguagesResponse, NeonLanguagesData
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid message
+        languages_data = NeonLanguagesData(
+            stt=["en-us", "es-es"],
+            tts=["en-us", "fr-fr"],
+            skills=["en-us"]
+        )
+        valid_message = NeonLanguagesResponse(data=languages_data, context={})
+        self.assertIsInstance(valid_message, NeonLanguagesResponse)
+        self.assertIsInstance(valid_message, BaseMessage)
+        self.assertEqual(valid_message.msg_type, "neon.languages.get.response")
+        self.assertEqual(valid_message.data.stt, ["en-us", "es-es"])
+        self.assertEqual(valid_message.data.tts, ["en-us", "fr-fr"])
+        self.assertEqual(valid_message.data.skills, ["en-us"])
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            NeonLanguagesResponse(context={})  # Missing data
