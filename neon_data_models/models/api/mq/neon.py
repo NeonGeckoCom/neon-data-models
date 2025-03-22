@@ -128,9 +128,7 @@ class NeonApiMessage:
         try:
             return cls.ta.validate_python(kwargs)
         except Exception as e:
-            # If validation fails, use the default message type
-            msg_type = kwargs.get('msg_type', 'unknown')
-            print(f"Using default message handler for unsupported type: {msg_type}")
+            # If validation fails, use the default message object
             return NeonMqUnknownMessage(**kwargs)
 
     @staticmethod
