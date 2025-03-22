@@ -69,6 +69,38 @@ class TestMessagebusModels(TestCase):
         self.assertEqual(tts_response.genders, ["female", "male"])
         self.assertEqual(tts_response.audio["female"], "base64audio1")
         self.assertEqual(tts_response.audio["male"], "base64audio2")
+        
+        # Test default values for male and female fields
+        self.assertIsNone(tts_response.male)
+        self.assertIsNone(tts_response.female)
+
+        # Test with explicit male and female fields
+        valid_response_with_gender_paths = {
+            "sentence": "Hello world",
+            "translated": False,
+            "genders": ["female", "male"],
+            "audio": {"female": "base64audio1", "male": "base64audio2"},
+            "male": "/path/to/male.wav",
+            "female": "/path/to/female.wav"
+        }
+        tts_response_with_gender_paths = TtsResponse(**valid_response_with_gender_paths)
+        self.assertEqual(tts_response_with_gender_paths.male, "/path/to/male.wav")
+        self.assertEqual(tts_response_with_gender_paths.female, "/path/to/female.wav")
+        
+        # Test with different content in audio dict vs direct fields
+        mixed_response = {
+            "sentence": "Hello world",
+            "translated": False,
+            "genders": ["female", "male"],
+            "audio": {"female": "base64audio1", "male": "base64audio2"},
+            "male": "/path/to/different_male.wav",
+            "female": "/path/to/different_female.wav"
+        }
+        mixed_tts_response = TtsResponse(**mixed_response)
+        self.assertEqual(mixed_tts_response.audio["male"], "base64audio2")
+        self.assertEqual(mixed_tts_response.male, "/path/to/different_male.wav")
+        self.assertEqual(mixed_tts_response.audio["female"], "base64audio1")
+        self.assertEqual(mixed_tts_response.female, "/path/to/different_female.wav")
 
         # Test valid response data without phonemes
         valid_response_no_phonemes = {

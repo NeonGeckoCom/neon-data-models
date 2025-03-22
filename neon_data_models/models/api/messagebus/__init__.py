@@ -57,6 +57,10 @@ class TtsResponse(BaseModel):
     phonemes: Optional[str] = Field(
         default=None, description="Phoneme representation of the sentence")
     genders: List[Gender]
+    male: Optional[str] = Field(default=None,
+                                 description="Path to audio file in male voice")
+    female: Optional[str] = Field(
+        default=None, description="Path to audio file in female voice")
     audio: Dict[Gender, str]
 
 
