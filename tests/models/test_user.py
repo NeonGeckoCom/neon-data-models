@@ -45,6 +45,9 @@ class TestDatabase(TestCase):
                   "preferred_name": "tester",
                   "dob": "2001-01-01",
                   "email": "developers@neon.ai",
+                  "avatar_url": "https://example.com/avatar.jpg",
+                  "about": "Test user biography",
+                  "phone": "555-123-4567",
                   "extra_key": "This should be removed by validation"
                   },
             language={"input": ["en-us", "uk-ua"],
@@ -67,6 +70,17 @@ class TestDatabase(TestCase):
             extras_keys = getattr(valid_with_extras, section).model_dump().keys()
             self.assertEqual(default_keys, extras_keys)
 
+        # Testing user fields specifically
+        self.assertEqual(valid_with_extras.user.first_name, "Daniel")
+        self.assertEqual(valid_with_extras.user.middle_name, "James")
+        self.assertEqual(valid_with_extras.user.last_name, "McKnight")
+        self.assertEqual(valid_with_extras.user.preferred_name, "tester")
+        self.assertEqual(valid_with_extras.user.email, "developers@neon.ai")
+        self.assertEqual(valid_with_extras.user.avatar_url, "https://example.com/avatar.jpg")
+        self.assertEqual(valid_with_extras.user.about, "Test user biography")
+        self.assertEqual(valid_with_extras.user.phone, "555-123-4567")
+        self.assertEqual(valid_with_extras.user.dob, date(2001, 1, 1))
+
         # Validation errors
         with self.assertRaises(ValidationError):
             NeonUserConfig(units={"time": 13})
@@ -83,6 +97,52 @@ class TestDatabase(TestCase):
 
         config = NeonUserConfig(user={"dob": "2001-01-01"})
         self.assertIsInstance(config.user.dob, date)
+
+    def test_user_config(self):
+        """Test the _UserConfig class specifically."""
+        from neon_data_models.models.user.database import _UserConfig
+        
+        # Test default values
+        default_config = _UserConfig()
+        self.assertEqual(default_config.first_name, "")
+        self.assertEqual(default_config.middle_name, "")
+        self.assertEqual(default_config.last_name, "")
+        self.assertEqual(default_config.preferred_name, "")
+        self.assertEqual(default_config.email, "")
+        self.assertEqual(default_config.avatar_url, "")
+        self.assertEqual(default_config.about, "")
+        self.assertEqual(default_config.phone, "")
+        self.assertIsNone(default_config.dob)
+        
+        # Test setting values
+        user_config = _UserConfig(
+            first_name="John",
+            middle_name="Doe",
+            last_name="Smith",
+            preferred_name="Johnny",
+            email="john.smith@example.com",
+            avatar_url="https://example.com/avatar.jpg",
+            about="Test biography",
+            phone="555-987-6543",
+            dob=date(1990, 1, 1)
+        )
+        self.assertEqual(user_config.first_name, "John")
+        self.assertEqual(user_config.middle_name, "Doe")
+        self.assertEqual(user_config.last_name, "Smith")
+        self.assertEqual(user_config.preferred_name, "Johnny")
+        self.assertEqual(user_config.email, "john.smith@example.com")
+        self.assertEqual(user_config.avatar_url, "https://example.com/avatar.jpg")
+        self.assertEqual(user_config.about, "Test biography")
+        self.assertEqual(user_config.phone, "555-987-6543")
+        self.assertEqual(user_config.dob, date(1990, 1, 1))
+        
+        # Test dob validator
+        legacy_config = _UserConfig(dob="YYYY/MM/DD")
+        self.assertIsNone(legacy_config.dob)
+        
+        # Test valid date string
+        valid_date_config = _UserConfig(dob="2000-12-31")
+        self.assertEqual(valid_date_config.dob, date(2000, 12, 31))
 
     def test_user(self):
         from neon_data_models.enum import AccessRoles

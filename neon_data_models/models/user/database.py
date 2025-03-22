@@ -31,7 +31,7 @@ from uuid import uuid4
 
 # from neon_data_models.models.api import HanaToken
 from neon_data_models.models.base import BaseModel
-from pydantic import Field
+from pydantic import Field, field_validator
 from datetime import date
 
 from neon_data_models.enum import AccessRoles
@@ -49,6 +49,14 @@ class _UserConfig(BaseModel):
                                         "(i.e. `https://example.com/avatar.jpg")
     about: str = ""
     phone: str = ""
+    
+    @field_validator('dob', mode='before')
+    @classmethod
+    def validate_dob(cls, v):
+        if v == "YYYY/MM/DD":
+            # Legacy default value for dob should be treated as `None`
+            return None
+        return v
 
 
 class _LanguageConfig(BaseModel):
@@ -197,7 +205,7 @@ class User(BaseModel):
     klat: KlatConfig = KlatConfig()
     llm: BrainForgeConfig = BrainForgeConfig()
     permissions: PermissionsConfig = PermissionsConfig()
-    tokens: Optional[List['HanaToken']] = []
+    tokens: Optional[List['HanaToken']] = [] # type: ignore
 
     def __eq__(self, other):
         return self.model_dump() == other.model_dump()
