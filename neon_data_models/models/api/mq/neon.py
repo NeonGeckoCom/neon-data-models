@@ -105,6 +105,10 @@ class NeonMqLanguagesResponse(NeonLanguagesResponse, MQContext):
     pass
 
 
+class NeonMqUnknownMessage(BaseMessage, MQContext):
+    """Default message class for handling unknown message types"""
+
+
 class NeonApiMessage:
     ta = TypeAdapter(Annotated[Union[NeonMqGetStt, NeonMqGetTts,
                                      NeonMqTextInput, NeonMqSttResponse,
@@ -120,7 +124,14 @@ class NeonApiMessage:
             mq_data = kwargs.get('context', {}).get('mq', {})
             # Update values with MQ context data
             kwargs.update(mq_data)
-        return cls.ta.validate_python(kwargs)
+        
+        try:
+            return cls.ta.validate_python(kwargs)
+        except Exception as e:
+            # If validation fails, use the default message type
+            msg_type = kwargs.get('msg_type', 'unknown')
+            print(f"Using default message handler for unsupported type: {msg_type}")
+            return NeonMqUnknownMessage(**kwargs)
 
     @staticmethod
     def from_sio_message(sio_message: dict) -> BaseMessage:
@@ -157,4 +168,5 @@ class NeonApiMessage:
 __all__ = [NeonMqGetTts.__name__, NeonMqGetStt.__name__, 
            NeonMqTextInput.__name__, NeonMqSttResponse.__name__,
            NeonMqTtsResponse.__name__, NeonMqGetLanguages.__name__,
-           NeonMqLanguagesResponse.__name__, NeonApiMessage.__name__]
+           NeonMqLanguagesResponse.__name__, NeonApiMessage.__name__,
+           NeonMqUnknownMessage.__name__]

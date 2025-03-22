@@ -703,3 +703,94 @@ class TestNeonMQ(TestCase):
         self.assertEqual(languages_response.data.tts, ["en-us", "fr-fr"])
         self.assertEqual(languages_response.data.skills, ["en-us"])
 
+    def test_neon_mq_unknown_message(self):
+        from neon_data_models.models.api.mq.neon import NeonMqUnknownMessage
+        from neon_data_models.models.base.messagebus import BaseMessage
+        from neon_data_models.models.base.contexts import MQContext
+
+        # Test valid initialization
+        unknown_message = NeonMqUnknownMessage(
+            msg_type="unknown.type",
+            message_id="test_mid",
+            data={},
+            context={}
+        )
+        
+        # Test inheritance
+        self.assertIsInstance(unknown_message, NeonMqUnknownMessage)
+        self.assertIsInstance(unknown_message, BaseMessage)
+        self.assertIsInstance(unknown_message, MQContext)
+        
+        # Test properties
+        self.assertEqual(unknown_message.msg_type, "unknown.type")
+        self.assertEqual(unknown_message.message_id, "test_mid")
+        
+        # Test with missing required fields
+        with self.assertRaises(ValidationError):
+            NeonMqUnknownMessage()
+
+    def test_neon_api_message_fallback(self):
+        from neon_data_models.models.api.mq.neon import NeonApiMessage, NeonMqUnknownMessage
+        
+        # Test with unknown message type
+        unknown_message_data = {
+            "msg_type": "unknown.message.type",
+            "message_id": "test_mid",
+            "data": {"some_field": "some_value"},
+            "context": {}
+        }
+        
+        message = NeonApiMessage(**unknown_message_data)
+        
+        # Verify fallback to NeonMqUnknownMessage
+        self.assertIsInstance(message, NeonMqUnknownMessage)
+        self.assertEqual(message.msg_type, "unknown.message.type")
+        self.assertEqual(message.message_id, "test_mid")
+        
+        # Test with the specific problematic message type from the error
+        ovos_stt_message = {
+            "msg_type": "ovos.languages.stt.response",
+            "message_id": "test_mid",
+            "data": {"languages": ["en-us", "es-es"]},
+            "context": {}
+        }
+        
+        message = NeonApiMessage(**ovos_stt_message)
+        
+        # Verify it doesn't raise an exception and preserves the data
+        self.assertIsInstance(message, NeonMqUnknownMessage)
+        self.assertEqual(message.msg_type, "ovos.languages.stt.response")
+        self.assertEqual(message.message_id, "test_mid")
+        self.assertEqual(message.data, {"languages": ["en-us", "es-es"]})
+
+    def test_neon_api_message_with_nested_data(self):
+        from neon_data_models.models.api.mq.neon import NeonApiMessage, NeonMqUnknownMessage
+        
+        # Test with deeply nested data
+        complex_message = {
+            "msg_type": "complex.unknown.type",
+            "message_id": "test_mid",
+            "data": {
+                "nested": {
+                    "deeply": {
+                        "value": "test"
+                    }
+                },
+                "list_data": [1, 2, 3, {"key": "value"}]
+            },
+            "context": {
+                "client": "test_client",
+                "user": "test_user"
+            }
+        }
+        
+        message = NeonApiMessage(**complex_message)
+        
+        # Verify complex data is preserved
+        self.assertIsInstance(message, NeonMqUnknownMessage)
+        self.assertEqual(message.msg_type, "complex.unknown.type")
+        self.assertEqual(message.message_id, "test_mid")
+        self.assertEqual(message.data["nested"]["deeply"]["value"], "test")
+        self.assertEqual(message.data["list_data"][3]["key"], "value")
+        self.assertEqual(message.context.client, "test_client")
+
