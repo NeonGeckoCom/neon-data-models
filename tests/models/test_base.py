@@ -26,7 +26,7 @@
 
 import importlib
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest import TestCase
 from time import time
 from pydantic import ValidationError
@@ -128,7 +128,7 @@ class TestContexts(TestCase):
         self.assertEqual(timing, TimingContext(**serialized))
 
         # Create a TimingContext with sample data
-        now = datetime.now()
+        now = datetime.now(tz=timezone.utc)
         one_second = timedelta(seconds=1)
         
         context = TimingContext(

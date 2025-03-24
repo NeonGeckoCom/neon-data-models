@@ -24,7 +24,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Literal, List, Optional, Any, Tuple
 
 from pydantic import Field, model_validator
@@ -88,42 +88,34 @@ class TimingContext(BaseModel):
     transform_audio: Optional[timedelta] = None
     transform_utterance: Optional[timedelta] = None
     wait_in_queue: Optional[timedelta] = None
-    
+
     @model_validator(mode='before')
     @classmethod
-    def convert_timestamps(cls, data):
-        if not isinstance(data, dict):
-            return data
-        
+    def validate_datetime_fields(cls, values):
+        """
+        Validate datetime fields to parse epoch timestamps into datetime objects.
+        Dynamically identifies fields with datetime type annotations.
+        """
+        # Find all fields that have datetime type annotation
         datetime_fields = [
-            'audio_begin', 'audio_end', 'client_sent', 'gradio_sent',
-            'handle_utterance', 'response_sent', 'speech_start'
-        ]
-        
-        timedelta_fields = [
-            'get_stt', 'get_tts', 'iris_input_handling', 'mq_response_handler',
-            'mq_from_core', 'mq_from_client', 'mq_input_handler', 'client_to_core',
-            'client_from_core', 'save_transcript', 'transform_audio',
-            'transform_utterance', 'wait_in_queue'
+            field_name for field_name, field_info in cls.model_fields.items()
+            if field_info.annotation == datetime or (
+                hasattr(field_info.annotation, "__origin__") and 
+                field_info.annotation.__origin__ is Optional and 
+                datetime in field_info.annotation.__args__
+            )
         ]
         
         for field in datetime_fields:
-            if field in data and data[field] is not None and not isinstance(data[field], datetime):
-                try:
-                    data[field] = datetime.fromtimestamp(float(data[field]))
-                except (ValueError, TypeError):
-                    # Leave it as is if conversion fails, let pydantic handle validation
-                    pass
+            if field in values and values[field] is not None:
+                if isinstance(values[field], (int, float)):
+                    # Convert epoch timestamp to datetime with UTC timezone
+                    values[field] = datetime.fromtimestamp(values[field], tz=timezone.utc)
+                elif not isinstance(values[field], datetime):
+                    # If it's neither a timestamp nor a datetime, raise an error
+                    raise ValueError(f"Field '{field}' must be a timestamp or datetime object")
         
-        for field in timedelta_fields:
-            if field in data and data[field] is not None and not isinstance(data[field], timedelta):
-                try:
-                    data[field] = timedelta(seconds=float(data[field]))
-                except (ValueError, TypeError):
-                    # Leave it as is if conversion fails, let pydantic handle validation
-                    pass
-        
-        return data
+        return values
 
 
 class KlatContext(BaseModel):
