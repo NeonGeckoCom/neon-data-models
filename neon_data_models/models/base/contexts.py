@@ -127,8 +127,8 @@ class TimingContext(BaseModel):
 
 
 class KlatContext(BaseModel):
-    sid: str
-    cid: str
+    sid: str = ""
+    cid: str = ""
     title: Optional[str] = ""
 
     @model_validator(mode='before')
