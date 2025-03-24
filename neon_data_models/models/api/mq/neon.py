@@ -130,6 +130,10 @@ class NeonMqUnknownMessage(BaseMessage, MQContext):
 
 
 class NeonApiMessage:
+    """
+    Type adapter for validating an arbitrary MQ message. This will always return
+    an instance that extends `BaseMessage` and `MQContext`.
+    """
     ta = TypeAdapter(Annotated[Union[NeonMqGetStt, NeonMqGetTts,
                                      NeonMqTextInput, NeonMqSttResponse,
                                      NeonMqTtsResponse, NeonMqGetLanguages,
@@ -153,6 +157,9 @@ class NeonApiMessage:
 
     @staticmethod
     def from_sio_message(sio_message: dict) -> BaseMessage:
+        """
+        Parse a Klat SocketIO message into a valid MQ API message
+        """
         requested_service = sio_message.get("requested_skill",
                                          "recognizer").lower()
         if requested_service not in ["stt", "tts", "recognizer"]:
