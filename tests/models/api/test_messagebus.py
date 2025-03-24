@@ -218,7 +218,7 @@ class TestMessagebusModels(TestCase):
         message_empty_dest = NeonGetTts(data=data, context=empty_dest_context)
         self.assertIn("audio", message_empty_dest.context.destination)
         
-        other_dest_context = {"destination": ["skills"]}
+        other_dest_context = {"destination": ["skills", "audio"]}
         message_other_dest = NeonGetTts(data=data, context=other_dest_context)
         self.assertIn("audio", message_other_dest.context.destination)
         self.assertIn("skills", message_other_dest.context.destination)
@@ -249,7 +249,7 @@ class TestMessagebusModels(TestCase):
         message_empty_dest = NeonGetStt(data=data, context=empty_dest_context)
         self.assertIn("audio", message_empty_dest.context.destination)
         
-        other_dest_context = {"destination": ["skills"]}
+        other_dest_context = {"destination": ["skills", "audio"]}
         message_other_dest = NeonGetStt(data=data, context=other_dest_context)
         self.assertIn("audio", message_other_dest.context.destination)
         self.assertIn("skills", message_other_dest.context.destination)
@@ -360,7 +360,7 @@ class TestMessagebusModels(TestCase):
         message_empty_dest = NeonAudioInput(data=data, context=empty_dest_context)
         self.assertIn("audio", message_empty_dest.context.destination)
         
-        other_dest_context = {"destination": ["skills"]}
+        other_dest_context = {"destination": ["skills", "audio"]}
         message_other_dest = NeonAudioInput(data=data, context=other_dest_context)
         self.assertIn("audio", message_other_dest.context.destination)
         self.assertIn("skills", message_other_dest.context.destination)

@@ -165,7 +165,7 @@ class NeonGetTts(BaseMessage):
     @model_validator(mode='after')
     def ensure_audio_destination(self):
         if "audio" not in self.context.destination:
-            self.context.destination.append("audio")
+            self.context.destination = ["audio"]
         return self
 
 
@@ -176,7 +176,8 @@ class NeonGetStt(BaseMessage):
     @model_validator(mode='after')
     def ensure_audio_destination(self):
         if "audio" not in self.context.destination:
-            self.context.destination.append("audio")
+            # Default context is not valid for this request, so override it
+            self.context.destination = ["audio"]
         return self
 
 
@@ -198,7 +199,8 @@ class NeonAudioInput(BaseMessage):
     @model_validator(mode='after')
     def ensure_audio_destination(self):
         if "audio" not in self.context.destination:
-            self.context.destination.append("audio")
+            # Default context is not valid for this request, so override it
+            self.context.destination = ["audio"]
         return self
 
 
