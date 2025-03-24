@@ -212,6 +212,20 @@ class TestMessagebusModels(TestCase):
         self.assertIsInstance(valid_message, BaseMessage)
         self.assertEqual(valid_message.data.text, "Hello world")
         self.assertEqual(valid_message.msg_type, "neon.get_tts")
+        
+        # Test ensure_audio_destination validator
+        empty_dest_context = {"destination": []}
+        message_empty_dest = NeonGetTts(data=data, context=empty_dest_context)
+        self.assertIn("audio", message_empty_dest.context.destination)
+        
+        other_dest_context = {"destination": ["skills"]}
+        message_other_dest = NeonGetTts(data=data, context=other_dest_context)
+        self.assertIn("audio", message_other_dest.context.destination)
+        self.assertIn("skills", message_other_dest.context.destination)
+        
+        audio_dest_context = {"destination": ["audio"]}
+        message_audio_dest = NeonGetTts(data=data, context=audio_dest_context)
+        self.assertEqual(message_audio_dest.context.destination, ["audio"])
 
         # Test missing required fields
         with self.assertRaises(ValidationError):
@@ -229,6 +243,20 @@ class TestMessagebusModels(TestCase):
         self.assertIsInstance(valid_message, BaseMessage)
         self.assertEqual(valid_message.data.audio_data, "base64encodedstring")
         self.assertEqual(valid_message.msg_type, "neon.get_stt")
+        
+        # Test ensure_audio_destination validator
+        empty_dest_context = {"destination": []}
+        message_empty_dest = NeonGetStt(data=data, context=empty_dest_context)
+        self.assertIn("audio", message_empty_dest.context.destination)
+        
+        other_dest_context = {"destination": ["skills"]}
+        message_other_dest = NeonGetStt(data=data, context=other_dest_context)
+        self.assertIn("audio", message_other_dest.context.destination)
+        self.assertIn("skills", message_other_dest.context.destination)
+        
+        audio_dest_context = {"destination": ["audio"]}
+        message_audio_dest = NeonGetStt(data=data, context=audio_dest_context)
+        self.assertEqual(message_audio_dest.context.destination, ["audio"])
 
         # Test missing required fields
         with self.assertRaises(ValidationError):
@@ -246,6 +274,20 @@ class TestMessagebusModels(TestCase):
         self.assertIsInstance(valid_message, BaseMessage)
         self.assertEqual(valid_message.data.utterances, ["How are you?"])
         self.assertEqual(valid_message.msg_type, "recognizer_loop:utterance")
+        
+        # Test ensure_skills_destination validator
+        empty_dest_context = {"destination": []}
+        message_empty_dest = NeonTextInput(data=data, context=empty_dest_context)
+        self.assertIn("skills", message_empty_dest.context.destination)
+        
+        other_dest_context = {"destination": ["audio"]}
+        message_other_dest = NeonTextInput(data=data, context=other_dest_context)
+        self.assertIn("skills", message_other_dest.context.destination)
+        self.assertIn("audio", message_other_dest.context.destination)
+        
+        skills_dest_context = {"destination": ["skills"]}
+        message_skills_dest = NeonTextInput(data=data, context=skills_dest_context)
+        self.assertEqual(message_skills_dest.context.destination, ["skills"])
 
         # Test missing required fields
         with self.assertRaises(ValidationError):
@@ -312,6 +354,20 @@ class TestMessagebusModels(TestCase):
         self.assertEqual(valid_message.data.audio_data, "base64encodedstring")
         self.assertEqual(valid_message.data.lang, "en-us")  # Default value
         self.assertEqual(valid_message.msg_type, "neon.audio_input")
+        
+        # Test ensure_audio_destination validator
+        empty_dest_context = {"destination": []}
+        message_empty_dest = NeonAudioInput(data=data, context=empty_dest_context)
+        self.assertIn("audio", message_empty_dest.context.destination)
+        
+        other_dest_context = {"destination": ["skills"]}
+        message_other_dest = NeonAudioInput(data=data, context=other_dest_context)
+        self.assertIn("audio", message_other_dest.context.destination)
+        self.assertIn("skills", message_other_dest.context.destination)
+        
+        audio_dest_context = {"destination": ["audio"]}
+        message_audio_dest = NeonAudioInput(data=data, context=audio_dest_context)
+        self.assertEqual(message_audio_dest.context.destination, ["audio"])
 
         # Test with message_body instead of audio_data (backward compatibility)
         compat_data = GetSttData(message_body="different_base64string")

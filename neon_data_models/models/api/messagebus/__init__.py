@@ -162,20 +162,44 @@ class NeonGetTts(BaseMessage):
     msg_type: Literal["neon.get_tts"] = "neon.get_tts"
     data: GetTtsData
 
+    @model_validator(mode='after')
+    def ensure_audio_destination(self):
+        if "audio" not in self.context.destination:
+            self.context.destination.append("audio")
+        return self
+
 
 class NeonGetStt(BaseMessage):
     msg_type: Literal["neon.get_stt"] = "neon.get_stt"
     data: GetSttData
+
+    @model_validator(mode='after')
+    def ensure_audio_destination(self):
+        if "audio" not in self.context.destination:
+            self.context.destination.append("audio")
+        return self
 
 
 class NeonTextInput(BaseMessage):
     msg_type: Literal["recognizer_loop:utterance"] = "recognizer_loop:utterance"
     data: GetResponseData
 
+    @model_validator(mode='after')
+    def ensure_skills_destination(self):
+        if "skills" not in self.context.destination:
+            self.context.destination.append("skills")
+        return self
+
 
 class NeonAudioInput(BaseMessage):
     msg_type: Literal["neon.audio_input"] = "neon.audio_input"
     data: GetSttData
+
+    @model_validator(mode='after')
+    def ensure_audio_destination(self):
+        if "audio" not in self.context.destination:
+            self.context.destination.append("audio")
+        return self
 
 
 class NeonSttResponse(BaseMessage):
