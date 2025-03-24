@@ -383,3 +383,281 @@ class TestMessagebusModels(TestCase):
         # Test missing required fields
         with self.assertRaises(ValidationError):
             NeonLanguagesResponse(context={})  # Missing data
+
+    def test_tts_speaker(self):
+        from neon_data_models.models.api.messagebus import TtsSpeaker
+        
+        # Test valid data
+        valid_data = {"name": "Neon", "language": "en-us", "gender": "female", "voice": "cmu-slt"}
+        speaker = TtsSpeaker(**valid_data)
+        self.assertIsInstance(speaker, TtsSpeaker)
+        self.assertEqual(speaker.name, "Neon")
+        self.assertEqual(speaker.language, "en-us")
+        self.assertEqual(speaker.gender, "female")
+        self.assertEqual(speaker.voice, "cmu-slt")
+        
+        # Test default values
+        minimal_data = {"name": "Test"}
+        speaker = TtsSpeaker(**minimal_data)
+        self.assertEqual(speaker.language, "en-us")
+        self.assertEqual(speaker.gender, "female")
+        self.assertIsNone(speaker.voice)
+        
+        # Test deprecated speaker field
+        deprecated_data = {"speaker": "Deprecated"}
+        speaker = TtsSpeaker(**deprecated_data)
+        self.assertEqual(speaker.name, "Deprecated")
+        self.assertEqual(speaker.speaker, "Deprecated")
+        
+        # Test mixed name and speaker fields (name should take precedence)
+        mixed_data = {"name": "Primary", "speaker": "Secondary"}
+        speaker = TtsSpeaker(**mixed_data)
+        self.assertEqual(speaker.name, "Primary")
+        self.assertEqual(speaker.speaker, "Secondary")
+        
+        # Test invalid gender
+        with self.assertRaises(ValidationError):
+            TtsSpeaker(name="Test", gender="invalid_gender")
+    
+    def test_get_tts_data_validation_edge_cases(self):
+        from neon_data_models.models.api.messagebus import GetTtsData
+        
+        # Test empty text
+        empty_text = {"text": ""}
+        tts_data = GetTtsData(**empty_text)
+        self.assertEqual(tts_data.text, "")
+        
+        # Test with both text and utterance (text should take precedence)
+        dual_fields = {"text": "Primary text", "utterance": "Secondary text"}
+        tts_data = GetTtsData(**dual_fields)
+        self.assertEqual(tts_data.text, "Primary text")
+        
+        # Test with custom language
+        custom_lang = {"text": "Hello", "lang": "fr-fr"}
+        tts_data = GetTtsData(**custom_lang)
+        self.assertEqual(tts_data.lang, "fr-fr")
+        
+        # Test with invalid language format (should accept but not validate format)
+        invalid_lang = {"text": "Hello", "lang": "invalid_lang"}
+        tts_data = GetTtsData(**invalid_lang)
+        self.assertEqual(tts_data.lang, "invalid_lang")
+    
+    def test_get_stt_data_validation_edge_cases(self):
+        from neon_data_models.models.api.messagebus import GetSttData
+        
+        # Test empty audio data
+        empty_audio = {"audio_data": ""}
+        stt_data = GetSttData(**empty_audio)
+        self.assertEqual(stt_data.audio_data, "")
+        
+        # Test with both audio_data and message_body (audio_data should take precedence)
+        dual_fields = {"audio_data": "Primary audio", "message_body": "Secondary audio"}
+        stt_data = GetSttData(**dual_fields)
+        self.assertEqual(stt_data.audio_data, "Primary audio")
+        
+        # Test with custom language
+        custom_lang = {"audio_data": "data", "lang": "de-de"}
+        stt_data = GetSttData(**custom_lang)
+        self.assertEqual(stt_data.lang, "de-de")
+    
+    def test_tts_response_edge_cases(self):
+        from neon_data_models.models.api.messagebus import TtsResponse
+        
+        # Test with minimum valid data
+        min_valid_data = {
+            "sentence": "Test",
+            "translated": True,
+            "genders": ["female"],
+            "audio": {"female": "audio_data"}
+        }
+        response = TtsResponse(**min_valid_data)
+        self.assertEqual(response.sentence, "Test")
+        self.assertTrue(response.translated)
+        self.assertEqual(response.genders, ["female"])
+        self.assertEqual(response.audio["female"], "audio_data")
+        
+        # Test with invalid gender in genders field
+        with self.assertRaises(ValidationError):
+            TtsResponse(
+                sentence="Test",
+                translated=False,
+                genders=["invalid_gender"],
+                audio={"female": "audio_data"}
+            )
+        
+        # Test with mismatch between genders and audio keys
+        with self.assertRaises(ValidationError):
+            TtsResponse(
+                sentence="Test",
+                translated=False,
+                genders=["male"],
+                audio={"female": "audio_data"}
+            )
+    
+    def test_tts_response_multi_language(self):
+        from neon_data_models.models.api.messagebus import TtsReponseData, TtsResponse, TtsSpeaker
+        
+        # Create multiple language responses
+        en_response = TtsResponse(
+            sentence="Hello world",
+            translated=False,
+            genders=["female", "male"],
+            audio={"female": "en_audio_female", "male": "en_audio_male"}
+        )
+        
+        es_response = TtsResponse(
+            sentence="Hola mundo",
+            translated=True,
+            genders=["female"],
+            audio={"female": "es_audio_female"}
+        )
+        
+        fr_response = TtsResponse(
+            sentence="Bonjour le monde",
+            translated=True,
+            genders=["male"],
+            audio={"male": "fr_audio_male"}
+        )
+        
+        # Test with multiple language responses
+        multi_lang_data = {
+            "responses": {
+                "en-us": en_response,
+                "es-es": es_response,
+                "fr-fr": fr_response
+            },
+            "speaker": {
+                "name": "MultiLang",
+                "language": "en-us",
+                "gender": "female"
+            }
+        }
+        
+        tts_response_data = TtsReponseData(**multi_lang_data)
+        self.assertEqual(len(tts_response_data.responses), 3)
+        self.assertEqual(tts_response_data.responses["en-us"].sentence, "Hello world")
+        self.assertEqual(tts_response_data.responses["es-es"].sentence, "Hola mundo")
+        self.assertEqual(tts_response_data.responses["fr-fr"].sentence, "Bonjour le monde")
+        self.assertEqual(tts_response_data.speaker.name, "MultiLang")
+        
+        # Verify each language's specific properties
+        self.assertFalse(tts_response_data.responses["en-us"].translated)
+        self.assertTrue(tts_response_data.responses["es-es"].translated)
+        self.assertEqual(tts_response_data.responses["en-us"].genders, ["female", "male"])
+        self.assertEqual(tts_response_data.responses["es-es"].genders, ["female"])
+        self.assertEqual(tts_response_data.responses["fr-fr"].genders, ["male"])
+    
+    def test_get_response_data_validation_edge_cases(self):
+        from neon_data_models.models.api.messagebus import GetResponseData
+        
+        # Test with a single string in messageText
+        text_string = {"messageText": "Single message"}
+        response_data = GetResponseData(**text_string)
+        self.assertEqual(response_data.utterances, ["Single message"])
+        
+        # Test with both utterances and messageText (utterances should take precedence)
+        dual_fields = {
+            "utterances": ["Primary utterance"],
+            "messageText": "Secondary utterance"
+        }
+        response_data = GetResponseData(**dual_fields)
+        self.assertEqual(response_data.utterances, ["Primary utterance"])
+        
+        # Test with multiple utterances
+        multi_utterance = {
+            "utterances": ["First utterance", "Second utterance", "Third utterance"]
+        }
+        response_data = GetResponseData(**multi_utterance)
+        self.assertEqual(len(response_data.utterances), 3)
+        self.assertEqual(response_data.utterances[1], "Second utterance")
+        
+        # Test with Unicode characters
+        unicode_text = {"utterances": ["こんにちは", "你好", "مرحبا"]}
+        response_data = GetResponseData(**unicode_text)
+        self.assertEqual(response_data.utterances[0], "こんにちは")
+    
+    def test_serialization_deserialization(self):
+        from neon_data_models.models.api.messagebus import (
+            GetTtsData, NeonGetTts, TtsResponse, TtsReponseData, NeonTtsResponse
+        )
+        import json
+        
+        # Test serialization and deserialization of GetTtsData
+        tts_data = GetTtsData(text="Serialize me", lang="en-us")
+        serialized = json.loads(tts_data.model_dump_json())
+        self.assertEqual(serialized["text"], "Serialize me")
+        self.assertEqual(serialized["lang"], "en-us")
+        
+        deserialized = GetTtsData.model_validate(serialized)
+        self.assertEqual(deserialized.text, "Serialize me")
+        self.assertEqual(deserialized.lang, "en-us")
+        
+        # Test serialization and deserialization of complete message
+        response = TtsResponse(
+            sentence="Test response",
+            translated=False,
+            phonemes="T EH S T",
+            genders=["female"],
+            audio={"female": "test_audio_data"}
+        )
+        
+        response_data = TtsReponseData(responses={"en-us": response})
+        message = NeonTtsResponse(data=response_data, context={"source": "test"})
+        
+        serialized_message = json.loads(message.model_dump_json())
+        self.assertEqual(serialized_message["msg_type"], "neon.get_tts.response")
+        self.assertEqual(serialized_message["data"]["responses"]["en-us"]["sentence"], "Test response")
+        
+        deserialized_message = NeonTtsResponse.model_validate(serialized_message)
+        self.assertEqual(deserialized_message.msg_type, "neon.get_tts.response")
+        self.assertEqual(deserialized_message.data.responses["en-us"].sentence, "Test response")
+        self.assertEqual(deserialized_message.data.responses["en-us"].audio["female"], "test_audio_data")
+    
+    def test_stt_response_data_edge_cases(self):
+        from neon_data_models.models.api.messagebus import SttReponseData
+        
+        # Test with multiple transcripts
+        multi_transcript = {
+            "transcripts": ["First guess", "Second guess", "Third guess"],
+            "parser_data": {"confidence": 0.8, "source": "test_engine"}
+        }
+        stt_response = SttReponseData(**multi_transcript)
+        self.assertEqual(len(stt_response.transcripts), 3)
+        self.assertEqual(stt_response.parser_data["confidence"], 0.8)
+        
+        # Test with complex parser data
+        complex_parser_data = {
+            "transcripts": ["Hello"],
+            "parser_data": {
+                "confidence": 0.95,
+                "engine": "test_engine",
+                "metadata": {
+                    "duration": 2.5,
+                    "sample_rate": 16000,
+                    "format": "wav",
+                    "channels": 1
+                },
+                "alternatives": [
+                    {"text": "Hello", "confidence": 0.95},
+                    {"text": "Hell no", "confidence": 0.05}
+                ]
+            }
+        }
+        stt_response = SttReponseData(**complex_parser_data)
+        self.assertEqual(stt_response.parser_data["metadata"]["sample_rate"], 16000)
+        self.assertEqual(stt_response.parser_data["alternatives"][0]["confidence"], 0.95)
+        
+        # Test with empty transcripts list (should fail)
+        with self.assertRaises(ValidationError):
+            SttReponseData(
+                transcripts=[],
+                parser_data={"confidence": 0.9}
+            )
+        
+        # Test with empty parser data (should succeed as {}is valid)
+        valid_empty_parser = {
+            "transcripts": ["Hello"],
+            "parser_data": {}
+        }
+        stt_response = SttReponseData(**valid_empty_parser)
+        self.assertEqual(len(stt_response.parser_data), 0)

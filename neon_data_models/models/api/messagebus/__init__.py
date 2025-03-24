@@ -52,20 +52,58 @@ class GetTtsData(BaseModel):
 
 
 class TtsResponse(BaseModel):
-    sentence: str
-    translated: bool
+    sentence: str = Field(description="Text to be spoken")
+    translated: bool = Field(
+        default=False, 
+        description="True if the text has been translated before TTS synthesis")
     phonemes: Optional[str] = Field(
         default=None, description="Phoneme representation of the sentence")
-    genders: List[Gender]
+    genders: List[Gender] = Field(
+        description="List of genders included in the response `audio` field",
+        deprecated=True)
     male: Optional[str] = Field(default=None,
                                  description="Path to audio file in male voice")
     female: Optional[str] = Field(
         default=None, description="Path to audio file in female voice")
     audio: Dict[Gender, str]
+    
+    @model_validator(mode='after')
+    def validate_gender_audio_match(self):
+        """Validate that the genders list matches the audio dictionary keys."""
+        if not set(self.genders) == set(self.audio.keys()):
+            raise ValueError(
+                "All genders listed in 'genders' must have corresponding "
+                "entries in 'audio'")
+        return self
+
+
+class TtsSpeaker(BaseModel):
+    name: str = Field(default="Neon", description="Name of the speaker")
+    speaker: Optional[str] = Field(
+        default=None, 
+        description="Deprecated: Use 'name' instead",
+        deprecated=True)
+    language: str = Field(default="en-us", description="BCP-47 language code")
+    gender: Gender = Field(default="female",
+                          description="Requested or synthesized gender")
+    voice: Optional[str] = Field(
+        default=None, description="Requested or synthesized voice name")
+    
+    @model_validator(mode='before')
+    @classmethod
+    def map_speaker_to_name(cls, values):
+        if hasattr(values, 'model_dump'):
+            values = values.model_dump()
+        if 'name' not in values and 'speaker' in values:
+            values['name'] = values['speaker']
+        return values
 
 
 class TtsReponseData(BaseModel):
-    responses: Dict[str, TtsResponse]
+    responses: Dict[str, TtsResponse] = Field(
+        description="Dictionary of BCP-47 lang codes to TTS responses")
+    speaker: Optional[TtsSpeaker] = Field(
+        default=None, description="Optional speaker metadata")
 
 
 class GetSttData(BaseModel):
@@ -86,6 +124,13 @@ class GetSttData(BaseModel):
 class SttReponseData(BaseModel):
     transcripts: List[str]
     parser_data: Dict[str, Any]
+    
+    @model_validator(mode='after')
+    def validate_transcripts_not_empty(self):
+        """Validate that the transcripts list is not empty."""
+        if not self.transcripts:
+            raise ValueError("'transcripts' cannot be an empty list")
+        return self
 
 
 class GetResponseData(BaseModel):
