@@ -26,3 +26,4 @@
 
 from neon_data_models.models.api.mq.llm import *
 from neon_data_models.models.api.mq.users import *
+from neon_data_models.models.api.mq.neon import *

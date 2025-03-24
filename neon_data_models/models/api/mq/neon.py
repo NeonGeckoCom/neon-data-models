@@ -75,38 +75,58 @@ class GetResponseData(BaseModel):
         return values
 
 class NeonMqGetTts(NeonGetTts, MQContext):
-    pass
+    """
+    Data model for an MQ message requesting TTS synthesis
+    """
 
 
 class NeonMqGetStt(NeonGetStt, MQContext):
-    pass
+    """
+    Data model for an MQ message requesting STT recognition
+    """
+
 
 class NeonMqTextInput(NeonTextInput, MQContext):
-    pass
+    """
+    Data model for an MQ message containing text input
+    """
 
 
 class NeonMqAudioInput(NeonAudioInput, MQContext):
-    pass
+    """
+    Data model for an MQ message containing audio input
+    """
 
 
 class NeonMqSttResponse(NeonSttResponse, MQContext):
-    pass
+    """
+    Data model for an MQ message containing an STT recognition response
+    """
 
 
 class NeonMqTtsResponse(NeonTtsResponse, MQContext):
-    pass
+    """
+    Data model for an MQ message containing a TTS synthesis response
+    """
 
 
 class NeonMqGetLanguages(NeonGetLanguages, MQContext):
-    pass
+    """
+    Data model for an MQ message requesting supported languages
+    """
 
 
 class NeonMqLanguagesResponse(NeonLanguagesResponse, MQContext):
-    pass
+    """
+    Data model for an MQ message containing supported languages response
+    """
 
 
 class NeonMqUnknownMessage(BaseMessage, MQContext):
-    """Default message class for handling unknown message types"""
+    """
+    Default message class for validating Messagebus messages that should be
+    forwarded to an MQ service
+    """
 
 
 class NeonApiMessage:
@@ -164,7 +184,7 @@ class NeonApiMessage:
 
 
 __all__ = [NeonMqGetTts.__name__, NeonMqGetStt.__name__, 
-           NeonMqTextInput.__name__, NeonMqSttResponse.__name__,
-           NeonMqTtsResponse.__name__, NeonMqGetLanguages.__name__,
-           NeonMqLanguagesResponse.__name__, NeonApiMessage.__name__,
-           NeonMqUnknownMessage.__name__]
+           NeonMqTextInput.__name__, NeonMqAudioInput.__name__,
+           NeonMqSttResponse.__name__, NeonMqTtsResponse.__name__,
+           NeonMqGetLanguages.__name__, NeonMqLanguagesResponse.__name__,
+           NeonApiMessage.__name__, NeonMqUnknownMessage.__name__]
