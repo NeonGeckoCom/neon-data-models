@@ -101,6 +101,8 @@ class TestContexts(TestCase):
 
     def test_timing_context(self):
         from neon_data_models.models.base.contexts import TimingContext
+        from datetime import datetime, timedelta, timezone
+
         import json
         
         default = TimingContext()
@@ -177,6 +179,163 @@ class TestContexts(TestCase):
         self.assertIsInstance(deserialized.get_tts, timedelta)
         self.assertEqual(deserialized.get_stt.total_seconds(), 1.0)
         self.assertEqual(deserialized.get_tts.total_seconds(), 2.0)
+
+        
+        # Test invalid type for datetime field (string)
+        with self.assertRaises(ValidationError) as context:
+            TimingContext(audio_begin="not a timestamp or datetime")
+        self.assertIn("audio_begin", str(context.exception))
+        
+        # Test invalid type for datetime field (dict)
+        with self.assertRaises(ValidationError) as context:
+            TimingContext(client_sent={"invalid": "value"})
+        self.assertIn("client_sent", str(context.exception))
+        
+        # Test invalid type for timedelta field
+        with self.assertRaises(ValidationError) as context:
+            TimingContext(get_stt="invalid")
+        
+        # Create a context with all fields populated
+        now = datetime.now(tz=timezone.utc)
+        delta = timedelta(seconds=0.5)
+        
+        timing = TimingContext(
+            # Datetime fields
+            audio_begin=now,
+            audio_end=now + delta,
+            client_sent=now + delta * 2,
+            gradio_sent=now + delta * 3,
+            handle_utterance=now + delta * 4,
+            response_sent=now + delta * 5,
+            speech_start=now + delta * 6,
+            
+            # Timedelta fields
+            get_stt=delta,
+            get_tts=delta * 2,
+            iris_input_handling=delta * 3,
+            mq_response_handler=delta * 4,
+            mq_from_core=delta * 5,
+            mq_from_client=delta * 6,
+            mq_input_handler=delta * 7,
+            client_to_core=delta * 8,
+            client_from_core=delta * 9,
+            save_transcript=delta * 10,
+            transform_audio=delta * 11,
+            transform_utterance=delta * 12,
+            wait_in_queue=delta * 13
+        )
+        
+        # Verify all fields are properly typed
+        self.assertIsInstance(timing.audio_begin, datetime)
+        self.assertIsInstance(timing.audio_end, datetime)
+        self.assertIsInstance(timing.client_sent, datetime)
+        self.assertIsInstance(timing.gradio_sent, datetime)
+        self.assertIsInstance(timing.handle_utterance, datetime)
+        self.assertIsInstance(timing.response_sent, datetime)
+        self.assertIsInstance(timing.speech_start, datetime)
+        
+        self.assertIsInstance(timing.get_stt, timedelta)
+        self.assertIsInstance(timing.get_tts, timedelta)
+        self.assertIsInstance(timing.iris_input_handling, timedelta)
+        self.assertIsInstance(timing.mq_response_handler, timedelta)
+        self.assertIsInstance(timing.mq_from_core, timedelta)
+        self.assertIsInstance(timing.mq_from_client, timedelta)
+        self.assertIsInstance(timing.mq_input_handler, timedelta)
+        self.assertIsInstance(timing.client_to_core, timedelta)
+        self.assertIsInstance(timing.client_from_core, timedelta)
+        self.assertIsInstance(timing.save_transcript, timedelta)
+        self.assertIsInstance(timing.transform_audio, timedelta)
+        self.assertIsInstance(timing.transform_utterance, timedelta)
+        self.assertIsInstance(timing.wait_in_queue, timedelta)
+        
+        # Test serialization/deserialization with all fields
+        serialized = timing.model_dump()
+        deserialized = TimingContext(**serialized)
+        self.assertEqual(timing, deserialized)
+
+
+        # Zero timestamp
+        zero_time = TimingContext(audio_begin=0)
+        self.assertEqual(zero_time.audio_begin, 
+                         datetime.fromtimestamp(0, tz=timezone.utc))
+        
+        # Negative timestamp (represents dates before 1970)
+        neg_time = TimingContext(audio_begin=-86400)  # One day before epoch
+        self.assertEqual(neg_time.audio_begin, 
+                         datetime.fromtimestamp(-86400, tz=timezone.utc))
+        
+        # Very large timestamp
+        future_time = TimingContext(audio_begin=2147483647)  # Year 2038
+        self.assertEqual(future_time.audio_begin, 
+                         datetime.fromtimestamp(2147483647, tz=timezone.utc))
+        
+        # Zero timedelta
+        zero_delta = TimingContext(get_stt=0)
+        self.assertEqual(zero_delta.get_stt, timedelta(0))
+        
+        # Negative timedelta
+        neg_delta = TimingContext(get_stt=-1.5)
+        self.assertEqual(neg_delta.get_stt, timedelta(seconds=-1.5))
+
+
+        now = datetime.now(tz=timezone.utc)
+        timestamp = now.timestamp()
+        
+        # Test with timestamp input
+        timestamp_input = TimingContext(audio_begin=timestamp)
+        self.assertIsInstance(timestamp_input.audio_begin, datetime)
+        self.assertAlmostEqual(timestamp_input.audio_begin.timestamp(), 
+                               timestamp, places=3)
+        
+        # Test with datetime input
+        datetime_input = TimingContext(audio_begin=now)
+        self.assertIsInstance(datetime_input.audio_begin, datetime)
+        self.assertAlmostEqual(datetime_input.audio_begin.timestamp(), 
+                               timestamp, places=3)
+        
+        # Compare both inputs
+        self.assertAlmostEqual(timestamp_input.audio_begin.timestamp(),
+                               datetime_input.audio_begin.timestamp(), 
+                               places=3)
+        
+        # Test with timedelta object vs number of seconds
+        delta = timedelta(seconds=1.5)
+        delta_input = TimingContext(get_stt=delta)
+        seconds_input = TimingContext(get_stt=1.5)
+        
+        self.assertEqual(delta_input.get_stt, delta)
+        self.assertEqual(seconds_input.get_stt, delta)
+
+
+        timestamp = datetime.now(tz=timezone.utc).timestamp()
+        
+        # Test transcribed alias for handle_utterance
+        with_transcribed = TimingContext(transcribed=timestamp)
+        self.assertIsInstance(with_transcribed.handle_utterance, datetime)
+        self.assertAlmostEqual(with_transcribed.handle_utterance.timestamp(), 
+                               timestamp, places=3)
+        
+        # Test text_parsers alias for transform_utterance
+        with_text_parsers = TimingContext(text_parsers=1.5)
+        self.assertIsInstance(with_text_parsers.transform_utterance, timedelta)
+        self.assertEqual(with_text_parsers.transform_utterance, 
+                         timedelta(seconds=1.5))
+        
+        # Test both aliases together
+        with_both = TimingContext(transcribed=timestamp, text_parsers=2.5)
+        self.assertIsInstance(with_both.handle_utterance, datetime)
+        self.assertIsInstance(with_both.transform_utterance, timedelta)
+        self.assertAlmostEqual(with_both.handle_utterance.timestamp(), 
+                               timestamp, places=3)
+        self.assertEqual(with_both.transform_utterance, 
+                         timedelta(seconds=2.5))
+        
+        # Ensure serialized data doesn't contain the old field names
+        serialized = with_both.model_dump()
+        self.assertIn("handle_utterance", serialized)
+        self.assertIn("transform_utterance", serialized)
+        self.assertNotIn("transcribed", serialized)
+        self.assertNotIn("text_parsers", serialized)
 
     def test_klat_context(self):
         from neon_data_models.models.base.contexts import KlatContext
