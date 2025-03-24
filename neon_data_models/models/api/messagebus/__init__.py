@@ -44,6 +44,7 @@ class GetTtsData(BaseModel):
     @model_validator(mode='before')
     @classmethod
     def validate_inputs(cls, values):
+        # Ensure input values are normalized to valid field names
         if hasattr(values, 'model_dump'):
             values = values.model_dump()
         if 'text' not in values:
@@ -114,6 +115,7 @@ class GetSttData(BaseModel):
     @model_validator(mode='before')
     @classmethod
     def validate_inputs(cls, values):
+        # Ensure input values are normalized to valid field names
         if hasattr(values, 'model_dump'):
             values = values.model_dump()
         if 'audio_data' not in values:
@@ -141,6 +143,7 @@ class GetResponseData(BaseModel):
     @model_validator(mode='before')
     @classmethod
     def validate_inputs(cls, values):
+        # Ensure input values are normalized to valid field names
         if hasattr(values, 'model_dump'):
             values = values.model_dump()
         if 'utterances' not in values:
