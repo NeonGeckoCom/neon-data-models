@@ -74,7 +74,10 @@ class BaseMessage(BaseModel):
     data: dict
     context: MessageContext
 
-    def as_message(self):
+    def as_message(self) -> "Message":
+        """
+        Get a `Message` representation of this object.
+        """
         try:
             from ovos_bus_client.message import Message
             if hasattr(self.data, 'model_dump'):

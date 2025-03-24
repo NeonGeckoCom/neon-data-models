@@ -356,6 +356,7 @@ class TestContexts(TestCase):
 
 class TestMessagebus(TestCase):
     def test_base_model(self):
+        from ovos_bus_client.message import Message
         from neon_data_models.models.base.messagebus import BaseMessage
         from neon_data_models.models.client import NodeData
         from neon_data_models.models.user import NeonUserConfig
@@ -376,6 +377,12 @@ class TestMessagebus(TestCase):
         # Defined keys will generate objects
         self.assertIsInstance(message.context.node_data, NodeData)
         self.assertIsInstance(message.context.user_profiles[0], NeonUserConfig)
+
+        as_messagebus = message.as_message()
+        self.assertIsInstance(as_messagebus, Message)
+        self.assertEqual(as_messagebus.msg_type, message.msg_type)
+        self.assertEqual(as_messagebus.data, message.data)
+        self.assertEqual(as_messagebus.context, message.context.model_dump())
 
         serialized = message.model_dump()
         # Extra context keys are always retained for compat.
