@@ -74,7 +74,7 @@ class BaseMessage(BaseModel):
     data: dict
     context: MessageContext
 
-    def as_message(self) -> "Message":
+    def as_message(self) -> "Message": # type: ignore
         """
         Get a `Message` representation of this object.
         """
