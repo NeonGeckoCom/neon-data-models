@@ -130,7 +130,7 @@ class KlatContext(BaseModel):
         """
         Validate KlatContext inputs to normalize messageID to sid.
         """
-        if "sid" not in values:
+        if "sid" not in values and "messageID" in values:
             values["sid"] = values.get("messageID")
         return values
 

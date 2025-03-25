@@ -340,10 +340,29 @@ class TestContexts(TestCase):
     def test_klat_context(self):
         from neon_data_models.models.base.contexts import KlatContext
         with self.assertRaises(ValidationError):
-            KlatContext()
+            KlatContext(sid=None)
 
         minimal_ctx = KlatContext(cid="conversation", sid="shout")
         self.assertEqual(minimal_ctx, KlatContext(**minimal_ctx.model_dump()))
+        
+        # Test messageID normalization to sid
+        message_id_ctx = KlatContext(cid="conversation", messageID="message_id_value")
+        self.assertEqual(message_id_ctx.sid, "message_id_value")
+        self.assertEqual(message_id_ctx.cid, "conversation")
+        
+        # Test serialization with normalized field
+        serialized = message_id_ctx.model_dump()
+        self.assertEqual(serialized["sid"], "message_id_value")
+        self.assertNotIn("messageID", serialized)
+        
+        # Test round-trip serialization
+        deserialized = KlatContext(**serialized)
+        self.assertEqual(deserialized.sid, "message_id_value")
+        self.assertEqual(deserialized, message_id_ctx)
+        
+        # Test that sid takes precedence when both fields are provided
+        both_fields_ctx = KlatContext(cid="conversation", sid="shout_id", messageID="message_id_value")
+        self.assertEqual(both_fields_ctx.sid, "shout_id")
 
     def test_mq_context(self):
         from neon_data_models.models.base.contexts import MQContext
