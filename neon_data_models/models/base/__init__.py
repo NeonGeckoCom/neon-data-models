@@ -1,6 +1,6 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2024 Neongecko.com Inc.
+# Copyright 2008-2025 Neongecko.com Inc.
 # BSD-3
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -25,9 +25,43 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from os import environ
+from datetime import datetime, timedelta
 from pydantic import ConfigDict, BaseModel as _BaseModel
 
 
 class BaseModel(_BaseModel):
     model_config = ConfigDict(extra="allow" if environ.get(
             "NEON_DATA_MODELS_ALLOW_EXTRA", "false") != "false" else "ignore")
+
+        
+    def model_dump(self, *args, **kwargs) -> dict:
+        """
+        Global `model_dump` overrides to ensure model serialization.
+        Recursively processes nested dictionaries, lists, and BaseModel instances.
+        """
+        data = super().model_dump(*args, **kwargs)
+        return self._process_data(data)
+    
+    def _process_data(self, data):
+        """
+        Recursively process data to convert datetime and timedelta objects.
+        """
+        if isinstance(data, dict):
+            # Process dictionary values
+            for key, value in list(data.items()):
+                data[key] = self._process_data(value)
+            return data
+        elif isinstance(data, list):
+            # Process list elements
+            return [self._process_data(item) for item in data]
+        elif isinstance(data, datetime):
+            # Convert datetime to timestamp
+            return data.timestamp()
+        elif isinstance(data, timedelta):
+            # Convert timedelta to seconds
+            return data.total_seconds()
+        else:
+            # Return other types unchanged
+            return data
+
+

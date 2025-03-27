@@ -1,6 +1,6 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2024 Neongecko.com Inc.
+# Copyright 2008-2025 Neongecko.com Inc.
 # BSD-3
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -28,7 +28,7 @@ from unittest import TestCase
 from pydantic import ValidationError
 
 
-class TestMQ(TestCase):
+class TestUsersMQ(TestCase):
     def test_create_user_db_request(self):
         from neon_data_models.models.api.mq.users import UserDbRequest, CreateUserRequest
 
@@ -126,6 +126,8 @@ class TestMQ(TestCase):
             UserDbRequest(operation="delete", username="test_user",
                           message_id="test0")
 
+
+class TestLLMMQ(TestCase):
     def test_mq_llm_propose_request(self):
         from neon_data_models.models.api.mq.llm import LLMProposeRequest
         from neon_data_models.models.api.llm import LLMRequest
@@ -272,5 +274,523 @@ class TestMQ(TestCase):
         # Invalid response data
         with self.assertRaises(ValidationError):
             LLMVoteResponse(sorted_answer_indexes=[2, 0, 1, "invalid"],
-                            message_id=""),
+                            message_id="")
+
+
+class TestNeonMQ(TestCase):
+    def test_get_tts_data(self):
+        from neon_data_models.models.api.mq.neon import GetTtsData
+
+        # Test valid data
+        valid_data = {"text": "Hello world", "lang": "en-us"}
+        tts_data = GetTtsData(**valid_data)
+        self.assertIsInstance(tts_data, GetTtsData)
+        self.assertEqual(tts_data.text, "Hello world")
+        self.assertEqual(tts_data.lang, "en-us")
+
+        # Test with utterance instead of text (backward compatibility)
+        compat_data = {"utterance": "Hello world"}
+        tts_data = GetTtsData(**compat_data)
+        self.assertEqual(tts_data.text, "Hello world")
+        self.assertEqual(tts_data.lang, "en-us")  # Default value
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            GetTtsData()
+
+    def test_get_stt_data(self):
+        from neon_data_models.models.api.mq.neon import GetSttData
+
+        # Test valid data
+        valid_data = {"audio_data": "base64encodedstring", "lang": "en-us"}
+        stt_data = GetSttData(**valid_data)
+        self.assertIsInstance(stt_data, GetSttData)
+        self.assertEqual(stt_data.audio_data, "base64encodedstring")
+        self.assertEqual(stt_data.lang, "en-us")
+
+        # Test with message_body instead of audio_data (backward compatibility)
+        compat_data = {"message_body": "base64encodedstring"}
+        stt_data = GetSttData(**compat_data)
+        self.assertEqual(stt_data.audio_data, "base64encodedstring")
+        self.assertEqual(stt_data.lang, "en-us")  # Default value
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            GetSttData()
+
+    def test_get_response_data(self):
+        from neon_data_models.models.api.mq.neon import GetResponseData
+
+        # Test valid data
+        valid_data = {"utterances": ["How are you?"], "lang": "en-us"}
+        response_data = GetResponseData(**valid_data)
+        self.assertIsInstance(response_data, GetResponseData)
+        self.assertEqual(response_data.utterances, ["How are you?"])
+        self.assertEqual(response_data.lang, "en-us")
+
+        # Test with messageText instead of utterances (backward compatibility)
+        compat_data = {"messageText": "How are you?"}
+        response_data = GetResponseData(**compat_data)
+        self.assertEqual(response_data.utterances, ["How are you?"])
+        self.assertEqual(response_data.lang, "en-us")  # Default value
+
+        # Test with empty utterances
+        empty_data = {"utterances": []}
+        response_data = GetResponseData(**empty_data)
+        self.assertEqual(response_data.utterances, [])
+
+    def test_neon_mq_get_tts(self):
+        from neon_data_models.models.api.mq.neon import NeonMqGetTts, GetTtsData
+        from neon_data_models.models.base.contexts import MQContext
+
+        # Test valid request
+        message_id = "test_mid"
+        data = GetTtsData(text="Hello world")
+        valid_request = NeonMqGetTts(data=data, message_id=message_id, context={})
+        self.assertIsInstance(valid_request, NeonMqGetTts)
+        self.assertIsInstance(valid_request, MQContext)
+        self.assertEqual(valid_request.data.text, "Hello world")
+        self.assertEqual(valid_request.message_id, message_id)
+
+        # Test missing MQ required data
+        with self.assertRaises(ValidationError):
+            NeonMqGetTts(data=data)
+
+        # Test missing data required
+        with self.assertRaises(ValidationError):
+            NeonMqGetTts(message_id=message_id)
+
+    def test_neon_mq_get_stt(self):
+        from neon_data_models.models.api.mq.neon import NeonMqGetStt, GetSttData
+        from neon_data_models.models.base.contexts import MQContext
+
+        # Test valid request
+        message_id = "test_mid"
+        data = GetSttData(audio_data="base64encodedstring")
+        valid_request = NeonMqGetStt(data=data, message_id=message_id,
+                                     context={})
+        self.assertIsInstance(valid_request, NeonMqGetStt)
+        self.assertIsInstance(valid_request, MQContext)
+        self.assertEqual(valid_request.data.audio_data, "base64encodedstring")
+        self.assertEqual(valid_request.message_id, message_id)
+
+        # Test missing MQ required data
+        with self.assertRaises(ValidationError):
+            NeonMqGetStt(data=data)
+
+        # Test missing data required
+        with self.assertRaises(ValidationError):
+            NeonMqGetStt(message_id=message_id)
+
+    def test_neon_mq_get_response(self):
+        from neon_data_models.models.api.mq.neon import NeonMqTextInput, GetResponseData
+        from neon_data_models.models.base.contexts import MQContext
+
+        # Test valid request
+        message_id = "test_mid"
+        data = GetResponseData(utterances=["How are you?"])
+        valid_request = NeonMqTextInput(data=data, message_id=message_id,
+                                          context={})
+        self.assertIsInstance(valid_request, NeonMqTextInput)
+        self.assertIsInstance(valid_request, MQContext)
+        self.assertEqual(valid_request.data.utterances, ["How are you?"])
+        self.assertEqual(valid_request.message_id, message_id)
+
+        # Test missing MQ required data
+        with self.assertRaises(ValidationError):
+            NeonMqTextInput(data=data)
+
+        # Test missing data required
+        with self.assertRaises(ValidationError):
+            NeonMqTextInput(message_id=message_id)
+
+    def test_neon_mq_stt_response(self):
+        from neon_data_models.models.api.mq.neon import NeonMqSttResponse
+        # TODO: This needs defined serialized messages
+        # # Test valid response
+        # valid_response = NeonMqSttResponse(
+        #     transcription="Hello world",
+        #     message_id="test_mid"
+        # )
+        # self.assertIsInstance(valid_response, NeonMqSttResponse)
+        # self.assertEqual(valid_response.transcription, "Hello world")
+        # self.assertEqual(valid_response.message_id, "test_mid")
+
+        # # Test missing MQ required data
+        # with self.assertRaises(ValidationError):
+        #     NeonMqSttResponse(transcription="Hello world")
+
+        # # Test missing transcription data
+        # with self.assertRaises(ValidationError):
+        #     NeonMqSttResponse(message_id="test_mid")
+
+    def test_neon_mq_tts_response(self):
+        from neon_data_models.models.api.mq.neon import NeonMqTtsResponse
+        # TODO: This needs defined serialized messages
+        # # Test valid response
+        # valid_response = NeonMqTtsResponse(
+        #     audio_data="base64encodedstring",
+        #     message_id="test_mid"
+        # )
+        # self.assertIsInstance(valid_response, NeonMqTtsResponse)
+        # self.assertEqual(valid_response.audio_data, "base64encodedstring")
+        # self.assertEqual(valid_response.message_id, "test_mid")
+
+        # # Test missing MQ required data
+        # with self.assertRaises(ValidationError):
+        #     NeonMqTtsResponse(audio_data="base64encodedstring")
+
+        # # Test missing audio data
+        # with self.assertRaises(ValidationError):
+        #     NeonMqTtsResponse(message_id="test_mid")
+
+    def test_neon_api_message(self):
+        from neon_data_models.models.api.mq.neon import NeonApiMessage, GetTtsData, GetSttData, GetResponseData
+        from neon_data_models.models.api.mq.neon import NeonMqGetTts, NeonMqGetStt, NeonMqTextInput
+        from neon_data_models.models.api.mq.neon import NeonMqSttResponse, NeonMqTtsResponse
+
+        # Test TTS message
+        tts_message = NeonApiMessage(
+            msg_type="neon.get_tts",
+            data=GetTtsData(text="Hello world"),
+            context={},
+            message_id="test_mid"
+        )
+        self.assertIsInstance(tts_message, NeonMqGetTts)
+
+        # Test STT message
+        stt_message = NeonApiMessage(
+            msg_type="neon.get_stt",
+            data=GetSttData(audio_data="base64encodedstring"),
+            context={},
+            message_id="test_mid"
+        )
+        self.assertIsInstance(stt_message, NeonMqGetStt)
+
+        # Test get response message
+        response_message = NeonApiMessage(
+            msg_type="recognizer_loop:utterance",
+            data=GetResponseData(utterances=["How are you?"]),
+            context={},
+            message_id="test_mid"
+        )
+        self.assertIsInstance(response_message, NeonMqTextInput)
+
+        # Test STT response
+        stt_response = NeonApiMessage(
+            msg_type="neon.get_stt.response",
+            data={"transcripts": ["test"],
+                  "parser_data": {}},
+            context={},
+            message_id="test_mid"
+        )
+        self.assertIsInstance(stt_response, NeonMqSttResponse)
+
+        # Test TTS response
+        tts_response = NeonApiMessage(
+            msg_type="neon.get_tts.response",
+            data={"responses": {"en-us": {"sentence": "test",
+                                          "translated": False,
+                                          "phonemes": "",
+                                          "genders": ["female"],
+                                          "audio": {
+                                          "female": "fake_b64_audio"}}}},
+            context={},
+            message_id="test_mid"
+        )
+        self.assertIsInstance(tts_response, NeonMqTtsResponse)
+
+        # Test from_sio_message for STT
+        sio_stt = {
+            "requested_skill": "stt",
+            "message_body": "base64encodedstring",
+            "client": "test_client",
+            "nick": "test_user",
+            "cid": "test_session",
+            "sid": "test_shout_id",
+            "timeCreated": 123456789,
+            "message_id": "test_mid"
+        }
+        stt_req = NeonApiMessage.from_sio_message(sio_stt)
+        self.assertIsInstance(stt_req, NeonMqGetStt)
+        self.assertEqual(stt_req.data.audio_data, "base64encodedstring")
+
+        # Test from_sio_message for TTS
+        sio_tts = {
+            "requested_skill": "tts",
+            "utterance": "Hello world",
+            "client": "test_client",
+            "nick": "test_user",
+            "cid": "test_session",
+            "sid": "test_shout_id",
+            "timeCreated": 123456789,
+            "message_id": "test_mid"
+        }
+        tts_req = NeonApiMessage.from_sio_message(sio_tts)
+        self.assertIsInstance(tts_req, NeonMqGetTts)
+        self.assertEqual(tts_req.data.text, "Hello world")
+
+        # Test from_sio_message for recognizer
+        sio_recognizer = {
+            "requested_skill": "recognizer",
+            "messageText": "How are you?",
+            "client": "test_client",
+            "nick": "test_user",
+            "cid": "test_session",
+            "sid": "test_shout_id",
+            "timeCreated": 123456789,
+            "message_id": "test_mid"
+        }
+        recognizer_req = NeonApiMessage.from_sio_message(sio_recognizer)
+        self.assertIsInstance(recognizer_req, NeonMqTextInput)
+        self.assertEqual(recognizer_req.data.utterances, ["How are you?"])
+
+        # Test invalid requested_skill
+        with self.assertRaises(ValueError):
+            NeonApiMessage.from_sio_message({"requested_skill": "invalid"})
+
+    def test_neon_mq_text_input(self):
+        from neon_data_models.models.api.mq.neon import NeonMqTextInput, GetResponseData
+        from neon_data_models.models.base.contexts import MQContext
+
+        # Test valid request
+        message_id = "test_mid"
+        data = GetResponseData(utterances=["How are you?"])
+        valid_request = NeonMqTextInput(data=data, message_id=message_id,
+                                       context={})
+        self.assertIsInstance(valid_request, NeonMqTextInput)
+        self.assertIsInstance(valid_request, MQContext)
+        self.assertEqual(valid_request.data.utterances, ["How are you?"])
+        self.assertEqual(valid_request.message_id, message_id)
+
+        # Test missing MQ required data
+        with self.assertRaises(ValidationError):
+            NeonMqTextInput(data=data)
+
+        # Test missing data required
+        with self.assertRaises(ValidationError):
+            NeonMqTextInput(message_id=message_id)
+
+    def test_neon_api_message_validation(self):
+        from neon_data_models.models.api.mq.neon import NeonApiMessage, GetTtsData
+
+        # Test parse_from_messagebus validator with MQ context in a nested field
+        message_with_mq = {
+            "msg_type": "neon.get_tts",
+            "data": {"text": "Hello world"},
+            "context": {"mq": {
+                "message_id": "mq_mid"
+            }}
+        }
+        
+        api_message = NeonApiMessage(**message_with_mq)
+        self.assertEqual(api_message.message_id, "mq_mid")
+        
+        # Test with direct MQ context fields
+        direct_message = {
+            "msg_type": "neon.get_tts",
+            "data": {"text": "Hello world"},
+            "context": {},
+            "message_id": "direct_mid"
+        }
+        
+        direct_api_message = NeonApiMessage(**direct_message)
+        self.assertEqual(direct_api_message.message_id, "direct_mid")
+
+    def test_neon_mq_audio_input(self):
+        from neon_data_models.models.api.mq.neon import NeonMqAudioInput, GetSttData
+        from neon_data_models.models.api.messagebus import NeonAudioInput
+        from neon_data_models.models.base.contexts import MQContext
+
+        # Test valid request
+        message_id = "test_mid"
+        data = GetSttData(audio_data="base64encodedstring")
+        valid_request = NeonMqAudioInput(data=data, message_id=message_id, context={})
+        self.assertIsInstance(valid_request, NeonMqAudioInput)
+        self.assertIsInstance(valid_request, NeonAudioInput)
+        self.assertIsInstance(valid_request, MQContext)
+        self.assertEqual(valid_request.data.audio_data, "base64encodedstring")
+        self.assertEqual(valid_request.message_id, message_id)
+        self.assertEqual(valid_request.msg_type, "neon.audio_input")
+
+        # Test missing MQ required data
+        with self.assertRaises(ValidationError):
+            NeonMqAudioInput(data=data)
+
+        # Test missing data required
+        with self.assertRaises(ValidationError):
+            NeonMqAudioInput(message_id=message_id)
+
+    def test_neon_mq_get_languages(self):
+        from neon_data_models.models.api.mq.neon import NeonMqGetLanguages
+        from neon_data_models.models.api.messagebus import NeonGetLanguages
+        from neon_data_models.models.base.contexts import MQContext
+
+        # Test valid request
+        message_id = "test_mid"
+        valid_request = NeonMqGetLanguages(message_id=message_id, data={},
+                                            context={})
+        self.assertIsInstance(valid_request, NeonMqGetLanguages)
+        self.assertIsInstance(valid_request, NeonGetLanguages)
+        self.assertIsInstance(valid_request, MQContext)
+        self.assertEqual(valid_request.message_id, message_id)
+        self.assertEqual(valid_request.msg_type, "neon.languages.get")
+
+        # Test missing MQ required data
+        with self.assertRaises(ValidationError):
+            NeonMqGetLanguages()
+
+    def test_neon_mq_languages_response(self):
+        from neon_data_models.models.api.mq.neon import NeonMqLanguagesResponse
+        from neon_data_models.models.api.messagebus import NeonLanguagesResponse, NeonLanguagesData
+        from neon_data_models.models.base.contexts import MQContext
+
+        # Test valid response
+        message_id = "test_mid"
+        data = NeonLanguagesData(
+            stt=["en-us", "es-es"],
+            tts=["en-us", "fr-fr"],
+            skills=["en-us"]
+        )
+        valid_response = NeonMqLanguagesResponse(data=data, message_id=message_id, context={})
+        self.assertIsInstance(valid_response, NeonMqLanguagesResponse)
+        self.assertIsInstance(valid_response, NeonLanguagesResponse)
+        self.assertIsInstance(valid_response, MQContext)
+        self.assertEqual(valid_response.message_id, message_id)
+        self.assertEqual(valid_response.msg_type, "neon.languages.get.response")
+        self.assertEqual(valid_response.data.stt, ["en-us", "es-es"])
+        self.assertEqual(valid_response.data.tts, ["en-us", "fr-fr"])
+        self.assertEqual(valid_response.data.skills, ["en-us"])
+
+        # Test missing MQ required data
+        with self.assertRaises(ValidationError):
+            NeonMqLanguagesResponse(data=data)
+
+        # Test missing data required
+        with self.assertRaises(ValidationError):
+            NeonMqLanguagesResponse(message_id=message_id)
+
+    def test_neon_api_message_languages(self):
+        from neon_data_models.models.api.mq.neon import NeonApiMessage
+        from neon_data_models.models.api.mq.neon import NeonMqGetLanguages, NeonMqLanguagesResponse
+        from neon_data_models.models.api.messagebus import NeonLanguagesData
+
+        # Test GetLanguages message
+        languages_get_message = NeonApiMessage(
+            msg_type="neon.languages.get",
+            data={},
+            context={},
+            message_id="test_mid"
+        )
+        self.assertIsInstance(languages_get_message, NeonMqGetLanguages)
+        self.assertEqual(languages_get_message.message_id, "test_mid")
+        self.assertEqual(languages_get_message.msg_type, "neon.languages.get")
+
+        # Test LanguagesResponse message
+        languages_data = NeonLanguagesData(
+            stt=["en-us", "es-es"],
+            tts=["en-us", "fr-fr"],
+            skills=["en-us"]
+        )
+        languages_response = NeonApiMessage(
+            msg_type="neon.languages.get.response",
+            data=languages_data,
+            context={},
+            message_id="test_mid"
+        )
+        self.assertIsInstance(languages_response, NeonMqLanguagesResponse)
+        self.assertEqual(languages_response.data.stt, ["en-us", "es-es"])
+        self.assertEqual(languages_response.data.tts, ["en-us", "fr-fr"])
+        self.assertEqual(languages_response.data.skills, ["en-us"])
+
+    def test_neon_mq_unknown_message(self):
+        from neon_data_models.models.api.mq.neon import NeonMqUnknownMessage
+        from neon_data_models.models.base.messagebus import BaseMessage
+        from neon_data_models.models.base.contexts import MQContext
+
+        # Test valid initialization
+        unknown_message = NeonMqUnknownMessage(
+            msg_type="unknown.type",
+            message_id="test_mid",
+            data={},
+            context={}
+        )
+        
+        # Test inheritance
+        self.assertIsInstance(unknown_message, NeonMqUnknownMessage)
+        self.assertIsInstance(unknown_message, BaseMessage)
+        self.assertIsInstance(unknown_message, MQContext)
+        
+        # Test properties
+        self.assertEqual(unknown_message.msg_type, "unknown.type")
+        self.assertEqual(unknown_message.message_id, "test_mid")
+        
+        # Test with missing required fields
+        with self.assertRaises(ValidationError):
+            NeonMqUnknownMessage()
+
+    def test_neon_api_message_fallback(self):
+        from neon_data_models.models.api.mq.neon import NeonApiMessage, NeonMqUnknownMessage
+        
+        # Test with unknown message type
+        unknown_message_data = {
+            "msg_type": "unknown.message.type",
+            "message_id": "test_mid",
+            "data": {"some_field": "some_value"},
+            "context": {}
+        }
+        
+        message = NeonApiMessage(**unknown_message_data)
+        
+        # Verify fallback to NeonMqUnknownMessage
+        self.assertIsInstance(message, NeonMqUnknownMessage)
+        self.assertEqual(message.msg_type, "unknown.message.type")
+        self.assertEqual(message.message_id, "test_mid")
+        
+        # Test with the specific problematic message type from the error
+        ovos_stt_message = {
+            "msg_type": "ovos.languages.stt.response",
+            "message_id": "test_mid",
+            "data": {"languages": ["en-us", "es-es"]},
+            "context": {}
+        }
+        
+        message = NeonApiMessage(**ovos_stt_message)
+        
+        # Verify it doesn't raise an exception and preserves the data
+        self.assertIsInstance(message, NeonMqUnknownMessage)
+        self.assertEqual(message.msg_type, "ovos.languages.stt.response")
+        self.assertEqual(message.message_id, "test_mid")
+        self.assertEqual(message.data, {"languages": ["en-us", "es-es"]})
+
+    def test_neon_api_message_with_nested_data(self):
+        from neon_data_models.models.api.mq.neon import NeonApiMessage, NeonMqUnknownMessage
+        
+        # Test with deeply nested data
+        complex_message = {
+            "msg_type": "complex.unknown.type",
+            "message_id": "test_mid",
+            "data": {
+                "nested": {
+                    "deeply": {
+                        "value": "test"
+                    }
+                },
+                "list_data": [1, 2, 3, {"key": "value"}]
+            },
+            "context": {
+                "client": "test_client",
+                "user": "test_user"
+            }
+        }
+        
+        message = NeonApiMessage(**complex_message)
+        
+        # Verify complex data is preserved
+        self.assertIsInstance(message, NeonMqUnknownMessage)
+        self.assertEqual(message.msg_type, "complex.unknown.type")
+        self.assertEqual(message.message_id, "test_mid")
+        self.assertEqual(message.data["nested"]["deeply"]["value"], "test")
+        self.assertEqual(message.data["list_data"][3]["key"], "value")
+        self.assertEqual(message.context.client, "test_client")
 

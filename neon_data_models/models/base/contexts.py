@@ -1,6 +1,6 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2024 Neongecko.com Inc.
+# Copyright 2008-2025 Neongecko.com Inc.
 # BSD-3
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -24,15 +24,19 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from datetime import datetime, timedelta
-from typing import Literal, List, Optional
+from datetime import datetime, timedelta, timezone
+from typing import Literal, List, Optional, Any, Tuple
+
+from pydantic import Field, model_validator
 
 from neon_data_models.models.base import BaseModel
 
 
 class SessionContext(BaseModel):
     session_id: str = "default"
-    active_skills: List[str] = []
+    active_skills: List[Tuple[str, float]] = Field(
+        default=[], 
+        description="List of tuple `skill_id` and last used timestamp")
     utterance_states: dict = {}
     lang: Optional[str] = None
     context: dict = {}
@@ -85,13 +89,60 @@ class TimingContext(BaseModel):
     transform_utterance: Optional[timedelta] = None
     wait_in_queue: Optional[timedelta] = None
 
+    @model_validator(mode='before')
+    @classmethod
+    def validate_datetime_fields(cls, values):
+        """
+        Validate datetime fields to parse epoch timestamps into datetime objects.
+        Dynamically identifies fields with datetime type annotations.
+        """
+        # Find all fields that have datetime type annotation
+        datetime_fields = [
+            field_name for field_name, field_info in cls.model_fields.items()
+            if field_info.annotation == datetime or (
+                hasattr(field_info.annotation, "__origin__") and 
+                field_info.annotation.__origin__ is Optional and 
+                datetime in field_info.annotation.__args__
+            )
+        ]
+        
+        for field in datetime_fields:
+            if field in values and values[field] is not None:
+                if isinstance(values[field], (int, float)):
+                    # Convert epoch timestamp to datetime with UTC timezone
+                    values[field] = datetime.fromtimestamp(values[field], tz=timezone.utc)
+                elif not isinstance(values[field], datetime):
+                    # If it's neither a timestamp nor a datetime, raise an error
+                    raise ValueError(f"Field '{field}' must be a timestamp or datetime object")
+        
+        return values
+
 
 class KlatContext(BaseModel):
-    sid: str
-    cid: str
-    title: Optional[str] = ""
+    sid: str = Field(default="", description="Klat Shout ID")
+    cid: str = Field(default="", description="Klat Conversation ID")
+    title: str = Field(default="", description="Klat Conversation Title")
 
+    @model_validator(mode='before')
+    @classmethod
+    def validate_inputs(cls, values):
+        """
+        Validate KlatContext inputs to normalize messageID to sid.
+        """
+        values.setdefault("sid", values.get("messageID", ""))
+        if "title" in values and values["title"] is None:
+            values.pop("title")
+        return values
 
 class MQContext(BaseModel):
     routing_key: Optional[str] = None
     message_id: str
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_inputs(cls, values):
+        """
+        Validate MQContext inputs to normalize messageID to message_id.
+        """
+        values.setdefault("message_id", values.get("messageID"))
+        return values

@@ -1,1 +1,2 @@
 pytest
+ovos-bus-client~=0.1
