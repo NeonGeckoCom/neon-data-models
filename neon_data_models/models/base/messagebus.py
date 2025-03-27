@@ -25,7 +25,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from typing import Optional, List, Union
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from neon_data_models.models.base import BaseModel
 from neon_data_models.models.base.contexts import (SessionContext, KlatContext,
@@ -67,6 +67,12 @@ class MessageContext(BaseModel):
         if isinstance(v, str):
             return [v]
         return v
+    
+    @model_validator(mode='before')
+    def validate_session_value(cls, data):
+        if isinstance(data, dict) and data.get('session', {}) is None:
+            data.pop('session')
+        return data
 
 
 class BaseMessage(BaseModel):

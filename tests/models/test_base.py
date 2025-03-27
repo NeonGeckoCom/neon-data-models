@@ -464,3 +464,28 @@ class TestMessagebus(TestCase):
         # Test round-trip
         deserialized = MessageContext(**serialized)
         self.assertEqual(deserialized.destination, ["test"])
+
+        # Test session=None validation
+        none_session_context = MessageContext(session=None)
+        self.assertIsNotNone(none_session_context.session)
+        self.assertIsInstance(none_session_context.session, SessionContext)
+        
+        # Test that the default is used when None is provided
+        default_session = SessionContext()
+        self.assertEqual(none_session_context.session.model_dump(), 
+                         default_session.model_dump())
+        
+        # Test serialization with None session that gets defaulted
+        serialized = none_session_context.model_dump(exclude_none=True)
+        self.assertIn("session", serialized)
+        self.assertEqual(serialized["session"], default_session.model_dump())
+        
+        # Test round-trip serialization
+        deserialized = MessageContext(**serialized)
+        self.assertEqual(deserialized.session.model_dump(), 
+                         default_session.model_dump())
+        
+        # Test when None is passed in a nested dictionary
+        nested_none_context = MessageContext(**{"session": None})
+        self.assertIsNotNone(nested_none_context.session)
+        self.assertIsInstance(nested_none_context.session, SessionContext)
