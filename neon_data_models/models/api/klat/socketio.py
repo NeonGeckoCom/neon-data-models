@@ -1,6 +1,6 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2024 Neongecko.com Inc.
+# Copyright 2008-2025 Neongecko.com Inc.
 # BSD-3
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -23,12 +23,14 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-import uuid
-from typing import Optional, Dict, List, Literal, Union
 
-from neon_data_models.models.api.llm import LLMPersona
+import uuid
+
+from typing import Optional, Dict, List, Literal, Union
+from datetime import datetime
 from pydantic import Field, model_validator, model_serializer
 
+from neon_data_models.models.api.llm import LLMPersona
 from neon_data_models.enum import CcaiPromptStates
 from neon_data_models.models.base import BaseModel
 
@@ -56,12 +58,13 @@ class GetTtsRequest(BaseModel):
 class NewMessage(BaseModel):
     cid: str = Field(description="Conversation ID associated with the message")
     userID: str = Field(description="User ID associated with the message")
-    prompt_id: Optional[str] = Field(
+    userDisplayName: str = Field(description="Username of the sender")
+    promptID: Optional[str] = Field(
         default=None, description="Prompt ID this message is in response to")
     promptState: Optional[CcaiPromptStates] = Field(
         default=None,
         description="Associated CCAI state if `prompt_id` is defined")
-    source: str = Field(description="Username associated with the message")
+    source: str = Field(description="Service associated with the message")
     messageText: str = Field(
         description="Message content (input string or audio filename)")
     repliedMessage: Optional[str] = Field(
@@ -83,11 +86,10 @@ class NewMessage(BaseModel):
         default={},
         description="TTS Audio formatted as {<language>: {<gender>: "
                     "<b64-encoded WAV>}}")
-    isAnnouncement: bool = Field(
-        default=False,
-        description="True if the message is a system announcement")
-    timeCreated: int = Field(description="Unix timestamp (epoch seconds)")
-    message_id: str = Field(description="UUID for this message")
+    isAnnouncement: Literal['0', '1'] = Field(
+        default='0', description="True if the message is a system announcement")
+    timeCreated: datetime = Field(description="Unix timestamp (epoch seconds)")
+    messageID: str = Field(description="UUID for this message")
     bound_service: str = Field(default="", description="Service this message is targeting")
 
     @model_validator(mode='before')
@@ -97,6 +99,10 @@ class NewMessage(BaseModel):
         # backwards-compat.
         values['messageText'] = values.get('messageText') or \
                                 values.pop('message_body')
+        values['is_bot'] = values.get('is_bot') or \
+                          values.pop('isBot', '0')
+        values['promptID'] = values.get('promptID') or \
+                            values.pop('prompt_id', None)
         return values
 
     class Config:
