@@ -794,3 +794,185 @@ class TestNeonMQ(TestCase):
         self.assertEqual(message.data["list_data"][3]["key"], "value")
         self.assertEqual(message.context.client, "test_client")
 
+
+class TestChatbotsMQ(TestCase):
+    def test_chatbot_request(self):
+        from neon_data_models.models.api.mq.chatbots import ChatbotRequest
+        from datetime import datetime
+        
+        # Test basic initialization with required fields
+        current_time = datetime.now()
+        valid_kwargs = {
+            "username": "test_user",
+            "cid": "test_conversation",
+            "message_text": "Hello, how are you?",
+            "message_id": "test_message_id",
+            "time_created": current_time
+        }
+        
+        chatbot_request = ChatbotRequest(**valid_kwargs)
+        self.assertIsInstance(chatbot_request, ChatbotRequest)
+        self.assertEqual(chatbot_request.username, "test_user")
+        self.assertEqual(chatbot_request.cid, "test_conversation")
+        self.assertEqual(chatbot_request.message_text, "Hello, how are you?")
+        self.assertEqual(chatbot_request.time_created, current_time)
+        self.assertFalse(chatbot_request.from_bot)  # Default value check
+        
+        # Test with all fields
+        full_kwargs = {
+            "username": "test_user",
+            "cid": "test_conversation",
+            "message_text": "Hello, how are you?",
+            "from_bot": True,
+            "prompt_id": "test_prompt_id",
+            "prompt_state": 1,
+            "time_created": current_time,
+            "requested_participants": ["participant1", "participant2"],
+            "recipient": "test_recipient",
+            "bound_service": "test_service",
+            "client": "test_client",
+            "message_id": "test_message_id",
+            "messageID": "test_sid"
+        }
+        
+        full_request = ChatbotRequest(**full_kwargs)
+        self.assertIsInstance(full_request, ChatbotRequest)
+        self.assertEqual(full_request.username, "test_user")
+        self.assertEqual(full_request.cid, "test_conversation")
+        self.assertEqual(full_request.sid, "test_sid")
+        self.assertEqual(full_request.message_text, "Hello, how are you?")
+        self.assertTrue(full_request.from_bot)
+        self.assertEqual(full_request.prompt_id, "test_prompt_id")
+        self.assertEqual(full_request.prompt_state, 1)
+        self.assertEqual(full_request.time_created, current_time)
+        self.assertEqual(full_request.requested_participants, ["participant1", "participant2"])
+        self.assertEqual(full_request.recipient, "test_recipient")
+        self.assertEqual(full_request.bound_service, "test_service")
+        self.assertEqual(full_request.message_id, "test_message_id")
+        
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            ChatbotRequest(username="test_user", cid="test_conversation")
+        
+        with self.assertRaises(ValidationError):
+            ChatbotRequest(cid="test_conversation", message_text="Hello", time_created=current_time)
+        
+        with self.assertRaises(ValidationError):
+            ChatbotRequest(username="test_user", message_text="Hello", time_created=current_time)
+        
+        with self.assertRaises(ValidationError):
+            ChatbotRequest(username="test_user", cid="test_conversation", message_text="Hello")
+        
+        # Test model_dump method for backwards compatibility
+        # Test with from_bot=True
+        bot_request = ChatbotRequest(
+            username="test_user",
+            cid="test_conversation",
+            message_id="test_message_id",
+            message_text="Hello from bot",
+            from_bot=True,
+            time_created=datetime.now()
+        )
+        serialized_bot = bot_request.model_dump()
+        self.assertEqual(serialized_bot["bot"], "1")
+        self.assertTrue(serialized_bot["from_bot"])
+        
+        # Test with from_bot=False (default)
+        user_request = ChatbotRequest(
+            username="test_user",
+            cid="test_conversation",
+            message_id="test_message_id",
+            message_text="Hello from user",
+            time_created=datetime.now()
+        )
+        serialized_user = user_request.model_dump()
+        self.assertEqual(serialized_user["bot"], "0")
+        self.assertFalse(serialized_user["from_bot"])
+        
+        # Test with exclude option
+        excluded_data = bot_request.model_dump(exclude={"from_bot"})
+        self.assertEqual(excluded_data["bot"], "1")
+        self.assertNotIn("from_bot", excluded_data)
+        
+        # Test with exclude_none option
+        none_fields_request = ChatbotRequest(
+            username="test_user",
+            cid="test_conversation",
+            message_id="test_message_id",
+            message_text="Testing exclude_none",
+            time_created=datetime.now(),
+            prompt_id=None,
+            recipient=None
+        )
+        serialized_with_none = none_fields_request.model_dump()
+        serialized_without_none = none_fields_request.model_dump(exclude_none=True)
+        
+        self.assertIn("prompt_id", serialized_with_none)
+        self.assertIn("recipient", serialized_with_none)
+        self.assertNotIn("prompt_id", serialized_without_none)
+        self.assertNotIn("recipient", serialized_without_none)
+        self.assertEqual(serialized_without_none["bot"], "0")
+    
+        # Test from_sio_message
+
+        # Create a mock Socket.IO message
+        sio_message = {
+            "userDisplayName": "test_user",
+            "cid": "test_conversation",
+            "messageText": "Hello, how are you?",
+            "bot": 1,  # 1 means it's from a bot
+            "promptId": "test_prompt_id",
+            "promptState": 2,
+            "timeCreated": datetime.now(),
+            "recipient": "test_recipient",
+            "bound_service": "test_service",
+            "client": "test_client",
+            "message_id": "test_message_id"
+        }
+        
+        # Test conversion from Socket.IO message
+        chatbot_request = ChatbotRequest.from_sio_message(sio_message)
+        self.assertIsInstance(chatbot_request, ChatbotRequest)
+        self.assertEqual(chatbot_request.username, "test_user")
+        self.assertEqual(chatbot_request.cid, "test_conversation")
+        self.assertEqual(chatbot_request.message_text, "Hello, how are you?")
+        self.assertTrue(chatbot_request.from_bot)
+        self.assertEqual(chatbot_request.prompt_id, "test_prompt_id")
+        self.assertEqual(chatbot_request.prompt_state, 2)
+        self.assertEqual(chatbot_request.time_created, sio_message["timeCreated"])
+        self.assertEqual(chatbot_request.recipient, "test_recipient")
+        self.assertEqual(chatbot_request.bound_service, "test_service")
+        
+        # Test with bot=0 (from user)
+        sio_message["bot"] = 0
+        chatbot_request = ChatbotRequest.from_sio_message(sio_message)
+        self.assertFalse(chatbot_request.from_bot)
+        
+        # Test with missing optional fields
+        minimal_sio_message = {
+            "userDisplayName": "test_user",
+            "cid": "test_conversation",
+            "message_id": "test_message_id",
+            "messageText": "Hello, how are you?",
+            "timeCreated": datetime.now(),
+        }
+        
+        minimal_request = ChatbotRequest.from_sio_message(minimal_sio_message)
+        self.assertIsInstance(minimal_request, ChatbotRequest)
+        self.assertEqual(minimal_request.username, "test_user")
+        self.assertEqual(minimal_request.cid, "test_conversation")
+        self.assertEqual(minimal_request.message_text, "Hello, how are you?")
+        self.assertFalse(minimal_request.from_bot)
+        self.assertIsNone(minimal_request.prompt_id)
+        self.assertIsNone(minimal_request.prompt_state)
+        self.assertEqual(minimal_request.time_created, minimal_sio_message["timeCreated"])
+        self.assertIsNone(minimal_request.recipient)
+        self.assertIsNone(minimal_request.bound_service)
+        
+        # Test with missing required fields
+        with self.assertRaises(ValidationError):
+            ChatbotRequest.from_sio_message({})
+        
+        with self.assertRaises(ValidationError):
+            ChatbotRequest.from_sio_message({"usesrDisplayName": "test_user"})
+
