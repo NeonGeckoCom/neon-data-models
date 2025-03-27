@@ -64,7 +64,8 @@ class ChatbotRequest(KlatContext, MQContext):
         return ChatbotRequest(
             **klat_context.model_dump(exclude_none=True),
             **mq_context.model_dump(exclude_none=True),
-            username=sio_message["userDisplayName"],
+            username=sio_message.get("userDisplayName") or \
+                sio_message.get("userID"),
             message_text=sio_message["messageText"],
             from_bot=sio_message.get("bot") == 1,
             prompt_id = sio_message.get("promptId"),

@@ -975,4 +975,35 @@ class TestChatbotsMQ(TestCase):
         
         with self.assertRaises(ValidationError):
             ChatbotRequest.from_sio_message({"usesrDisplayName": "test_user"})
+        
+        # Test with userID fallback when userDisplayName is not present
+        user_id_sio_message = {
+            "userID": "test_user_id",
+            "cid": "test_conversation",
+            "messageText": "Hello, how are you?",
+            "timeCreated": datetime.now(),
+            "message_id": "test_message_id"
+        }
+        
+        user_id_request = ChatbotRequest.from_sio_message(user_id_sio_message)
+        self.assertIsInstance(user_id_request, ChatbotRequest)
+        self.assertEqual(user_id_request.username, "test_user_id")
+        self.assertEqual(user_id_request.cid, "test_conversation")
+        self.assertEqual(user_id_request.message_text, "Hello, how are you?")
+        
+        # Test with both userDisplayName and userID (userDisplayName should be preferred)
+        both_names_sio_message = {
+            "userDisplayName": "display_name",
+            "userID": "user_id",
+            "cid": "test_conversation",
+            "messageText": "Hello, how are you?",
+            "timeCreated": datetime.now(),
+            "message_id": "test_message_id"
+        }
+        
+        both_names_request = ChatbotRequest.from_sio_message(both_names_sio_message)
+        self.assertIsInstance(both_names_request, ChatbotRequest)
+        self.assertEqual(both_names_request.username, "display_name")
+        self.assertEqual(both_names_request.cid, "test_conversation")
+        self.assertEqual(both_names_request.message_text, "Hello, how are you?")
 
