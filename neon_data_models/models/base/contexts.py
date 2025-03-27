@@ -121,8 +121,7 @@ class TimingContext(BaseModel):
 class KlatContext(BaseModel):
     sid: str = Field(default="", description="Klat Shout ID")
     cid: str = Field(default="", description="Klat Conversation ID")
-    title: str = Field(default="",
-                                  description="Klat Conversation Title")
+    title: str = Field(default="", description="Klat Conversation Title")
 
     @model_validator(mode='before')
     @classmethod
