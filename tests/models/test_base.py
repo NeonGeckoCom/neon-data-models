@@ -26,6 +26,8 @@
 
 import importlib
 import os
+import json
+
 from datetime import datetime, timedelta, timezone
 from unittest import TestCase
 from time import time
@@ -101,9 +103,6 @@ class TestContexts(TestCase):
 
     def test_timing_context(self):
         from neon_data_models.models.base.contexts import TimingContext
-        from datetime import datetime, timedelta, timezone
-
-        import json
         
         default = TimingContext()
         self.assertIsNone(default.model_dump()['handle_utterance'])
@@ -397,7 +396,7 @@ class TestMessagebus(TestCase):
         self.assertIsInstance(message.context.node_data, NodeData)
         self.assertIsInstance(message.context.user_profiles[0], NeonUserConfig)
 
-        as_messagebus = message.as_message()
+        as_messagebus = message.as_messagebus_message()
         self.assertIsInstance(as_messagebus, Message)
         self.assertEqual(as_messagebus.msg_type, message.msg_type)
         self.assertEqual(as_messagebus.data, message.data)

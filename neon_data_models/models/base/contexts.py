@@ -121,7 +121,7 @@ class TimingContext(BaseModel):
 class KlatContext(BaseModel):
     sid: str = Field(default="", description="Klat Shout ID")
     cid: str = Field(default="", description="Klat Conversation ID")
-    title: Optional[str] = Field(default="",
+    title: str = Field(default="",
                                   description="Klat Conversation Title")
 
     @model_validator(mode='before')
@@ -130,8 +130,9 @@ class KlatContext(BaseModel):
         """
         Validate KlatContext inputs to normalize messageID to sid.
         """
-        if "sid" not in values and "messageID" in values:
-            values["sid"] = values.get("messageID")
+        values.setdefault("sid", values.get("messageID", ""))
+        if "title" in values and values["title"] is None:
+            values.pop("title")
         return values
 
 class MQContext(BaseModel):
@@ -144,6 +145,5 @@ class MQContext(BaseModel):
         """
         Validate MQContext inputs to normalize messageID to message_id.
         """
-        if "message_id" not in values:
-            values["message_id"] = values.get("messageID")
+        values.setdefault("message_id", values.get("messageID"))
         return values
