@@ -80,6 +80,8 @@ class ChatbotRequest(KlatContext, MQContext):
         data = super().model_dump(**kwargs)
         # Add the 'bot' parameter as '1' or '0' string for backwards compatibility
         data["bot"] = "1" if self.from_bot else "0"
+        # Add `messageText` for backwards-compat.
+        data["messageText"] = self.message_text
         return data
 
 
