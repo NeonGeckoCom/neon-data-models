@@ -24,10 +24,11 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Literal, Optional, List
+from typing import Dict, Literal, Optional, List
 from datetime import datetime, timezone
 from pydantic import Field, model_validator
 
+from neon_data_models.models.base import BaseModel
 from neon_data_models.models.base.contexts import KlatContext, MQContext
 
 
@@ -126,12 +127,17 @@ class ChatbotResponse(KlatContext, MQContext):
         return super().model_dump(**kwargs)
 
 
+class PromptCompletedContext(BaseModel):
+    prompt: Dict[str, str]
+    winner: str = ""
+
 class ChatbotSavePrompt(ChatbotResponse):
     prompt_id: str = Field(
         default="",
         description="ID of the CCAI prompt associated with the shout")
     prompt_text: str = Field(default="")
     created_on: str = Field(default="")
+    context: PromptCompletedContext
     
     def model_dump(self, **kwargs):
         return ChatbotResponse.model_dump(self, **kwargs)
@@ -140,7 +146,7 @@ class ChatbotSavePrompt(ChatbotResponse):
 class ChatbotNewPrompt(ChatbotResponse):
     user_id: Optional[str] = Field(default=None)
     prompt_text: str = Field(default="")
-    context: Optional[dict] = None
+    context: Optional[dict] = Field(default=None)
 
 
     @model_validator(mode='before')
