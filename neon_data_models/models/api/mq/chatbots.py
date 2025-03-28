@@ -24,8 +24,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Optional, List
-from datetime import datetime
+from typing import Literal, Optional, List
+from datetime import datetime, timezone
 from pydantic import Field
 
 from neon_data_models.models.base.contexts import KlatContext, MQContext
@@ -48,6 +48,7 @@ class ChatbotRequest(KlatContext, MQContext):
         default=None, deprecated=True,
         description="State of the CCAI conversation associated with the shout")
     time_created: datetime = Field(
+        default= datetime.now(tz=timezone.utc),
         description="Timestamp when the shout was created")
     requested_participants: Optional[List[str]] = Field(
         default=None, 
@@ -86,4 +87,43 @@ class ChatbotRequest(KlatContext, MQContext):
         return data
 
 
-__all__ = [ChatbotRequest.__name__]
+class ChatbotResponse(KlatContext, MQContext):
+    user_id: str = Field(alias='userID', 
+                         description="Unique UID of the sender")
+    username: Optional[str] = Field(default=None,
+                                    alias="userDisplayName",
+                                    description="Username of the sender")
+    message_text: str = Field(alias="messageText",
+                              description="Text content of the shout")
+    sid: Optional[str] = Field(default=None, alias="messageID",
+                               description="Shout ID")
+    replied_message: Optional[str] = Field(
+        default=None, alias="repliedMessage",
+        description="ID of the shout being replied to")
+    bot: Literal["0", "1"] = Field(default='0',
+                                   description="1 if the shout is from a bot")
+    prompt_id: Optional[str] = Field(
+        default=None, alias="promptID",
+        description="ID of the CCAI prompt associated with the shout")
+    prompt_state: Optional[int] = Field(
+        default=None, deprecated=True, alias="promptState",
+        description="State of the CCAI conversation associated with the shout")
+    is_announcement: Literal["0", "1"] = Field(
+        default='0', alias="isAnnouncement",
+        description="`1` if the shout is an announcement")
+    time_created: datetime = Field(
+        default= datetime.now(tz=timezone.utc), alias="timeCreated",
+        description="Timestamp when the shout was created")
+    source: str = Field(
+        default="klat_observer",
+        description="Name of the service originating the shout")
+    
+    def model_dump(self, **kwargs):
+        """Override model_dump to use by_alias=True by default"""
+        # Set by_alias=True by default if not specified
+        if 'by_alias' not in kwargs:
+            kwargs['by_alias'] = True
+        return super().model_dump(**kwargs)
+
+
+__all__ = [ChatbotRequest.__name__, ChatbotResponse.__name__]

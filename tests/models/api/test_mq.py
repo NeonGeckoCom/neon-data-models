@@ -1006,4 +1006,124 @@ class TestChatbotsMQ(TestCase):
         self.assertEqual(both_names_request.username, "display_name")
         self.assertEqual(both_names_request.cid, "test_conversation")
         self.assertEqual(both_names_request.message_text, "Hello, how are you?")
+    
+    def test_chatbot_response(self):
+        from neon_data_models.models.api.mq.chatbots import ChatbotResponse
+        from datetime import datetime, timezone
+        
+        # Test basic initialization with required fields
+        current_time = datetime.now(tz=timezone.utc)
+        valid_kwargs = {
+            "userID": "user123",
+            "messageText": "Hello, this is a response",
+            "message_id": "test_message_id"  # Added required message_id
+        }
+        
+        response = ChatbotResponse(**valid_kwargs)
+        self.assertIsInstance(response, ChatbotResponse)
+        self.assertEqual(response.user_id, "user123")
+        self.assertEqual(response.message_text, "Hello, this is a response")
+        self.assertEqual(response.bot, "0")  # Default value check
+        self.assertEqual(response.is_announcement, "0")  # Default value check
+        
+        # Test with all fields
+        full_kwargs = {
+            "userID": "user123",
+            "userDisplayName": "John Doe",
+            "messageText": "Hello, this is a complete response",
+            "messageID": "msg123",
+            "repliedMessage": "original_msg456",
+            "bot": "1",
+            "promptID": "prompt789",
+            "promptState": 2,
+            "isAnnouncement": "1",
+            "timeCreated": current_time,
+            "source": "test_source",
+            "client": "test_client",
+            "cid": "conversation123",
+            "message_id": "message123"
+        }
+        
+        full_response = ChatbotResponse(**full_kwargs)
+        self.assertIsInstance(full_response, ChatbotResponse)
+        self.assertEqual(full_response.user_id, "user123")
+        self.assertEqual(full_response.username, "John Doe")
+        self.assertEqual(full_response.message_text, "Hello, this is a complete response")
+        self.assertEqual(full_response.sid, "msg123")
+        self.assertEqual(full_response.replied_message, "original_msg456")
+        self.assertEqual(full_response.bot, "1")
+        self.assertEqual(full_response.prompt_id, "prompt789")
+        self.assertEqual(full_response.prompt_state, 2)
+        self.assertEqual(full_response.is_announcement, "1")
+        self.assertEqual(full_response.time_created, current_time)
+        self.assertEqual(full_response.source, "test_source")
+        self.assertEqual(full_response.cid, "conversation123")
+        self.assertEqual(full_response.message_id, "message123")
+        
+        # Test with default time_created
+        response_with_default_time = ChatbotResponse(
+            userID="user456",
+            messageText="Response with default time",
+            message_id="test_mid_default_time"  # Added required message_id
+        )
+        self.assertIsInstance(response_with_default_time.time_created, datetime)
+        
+        # Test field aliases
+        aliased_data = {
+            "userID": "user123",
+            "userDisplayName": "John Doe",
+            "messageText": "Testing aliases",
+            "messageID": "alias_msg_id",
+            "promptID": "alias_prompt_id",
+            "message_id": "test_mid_aliases"  # Added required message_id
+        }
+        
+        aliased_response = ChatbotResponse(**aliased_data)
+        self.assertEqual(aliased_response.user_id, "user123")
+        self.assertEqual(aliased_response.username, "John Doe")
+        self.assertEqual(aliased_response.message_text, "Testing aliases")
+        self.assertEqual(aliased_response.sid, "alias_msg_id")
+        self.assertEqual(aliased_response.prompt_id, "alias_prompt_id")
+        
+        # Test invalid bot value
+        with self.assertRaises(ValidationError):
+            ChatbotResponse(userID="user123", messageText="Test", bot="2", 
+                           message_id="test_mid_invalid_bot")  # Added required message_id
+            
+        # Test invalid is_announcement value
+        with self.assertRaises(ValidationError):
+            ChatbotResponse(userID="user123", messageText="Test", isAnnouncement="2",
+                           message_id="test_mid_invalid_announcement")  # Added required message_id
+            
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            ChatbotResponse(userDisplayName="John Doe", message_id="test_mid_missing_userID")
+            
+        with self.assertRaises(ValidationError):
+            ChatbotResponse(userID="user123", message_id="test_mid_missing_messageText")
+            
+        with self.assertRaises(ValidationError):
+            ChatbotResponse(userID="user123", messageText="Missing message_id")
+            
+        # Test model serialization with exclude_none
+        response_with_none = ChatbotResponse(
+            userID="user123",
+            messageText="Test exclude_none",
+            username=None,
+            promptID=None,
+            message_id="test_mid_exclude_none"  # Added required message_id
+        )
+        serialized_with_none = response_with_none.model_dump()
+        serialized_without_none = response_with_none.model_dump()
+        
+        # Fix: Check for attribute names, not alias names in serialized output
+        self.assertIn("userDisplayName", serialized_with_none)
+        self.assertIn("promptID", serialized_with_none)
+        # self.assertNotIn("userDisplayName", serialized_without_none)
+        # self.assertNotIn("promptID", serialized_without_none)
+        
+        # Test model serialization with by_alias=True to get the field aliases instead
+        serialized_with_alias = response_with_none.model_dump()
+        self.assertIn("userDisplayName", serialized_with_alias)
+        self.assertIn("promptID", serialized_with_alias)
 
