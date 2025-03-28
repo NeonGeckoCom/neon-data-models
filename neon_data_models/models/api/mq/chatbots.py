@@ -26,7 +26,7 @@
 
 from typing import Literal, Optional, List
 from datetime import datetime, timezone
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from neon_data_models.models.base.contexts import KlatContext, MQContext
 
@@ -126,4 +126,30 @@ class ChatbotResponse(KlatContext, MQContext):
         return super().model_dump(**kwargs)
 
 
-__all__ = [ChatbotRequest.__name__, ChatbotResponse.__name__]
+class ChatbotSavePrompt(ChatbotResponse):
+    prompt_id: str = Field(
+        default="",
+        description="ID of the CCAI prompt associated with the shout")
+    prompt_text: str = Field(default="")
+    created_on: str = Field(default="")
+    
+    def model_dump(self, **kwargs):
+        return ChatbotResponse.model_dump(self, **kwargs)
+
+
+class ChatbotNewPrompt(ChatbotResponse):
+    context: dict
+
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_context(cls, values):
+        values.setdefault("context", values.get("conversation_context"))
+        return values
+    
+    def model_dump(self, **kwargs):
+        return ChatbotResponse.model_dump(self, **kwargs)
+
+
+__all__ = [ChatbotRequest.__name__, ChatbotResponse.__name__,
+           ChatbotSavePrompt.__name__, ChatbotNewPrompt.__name__]
