@@ -68,7 +68,7 @@ class ChatbotRequest(KlatContext, MQContext):
                 sio_message.get("userID"),
             message_text=sio_message["messageText"],
             from_bot=sio_message.get("bot") == 1,
-            prompt_id = sio_message.get("promptId"),
+            prompt_id = sio_message.get("promptID"),
             prompt_state=sio_message.get("promptState"),
             time_created=sio_message["timeCreated"],
             recipient=sio_message.get("recipient"),
@@ -80,8 +80,9 @@ class ChatbotRequest(KlatContext, MQContext):
         data = super().model_dump(**kwargs)
         # Add the 'bot' parameter as '1' or '0' string for backwards compatibility
         data["bot"] = "1" if self.from_bot else "0"
-        # Add `messageText` for backwards-compat.
+        # Add parameters for backwards-compat.
         data["messageText"] = self.message_text
+        data["nick"] = self.username
         return data
 
 
