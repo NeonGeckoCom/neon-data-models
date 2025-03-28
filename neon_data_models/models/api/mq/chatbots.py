@@ -260,10 +260,12 @@ class ChatbotsMqConfiguredPersonasResponse(MQContext):
         return data
 
     @classmethod
-    def from_persona_response(cls, data: dict, service_name: str):
+    def from_persona_request(cls, data: dict,
+                               request: ChatbotsMqConfiguredPersonasRequest):
         data["items"] = [item for item in data["items"]
-                         if service_name in item["supported_llms"]]
-        return cls(**data)
+                         if request.service_name in item["supported_llms"]]
+        return cls(**data, message_id=request.message_id,
+                   routing_key=request.routing_key)
 
 
 class ChatbotsMqPromptsDataRequest(MQContext):

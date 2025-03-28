@@ -1396,6 +1396,7 @@ class TestChatbotsMQ(TestCase):
 
     def test_chatbots_mq_configured_personas_response(self):
         from neon_data_models.models.api.mq.chatbots import ChatbotsMqConfiguredPersonasResponse
+        from neon_data_models.models.api.mq.chatbots import ChatbotsMqConfiguredPersonasRequest
         from neon_data_models.models.api.llm import LLMPersona
         
         # Create test data
@@ -1430,7 +1431,7 @@ class TestChatbotsMQ(TestCase):
         self.assertEqual(serialized["items"][0]["persona_name"], "persona1")
         self.assertEqual(serialized["items"][1]["persona_name"], "persona2")
         
-        # Test from_persona_response method
+        # Test from_persona_request method with ChatbotsMqConfiguredPersonasRequest
         response_data = {
             "update_time": current_time,
             "items": [
@@ -1449,16 +1450,29 @@ class TestChatbotsMQ(TestCase):
                     "system_prompt": "System prompt 3",
                     "supported_llms": ["another_service"]
                 }
-            ],
-            "message_id": "test_message_id"
+            ]
         }
         
-        filtered_response = ChatbotsMqConfiguredPersonasResponse.from_persona_response(
-            response_data, "test_service"
+        # Create a request object
+        request = ChatbotsMqConfiguredPersonasRequest(
+            service_name="test_service",
+            message_id="test_req_id",
+            routing_key="test.routing.key",
+            user_id="test_user"
         )
+        
+        filtered_response = ChatbotsMqConfiguredPersonasResponse.from_persona_request(
+            response_data, request
+        )
+        
+        # Verify filtering based on service_name
         self.assertEqual(len(filtered_response.items), 2)  # Only personas with "test_service" in supported_llms
         self.assertEqual(filtered_response.items[0].name, "persona1")
         self.assertEqual(filtered_response.items[1].name, "persona2")
+        
+        # Verify request properties are preserved
+        self.assertEqual(filtered_response.message_id, "test_req_id")
+        self.assertEqual(filtered_response.routing_key, "test.routing.key")
         
         # Test backward compatibility - omitting context
         response_without_context = ChatbotsMqConfiguredPersonasResponse(
