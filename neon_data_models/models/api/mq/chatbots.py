@@ -202,6 +202,16 @@ class ConnectedSubmind(MQContext):
     supports_raw_shouts: bool  # TODO: Refactor?
     last_ping: datetime
 
+    @model_validator(mode='before')
+    @classmethod
+    def validate_context(cls, values):
+        # TODO: Mark as deprecated
+        if values.get('bot_type') in ('proctor', 'observer'):
+            values['bot_type'] = 'facilitator'
+        if values.get('shout') == 'hello':
+            values['shout'] = 'chatbot state'
+        return values
+
 
 class ChatbotsMqSubmindsState(MQContext):
     class SubmindState(BaseModel):
