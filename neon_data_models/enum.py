@@ -24,7 +24,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from enum import IntEnum
+from enum import Enum, IntEnum
 
 
 class AccessRoles(IntEnum):
@@ -92,3 +92,17 @@ class Weekdays(IntEnum):
     FRI = 4
     SAT = 5
     SUN = 6
+
+
+class SubmindStatus(Enum):
+    BANNED = "banned"
+    ACTIVE = "active"
+
+
+class CcaiState(IntEnum):
+    IDLE = 0  # No active prompt
+    RESP = 1  # Gathering responses to prompt
+    DISC = 2  # Discussing responses
+    VOTE = 3  # Voting on responses
+    PICK = 4  # Proctor will select response
+    WAIT = 5  # Bot is waiting for the proctor to ask them to respond (not participating)

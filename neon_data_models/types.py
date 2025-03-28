@@ -28,3 +28,5 @@ from typing import Literal
 
 
 Gender = Literal["male", "female"]
+BotType = Literal["submind", "facilitator"]
+

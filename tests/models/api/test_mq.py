@@ -1243,3 +1243,129 @@ class TestChatbotsMQ(TestCase):
         # These tests verify that the classes are properly defined and usable
         # even with the new names
 
+    def test_connected_submind(self):
+        from neon_data_models.models.api.mq.chatbots import ConnectedSubmind
+        from neon_data_models.enum import CcaiState
+        from neon_data_models.types import BotType
+        
+        # Test valid initialization with required fields
+        current_time = datetime.now(tz=timezone.utc)
+        valid_kwargs = {
+            "message_id": "test_message_id",
+            "bot_type": "submind",
+            "service_name": "test_service",
+            "cid": "test_conversation",
+            "dom": "test_domain",
+            "conversation_state": CcaiState.IDLE,
+            "responded_shout": "test_shout_id",
+            "shout": "chatbot state",
+            "context": {"key": "value"},
+            "prompt_id": "test_prompt_id",
+            "omit_reply": False,
+            "no_save": False,
+            "attached_cids": ["cid1", "cid2"],
+            "supports_raw_shouts": True,
+            "last_ping": current_time
+        }
+        
+        submind = ConnectedSubmind(**valid_kwargs)
+        self.assertIsInstance(submind, ConnectedSubmind)
+        self.assertIsInstance(submind.bot_type, str)
+        self.assertEqual(submind.service_name, "test_service")
+        self.assertEqual(submind.attached_cids, ["cid1", "cid2"])
+        self.assertEqual(submind.last_ping, current_time)
+        self.assertTrue(submind.supports_raw_shouts)
+        
+        # Test model_dump functionality
+        serialized = submind.model_dump()
+        self.assertIsInstance(serialized["bot_type"], str)
+        self.assertEqual(serialized["service_name"], "test_service")
+        self.assertEqual(serialized["attached_cids"], ["cid1", "cid2"])
+        
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            ConnectedSubmind(
+                message_id="test_message_id",
+                service_name="test_service"
+                # Missing other required fields
+            )
+
+    def test_chatbots_mq_subminds_state(self):
+        from neon_data_models.models.api.mq.chatbots import ChatbotsMqSubmindsState, ConnectedSubmind
+        from neon_data_models.enum import SubmindStatus
+        from neon_data_models.models.api.mq.chatbots import CcaiState
+        from datetime import datetime, timezone
+        
+        # Create test ConnectedSubmind for use in the test
+        current_time = datetime.now(tz=timezone.utc)
+        connected_submind = ConnectedSubmind(
+            message_id="connected_mid",
+            bot_type="submind",
+            service_name="test_service",
+            cid="test_conversation",
+            dom="test_domain",
+            conversation_state=CcaiState.IDLE,
+            responded_shout="test_shout_id",
+            shout="chatbot state",
+            context={"key": "value"},
+            prompt_id="test_prompt_id",
+            omit_reply=False,
+            no_save=False,
+            attached_cids=["cid1", "cid2"],
+            supports_raw_shouts=True,
+            last_ping=current_time
+        )
+        
+        # Create SubmindState objects for testing
+        submind_state1 = {"submind_id": "submind1", "status": SubmindStatus.ACTIVE}
+        submind_state2 = {"submind_id": "submind2", "status": SubmindStatus.BANNED}
+        
+        # Test valid initialization
+        valid_kwargs = {
+            "message_id": "test_message_id",
+            "subminds_per_cid": {
+                "cid1": [submind_state1, submind_state2],
+                "cid2": [submind_state1]
+            },
+            "connected_subminds": {
+                "submind1": connected_submind
+            },
+            "cid_submind_bans": {
+                "cid1": ["banned_submind1"],
+                "cid2": ["banned_submind2", "banned_submind3"]
+            },
+            "banned_subminds": ["globally_banned1", "globally_banned2"]
+        }
+        
+        state = ChatbotsMqSubmindsState(**valid_kwargs)
+        self.assertIsInstance(state, ChatbotsMqSubmindsState)
+        
+        # Test the nested SubmindState objects
+        self.assertEqual(state.subminds_per_cid["cid1"][0].submind_id, "submind1")
+        self.assertEqual(state.subminds_per_cid["cid1"][0].status, SubmindStatus.ACTIVE)
+        self.assertEqual(state.subminds_per_cid["cid1"][1].submind_id, "submind2")
+        self.assertEqual(state.subminds_per_cid["cid1"][1].status, SubmindStatus.BANNED)
+        
+        # Test the connected_subminds mapping
+        self.assertIsInstance(state.connected_subminds["submind1"], ConnectedSubmind)
+        self.assertEqual(state.connected_subminds["submind1"].service_name, "test_service")
+        
+        # Test the ban lists
+        self.assertEqual(state.cid_submind_bans["cid1"], ["banned_submind1"])
+        self.assertEqual(state.cid_submind_bans["cid2"], ["banned_submind2", "banned_submind3"])
+        self.assertEqual(state.banned_subminds, ["globally_banned1", "globally_banned2"])
+        
+        # Test model_dump functionality
+        serialized = state.model_dump()
+        self.assertIn("subminds_per_cid", serialized)
+        self.assertIn("connected_subminds", serialized)
+        self.assertIn("cid_submind_bans", serialized)
+        self.assertIn("banned_subminds", serialized)
+        
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            ChatbotsMqSubmindsState(
+                message_id="test_message_id"
+                # Missing other required fields
+            )
+

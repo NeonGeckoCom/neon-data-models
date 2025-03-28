@@ -24,10 +24,12 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Dict, Literal, Optional, List
+from typing import Any, Dict, Literal, Optional, List
 from datetime import datetime, timezone
 from pydantic import Field, model_validator
 
+from neon_data_models.enum import SubmindStatus, CcaiState
+from neon_data_models.types import BotType
 from neon_data_models.models.base import BaseModel
 from neon_data_models.models.base.contexts import KlatContext, MQContext
 
@@ -184,5 +186,36 @@ class ChatbotsMqNewPrompt(ChatbotsMqResponse):
         return ChatbotsMqResponse.model_dump(self, **kwargs)
 
 
+class ConnectedSubmind(MQContext):
+    bot_type: BotType
+    service_name: str
+    cid: str = Field(deprecated=True)
+    dom: str = Field(deprecated=True)
+    conversation_state: CcaiState
+    responded_shout: Optional[str] = Field(deprecated=True)
+    shout: Literal["chatbot state"] = Field(deprecated=True)
+    context: Dict[str, Any]  # TODO: Refactor?
+    prompt_id: Optional[str] = Field(deprecated=True)
+    omit_reply: bool = Field(deprecated=True)
+    no_save: bool = Field(deprecated=True)
+    attached_cids: List[str]
+    supports_raw_shouts: bool  # TODO: Refactor?
+    last_ping: datetime
+
+
+class ChatbotsMqSubmindsState(MQContext):
+    class SubmindState(BaseModel):
+        submind_id: str = Field(description="Connected submind's user_id")
+        status: SubmindStatus = Field(
+            description="Subminds's status in a particular conversation")
+    subminds_per_cid: Dict[str, List[SubmindState]]
+    connected_subminds: Dict[str, ConnectedSubmind]
+    cid_submind_bans: Dict[str, List[str]] = Field(
+        description="List of banned submind `user_id`s per `cid`")
+    banned_subminds: List[str] = Field(
+        description="List of globally banned submind `user_id`s")
+
+
 __all__ = [ChatbotsMqRequest.__name__, ChatbotsMqResponse.__name__,
-           ChatbotsMqSavePrompt.__name__, ChatbotsMqNewPrompt.__name__]
+           ChatbotsMqSavePrompt.__name__, ChatbotsMqNewPrompt.__name__,
+           ChatbotsMqSubmindsState.__name__]
