@@ -138,13 +138,16 @@ class ChatbotSavePrompt(ChatbotResponse):
 
 
 class ChatbotNewPrompt(ChatbotResponse):
-    context: dict
+    user_id = None
+    prompt_text: str = Field(default="")
+    context: Optional[dict] = None
 
 
     @model_validator(mode='before')
     @classmethod
     def validate_context(cls, values):
         values.setdefault("context", values.get("conversation_context"))
+        values["messageText"] = values.get("prompt_text")
         return values
     
     def model_dump(self, **kwargs):
