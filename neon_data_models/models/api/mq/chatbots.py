@@ -128,7 +128,16 @@ class ChatbotResponse(KlatContext, MQContext):
 
 
 class PromptCompletedContext(BaseModel):
-    prompt: Dict[str, str]
+    prompt: ChatbotRequest
+    is_active: bool
+    prompt_text: str
+    available_subminds: List[str]
+    state: int
+    participating_subminds: List[str]
+    proposed_responses: Dict[str, str]
+    submind_opinions: Dict[str, str]
+    votes: Dict[str, str]
+    votes_per_submind: Dict[str, List[str]]
     winner: str = ""
 
 class ChatbotSavePrompt(ChatbotResponse):
