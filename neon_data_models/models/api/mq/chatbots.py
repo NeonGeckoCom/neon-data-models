@@ -138,7 +138,7 @@ class ChatbotSavePrompt(ChatbotResponse):
 
 
 class ChatbotNewPrompt(ChatbotResponse):
-    user_id = None
+    user_id: Optional[str] = Field(default=None)
     prompt_text: str = Field(default="")
     context: Optional[dict] = None
 
