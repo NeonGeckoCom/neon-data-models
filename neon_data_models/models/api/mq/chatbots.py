@@ -32,7 +32,7 @@ from neon_data_models.models.base import BaseModel
 from neon_data_models.models.base.contexts import KlatContext, MQContext
 
 
-class ChatbotRequest(KlatContext, MQContext):
+class ChatbotsMqRequest(KlatContext, MQContext):
     """
     Defines a request from Klat to the Chatbots service.
     """
@@ -60,10 +60,10 @@ class ChatbotRequest(KlatContext, MQContext):
         default=None, description="Service bound to the conversation")
     
     @classmethod
-    def from_sio_message(cls, sio_message: dict) -> 'ChatbotRequest':
+    def from_sio_message(cls, sio_message: dict) -> 'ChatbotsMqRequest':
         klat_context = KlatContext(**sio_message)
         mq_context = MQContext(**sio_message)
-        return ChatbotRequest(
+        return ChatbotsMqRequest(
             **klat_context.model_dump(exclude_none=True),
             **mq_context.model_dump(exclude_none=True),
             username=sio_message.get("userDisplayName") or \
@@ -88,7 +88,10 @@ class ChatbotRequest(KlatContext, MQContext):
         return data
 
 
-class ChatbotResponse(KlatContext, MQContext):
+class ChatbotsMqResponse(KlatContext, MQContext):
+    """
+    Defines a chatbot response to a request.
+    """
     user_id: str = Field(alias='userID', 
                          description="Unique UID of the sender")
     username: Optional[str] = Field(default=None,
@@ -119,16 +122,21 @@ class ChatbotResponse(KlatContext, MQContext):
         default="klat_observer",
         description="Name of the service originating the shout")
     
+    class Config:
+        # For aliased fields, accept either the canonical name OR the alias
+        populate_by_name = True
+
     def model_dump(self, **kwargs):
-        """Override model_dump to use by_alias=True by default"""
-        # Set by_alias=True by default if not specified
+        # For backwards-compat, include aliased keys in serialization
+        by_alias = {}
         if 'by_alias' not in kwargs:
-            kwargs['by_alias'] = True
-        return super().model_dump(**kwargs)
+            by_alias = super().model_dump(by_alias=True, **kwargs)
+        
+        return {**super().model_dump(**kwargs), **by_alias}
 
 
 class PromptCompletedContext(BaseModel):
-    prompt: ChatbotRequest
+    prompt: ChatbotsMqRequest
     is_active: bool
     prompt_text: str
     available_subminds: List[str]
@@ -140,7 +148,7 @@ class PromptCompletedContext(BaseModel):
     votes_per_submind: Dict[str, List[str]]
     winner: str = ""
 
-class ChatbotSavePrompt(ChatbotResponse):
+class ChatbotsMqSavePrompt(ChatbotsMqResponse):
     prompt_id: str = Field(
         default="",
         description="ID of the CCAI prompt associated with the shout")
@@ -149,17 +157,21 @@ class ChatbotSavePrompt(ChatbotResponse):
     context: PromptCompletedContext
     
     def model_dump(self, **kwargs):
-        return ChatbotResponse.model_dump(self, **kwargs)
+        return ChatbotsMqResponse.model_dump(self, **kwargs)
 
 
-class ChatbotNewPrompt(ChatbotResponse):
+class ChatbotsMqNewPrompt(ChatbotsMqResponse):
     prompt_id: str = Field(
         description="ID of the CCAI prompt associated with the shout"
     )
     user_id: Optional[str] = Field(default=None)
     prompt_text: str = Field(default="")
-    context: Optional[dict] = Field(default=None)
+    context: Optional[dict] = Field(default=None,
+                                    alias="conversation_context")
 
+    class Config:
+        # For aliased fields, accept either the canonical name OR the alias
+        populate_by_name = True
 
     @model_validator(mode='before')
     @classmethod
@@ -169,8 +181,8 @@ class ChatbotNewPrompt(ChatbotResponse):
         return values
     
     def model_dump(self, **kwargs):
-        return ChatbotResponse.model_dump(self, **kwargs)
+        return ChatbotsMqResponse.model_dump(self, **kwargs)
 
 
-__all__ = [ChatbotRequest.__name__, ChatbotResponse.__name__,
-           ChatbotSavePrompt.__name__, ChatbotNewPrompt.__name__]
+__all__ = [ChatbotsMqRequest.__name__, ChatbotsMqResponse.__name__,
+           ChatbotsMqSavePrompt.__name__, ChatbotsMqNewPrompt.__name__]
