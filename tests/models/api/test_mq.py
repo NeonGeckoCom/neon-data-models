@@ -1369,3 +1369,125 @@ class TestChatbotsMQ(TestCase):
                 # Missing other required fields
             )
 
+    def test_chatbots_mq_configured_personas_request(self):
+        from neon_data_models.models.api.mq.chatbots import ChatbotsMqConfiguredPersonasRequest
+        
+        # Test valid initialization
+        valid_request = ChatbotsMqConfiguredPersonasRequest(
+            service_name="test_service",
+            message_id="test_message_id"
+        )
+        self.assertIsInstance(valid_request, ChatbotsMqConfiguredPersonasRequest)
+        self.assertEqual(valid_request.service_name, "test_service")
+        self.assertEqual(valid_request.message_id, "test_message_id")
+        
+        # Test serialization
+        serialized = valid_request.model_dump()
+        self.assertEqual(serialized["service_name"], "test_service")
+        self.assertEqual(serialized["message_id"], "test_message_id")
+        
+        # Test missing MQ required data
+        with self.assertRaises(ValidationError):
+            ChatbotsMqConfiguredPersonasRequest(service_name="test_service")
+        
+        # Test missing service_name
+        with self.assertRaises(ValidationError):
+            ChatbotsMqConfiguredPersonasRequest(message_id="test_message_id")
+
+    def test_chatbots_mq_configured_personas_response(self):
+        from neon_data_models.models.api.mq.chatbots import ChatbotsMqConfiguredPersonasResponse
+        from neon_data_models.models.api.llm import LLMPersona
+        
+        # Create test data
+        current_time = datetime.now(tz=timezone.utc)
+        test_personas = [
+            LLMPersona(
+                name="persona1",
+                system_prompt="System prompt 1",
+                # supported_llms=["test_service", "another_service"]
+            ),
+            LLMPersona(
+                name="persona2",
+                system_prompt="System prompt 2",
+                # supported_llms=["test_service"]
+            )
+        ]
+        
+        # Test valid initialization
+        valid_response = ChatbotsMqConfiguredPersonasResponse(
+            update_time=current_time,
+            items=test_personas,
+            message_id="test_message_id"
+        )
+        self.assertIsInstance(valid_response, ChatbotsMqConfiguredPersonasResponse)
+        self.assertEqual(valid_response.update_time, current_time)
+        self.assertEqual(len(valid_response.items), 2)
+        self.assertEqual(valid_response.items[0].name, "persona1")
+        self.assertEqual(valid_response.items[1].name, "persona2")
+        
+        # Test model_dump behavior with persona_name addition
+        serialized = valid_response.model_dump()
+        self.assertEqual(serialized["items"][0]["persona_name"], "persona1")
+        self.assertEqual(serialized["items"][1]["persona_name"], "persona2")
+        
+        # Test from_persona_response method
+        response_data = {
+            "update_time": current_time,
+            "items": [
+                {
+                    "name": "persona1",
+                    "system_prompt": "System prompt 1",
+                    "supported_llms": ["test_service", "another_service"]
+                },
+                {
+                    "name": "persona2",
+                    "system_prompt": "System prompt 2",
+                    "supported_llms": ["test_service"]
+                },
+                {
+                    "name": "persona3",
+                    "system_prompt": "System prompt 3",
+                    "supported_llms": ["another_service"]
+                }
+            ],
+            "message_id": "test_message_id"
+        }
+        
+        filtered_response = ChatbotsMqConfiguredPersonasResponse.from_persona_response(
+            response_data, "test_service"
+        )
+        self.assertEqual(len(filtered_response.items), 2)  # Only personas with "test_service" in supported_llms
+        self.assertEqual(filtered_response.items[0].name, "persona1")
+        self.assertEqual(filtered_response.items[1].name, "persona2")
+        
+        # Test backward compatibility - omitting context
+        response_without_context = ChatbotsMqConfiguredPersonasResponse(
+            update_time=current_time,
+            items=test_personas,
+            message_id="test_message_id"
+        )
+        self.assertIsInstance(
+            response_without_context.context['mq']['message_id'], str)
+        
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            ChatbotsMqConfiguredPersonasResponse(
+                update_time=current_time,
+                items=test_personas
+                # Missing message_id
+            )
+            
+        with self.assertRaises(ValidationError):
+            ChatbotsMqConfiguredPersonasResponse(
+                message_id="test_message_id",
+                items=test_personas
+                # Missing update_time
+            )
+            
+        with self.assertRaises(ValidationError):
+            ChatbotsMqConfiguredPersonasResponse(
+                message_id="test_message_id",
+                update_time=current_time
+                # Missing items
+            )
+

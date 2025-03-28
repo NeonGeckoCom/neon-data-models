@@ -47,6 +47,13 @@ class LLMPersonaIdentity(BaseModel):
         if self.user_id:
             persona_id += f"_{self.user_id}"
         return persona_id
+    
+    @model_validator(mode='before')
+    @classmethod
+    def validate_inputs(cls, values):
+        # MQ API uses `persona_name` here
+        values.setdefault('name', values.get('persona_name'))
+        return values
 
 
 class LLMPersona(LLMPersonaIdentity):

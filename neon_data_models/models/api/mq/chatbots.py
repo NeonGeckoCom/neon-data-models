@@ -30,6 +30,7 @@ from pydantic import Field, model_validator
 
 from neon_data_models.enum import SubmindStatus, CcaiState
 from neon_data_models.types import BotType
+from neon_data_models.models.api.llm import LLMPersona
 from neon_data_models.models.base import BaseModel
 from neon_data_models.models.base.contexts import KlatContext, MQContext
 
@@ -150,6 +151,7 @@ class PromptCompletedContext(BaseModel):
     votes_per_submind: Dict[str, List[str]]
     winner: str = ""
 
+
 class ChatbotsMqSavePrompt(ChatbotsMqResponse):
     prompt_id: str = Field(
         default="",
@@ -226,6 +228,52 @@ class ChatbotsMqSubmindsState(MQContext):
         description="List of globally banned submind `user_id`s")
 
 
+class ChatbotsMqConfiguredPersonasRequest(MQContext):
+    service_name: str = Field(
+        description="Name of the service to get personas for")
+
+
+class ChatbotsMqConfiguredPersonasResponse(MQContext):
+    update_time: datetime = Field(
+        description="Time the personas were last checked")
+    items: List[LLMPersona]
+    context: dict = Field(deprecated=True)
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_context(cls, values):
+        # Deprecated context handling for backwards-compat.
+        if 'context' not in values and 'message_id' in values:
+            values['context'] = {"mq": {"message_id": values['message_id']}}
+        return values
+        
+    def model_dump(self, **kwargs):
+        """
+        Override model_dump to include 'persona_name' field for each item based 
+        on its 'name' for backwards-compat.
+        """
+        data = super().model_dump(**kwargs)
+        for item in data['items']:
+            item['persona_name'] = item['name']
+        return data
+
+    @classmethod
+    def from_persona_response(cls, data: dict, service_name: str):
+        data["items"] = [item for item in data["items"]
+                         if service_name in item["supported_llms"]]
+        return cls(**data)
+
+
+class ChatbotsMqPromptsDataRequest(MQContext):
+    pass
+
+
+class ChatbotsMqPromptsDataResponse(MQContext):
+    pass
+
+
 __all__ = [ChatbotsMqRequest.__name__, ChatbotsMqResponse.__name__,
            ChatbotsMqSavePrompt.__name__, ChatbotsMqNewPrompt.__name__,
-           ChatbotsMqSubmindsState.__name__]
+           ChatbotsMqSubmindsState.__name__, 
+           ChatbotsMqConfiguredPersonasRequest.__name__,
+           ChatbotsMqConfiguredPersonasResponse.__name__]
