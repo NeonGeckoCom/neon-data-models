@@ -220,6 +220,9 @@ class ChatbotsMqSubmindsState(MQContext):
         submind_id: str = Field(description="Connected submind's user_id")
         status: SubmindStatus = Field(
             description="Subminds's status in a particular conversation")
+
+    msg_type: Literal["subminds_state"] = Field(
+        "subminds_state", description="Message type for SIO", deprecated=True)
     subminds_per_cid: Dict[str, List[SubmindState]]
     connected_subminds: Dict[str, ConnectedSubmind]
     cid_submind_bans: Dict[str, List[str]] = Field(
