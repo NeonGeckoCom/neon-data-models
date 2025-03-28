@@ -231,6 +231,8 @@ class ChatbotsMqSubmindsState(MQContext):
 class ChatbotsMqConfiguredPersonasRequest(MQContext):
     service_name: str = Field(
         description="Name of the service to get personas for")
+    user_id: Optional[str] = Field(
+        default=None, description="Optional user_id making with the request.")
 
 
 class ChatbotsMqConfiguredPersonasResponse(MQContext):
