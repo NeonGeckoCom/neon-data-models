@@ -153,6 +153,9 @@ class ChatbotSavePrompt(ChatbotResponse):
 
 
 class ChatbotNewPrompt(ChatbotResponse):
+    prompt_id: str = Field(
+        description="ID of the CCAI prompt associated with the shout"
+    )
     user_id: Optional[str] = Field(default=None)
     prompt_text: str = Field(default="")
     context: Optional[dict] = Field(default=None)
