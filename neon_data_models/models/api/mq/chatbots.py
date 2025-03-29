@@ -272,15 +272,34 @@ class ChatbotsMqConfiguredPersonasResponse(MQContext):
 
 
 class ChatbotsMqPromptsDataRequest(MQContext):
-    pass
+    """
+    Convenience class. The message payload here is just `MQContext`.
+    """
 
 
 class ChatbotsMqPromptsDataResponse(MQContext):
-    pass
+    records: List[str] = Field(description="List of configured prompts")
+    context: dict = Field(deprecated=True)
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_context(cls, values):
+        # Deprecated context handling for backwards-compat.
+        if 'context' not in values and 'message_id' in values:
+            values['context'] = {"mq": {"message_id": values['message_id']}}
+        return values
+    
+    @classmethod
+    def from_prompt_data_request(cls, data: dict,
+                               request: ChatbotsMqPromptsDataRequest):
+        return cls(**data, message_id=request.message_id,
+                   routing_key=request.routing_key)
 
 
 __all__ = [ChatbotsMqRequest.__name__, ChatbotsMqResponse.__name__,
            ChatbotsMqSavePrompt.__name__, ChatbotsMqNewPrompt.__name__,
            ChatbotsMqSubmindsState.__name__, 
            ChatbotsMqConfiguredPersonasRequest.__name__,
-           ChatbotsMqConfiguredPersonasResponse.__name__]
+           ChatbotsMqConfiguredPersonasResponse.__name__,
+           ChatbotsMqPromptsDataRequest.__name__,
+           ChatbotsMqPromptsDataResponse.__name__]

@@ -1286,9 +1286,15 @@ class TestChatbotsMQ(TestCase):
         with self.assertRaises(ValidationError):
             ConnectedSubmind(
                 message_id="test_message_id",
-                service_name="test_service"
-                # Missing other required fields
-            )
+                service_name="test_service")
+
+        # Test validation logic for deprecated fields
+        deprecated_kwargs = valid_kwargs.copy()
+        deprecated_kwargs["bot_type"] = "proctor"
+        deprecated_kwargs["shout"] = "hello"
+        submind = ConnectedSubmind(**deprecated_kwargs)
+        self.assertEqual(submind.bot_type, "facilitator")
+        self.assertEqual(submind.shout, "chatbot state")
 
     def test_chatbots_mq_subminds_state(self):
         from neon_data_models.models.api.mq.chatbots import ChatbotsMqSubmindsState, ConnectedSubmind
@@ -1505,3 +1511,37 @@ class TestChatbotsMQ(TestCase):
                 # Missing items
             )
 
+    def test_chatbots_mq_prompts_data_request(self):
+        from neon_data_models.models.api.mq.chatbots import ChatbotsMqPromptsDataRequest
+
+        # Test valid initialization
+        valid_request = ChatbotsMqPromptsDataRequest(message_id="test_message_id")
+        self.assertIsInstance(valid_request, ChatbotsMqPromptsDataRequest)
+        self.assertEqual(valid_request.message_id, "test_message_id")
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            ChatbotsMqPromptsDataRequest()
+
+    def test_chatbots_mq_prompts_data_response(self):
+        from neon_data_models.models.api.mq.chatbots import ChatbotsMqPromptsDataResponse, ChatbotsMqPromptsDataRequest
+
+        # Test valid initialization
+        valid_response = ChatbotsMqPromptsDataResponse(
+            message_id="test_message_id", records=["prompt1", "prompt2"]
+        )
+        self.assertIsInstance(valid_response, ChatbotsMqPromptsDataResponse)
+        self.assertEqual(valid_response.records, ["prompt1", "prompt2"])
+
+        # Test from_prompt_data_request method
+        request = ChatbotsMqPromptsDataRequest(message_id="test_message_id")
+        response_data = {"records": ["prompt1", "prompt2"]}
+        response = ChatbotsMqPromptsDataResponse.from_prompt_data_request(
+            response_data, request
+        )
+        self.assertEqual(response.message_id, "test_message_id")
+        self.assertEqual(response.records, ["prompt1", "prompt2"])
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            ChatbotsMqPromptsDataResponse(records=["prompt1", "prompt2"])
