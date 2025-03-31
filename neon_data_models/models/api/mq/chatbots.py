@@ -119,7 +119,6 @@ class ChatbotsMqResponse(KlatContext, MQContext):
         default='0', alias="isAnnouncement",
         description="`1` if the shout is an announcement")
     time_created: datetime = Field(
-        alias="time",
         default= datetime.now(tz=timezone.utc), alias="timeCreated",
         description="Timestamp when the shout was created")
     source: str = Field(
@@ -136,13 +135,14 @@ class ChatbotsMqResponse(KlatContext, MQContext):
     @model_validator(mode='before')
     @classmethod
     def validate_uid(cls, values):
-        # Some references use `nick` instead of `user_id` or `userID`
-        values.setdefault("user_id", values.get("nick"))
+        # Some references use different keys
+        # TODO: prevent `None` values from being added here in place of missing
+        #  keys
+        values.setdefault("userID", values.get("nick"))
 
-        # Some reference use `shout` instead of `message_text`
-        values.setdefault("message_text", values.get("shout"))
-
-        values.setdefault("replied_message", values.get("responded_shout"))
+        values.setdefault("messageText", values.get("shout"))
+        values.setdefault("repliedMessage", values.get("responded_shout"))
+        values.setdefault("timeCreated", values.get("time"))
 
     class Config:
         # For aliased fields, accept either the canonical name OR the alias
