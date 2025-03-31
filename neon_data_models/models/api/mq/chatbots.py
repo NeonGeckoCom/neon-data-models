@@ -111,8 +111,8 @@ class ChatbotsMqResponse(KlatContext, MQContext):
     prompt_id: Optional[str] = Field(
         default=None, alias="promptID",
         description="ID of the CCAI prompt associated with the shout")
-    prompt_state: Optional[int] = Field(
-        default=None, deprecated=True, alias="promptState",
+    prompt_state: int = Field(
+        deprecated=True, alias="conversation_state",
         description="State of the CCAI conversation associated with the shout")
     is_announcement: bool = Field(
         default=False, alias="isAnnouncement",
@@ -126,11 +126,10 @@ class ChatbotsMqResponse(KlatContext, MQContext):
     
     bot_type: BotType = Field(default=None, deprecated=True)
     service_name: Any = Field(default=None, deprecated=True)
-    conversation_state: Any = Field(default=None, deprecated=True)
-    context: dict = Field(default=None, deprecated=True)
+    context: Optional[dict] = Field(default=None)  # TODO Maybe deprecate as responses that need it specify this param separately
     dom: Any = Field(default=None, deprecated=True)
-    omit_reply: Any = Field(default=None, deprecated=True)
-    no_save: Any = Field(default=None, deprecated=True)
+    omit_reply: bool = Field(default=True, deprecated=True)
+    no_save: bool = Field(default=False, deprecated=True)
     created_on: Any = Field(default=None, deprecated=True)
     to_discussion: Any = Field(default=None, deprecated=True)
 
@@ -196,8 +195,7 @@ class ChatbotsMqSavePrompt(ChatbotsMqResponse):
         description="ID of the CCAI prompt associated with the shout")
     prompt_text: str = Field(default="")
     created_on: str = Field(default="")
-    # TODO: patched to resolve errors; consider intended behavior
-    context: Optional[PromptCompletedContext] = Field(default=None)
+    context: PromptCompletedContext = Field()
     
     @model_validator(mode='before')
     @classmethod
