@@ -117,7 +117,7 @@ class ChatbotsMqResponse(KlatContext, MQContext):
         description="State of the CCAI conversation associated with the shout")
     is_announcement: bool = Field(
         default=False, alias="isAnnouncement",
-        description="`1` if the shout is an announcement")
+        description="True if the shout is an announcement")
     time_created: datetime = Field(
         default= datetime.now(tz=timezone.utc), alias="timeCreated",
         description="Timestamp when the shout was created")
@@ -160,6 +160,7 @@ class ChatbotsMqResponse(KlatContext, MQContext):
         by_alias = {}
         if 'by_alias' not in kwargs:
             by_alias = super().model_dump(by_alias=True, **kwargs)
+            by_alias['isAnnouncement'] = '1' if self.is_announcement else '0'
         
         return {**super().model_dump(**kwargs), **by_alias}
 
