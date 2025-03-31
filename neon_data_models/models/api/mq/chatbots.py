@@ -365,6 +365,21 @@ class ChatbotsMqSubmindDisconnection(MQContext):
         populate_by_name = True
 
 
+class ChatbotsMqSubmindInvitation(MQContext):
+    cid: str = Field(description="Conversation ID to invite subminds to")
+    requested_participants: List[str] = Field(
+        description="List of submind User IDs to invite to the conversation")
+
+
+class ChatbotsMqUpdateParticipatingSubminds(MQContext):
+    cid: str = Field(description="Conversation ID to update")
+    subminds_to_invite: List[str] = Field(
+        default=[],
+        description="List of submind User IDs to invite to the conversation")
+    subminds_to_kick: List[str] = Field(
+        default=[],
+        description="List of submind User IDs to evict from the conversation")
+
 __all__ = [ChatbotsMqRequest.__name__, ChatbotsMqResponse.__name__,
            ChatbotsMqSavePrompt.__name__, ChatbotsMqNewPrompt.__name__,
            ChatbotsMqSubmindsState.__name__, 
@@ -373,4 +388,6 @@ __all__ = [ChatbotsMqRequest.__name__, ChatbotsMqResponse.__name__,
            ChatbotsMqPromptsDataRequest.__name__,
            ChatbotsMqPromptsDataResponse.__name__,
            ChatbotsMqSubmindConnection.__name__,
-           ChatbotsMqSubmindDisconnection.__name__]
+           ChatbotsMqSubmindDisconnection.__name__,
+           ChatbotsMqSubmindInvitation.__name__,
+           ChatbotsMqUpdateParticipatingSubminds.__name__,]
