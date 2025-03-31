@@ -135,18 +135,19 @@ class ChatbotsMqResponse(KlatContext, MQContext):
     @model_validator(mode='before')
     @classmethod
     def validate_inputs(cls, values):
-        # Some references use different keys
-        # TODO: prevent `None` values from being added here in place of missing
-        #  keys
-        values.setdefault("userID", values.get("nick"))
+        if isinstance(values, dict):
+            # Some references use different keys
+            # TODO: prevent `None` values from being added here in place of missing
+            #  keys
+            values.setdefault("userID", values.get("nick"))
 
-        values.setdefault("messageText", values.get("shout"))
-        values.setdefault("repliedMessage", values.get("responded_shout"))
-        values.setdefault("timeCreated", values.get("time"))
+            values.setdefault("messageText", values.get("shout"))
+            values.setdefault("repliedMessage", values.get("responded_shout"))
+            values.setdefault("timeCreated", values.get("time"))
 
-        # TODO: Mark as deprecated
-        if values.get('bot_type') in ('proctor', 'observer'):
-            values['bot_type'] = 'facilitator'
+            # TODO: Mark as deprecated
+            if values.get('bot_type') in ('proctor', 'observer'):
+                values['bot_type'] = 'facilitator'
 
         return values
 
