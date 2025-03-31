@@ -380,6 +380,17 @@ class ChatbotsMqUpdateParticipatingSubminds(MQContext):
         default=[],
         description="List of submind User IDs to evict from the conversation")
 
+
+class ChatbotsMqSubmindConversationBan(MQContext):
+    user_id: str = Field(description="User ID of the submind", alias="nick")
+    cid: str = Field(description="Conversation ID to (un)ban submind from")
+
+
+class ChatbotsMqSubmindGlobalBan(MQContext):
+    user_id: str = Field(description="User ID of the submind", alias="nick")
+
+
+
 __all__ = [ChatbotsMqRequest.__name__, ChatbotsMqResponse.__name__,
            ChatbotsMqSavePrompt.__name__, ChatbotsMqNewPrompt.__name__,
            ChatbotsMqSubmindsState.__name__, 
@@ -390,4 +401,6 @@ __all__ = [ChatbotsMqRequest.__name__, ChatbotsMqResponse.__name__,
            ChatbotsMqSubmindConnection.__name__,
            ChatbotsMqSubmindDisconnection.__name__,
            ChatbotsMqSubmindInvitation.__name__,
-           ChatbotsMqUpdateParticipatingSubminds.__name__,]
+           ChatbotsMqUpdateParticipatingSubminds.__name__,
+           ChatbotsMqSubmindConversationBan.__name__,
+           ChatbotsMqSubmindGlobalBan.__name__,]
