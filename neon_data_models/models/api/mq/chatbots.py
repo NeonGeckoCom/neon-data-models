@@ -125,12 +125,12 @@ class ChatbotsMqResponse(KlatContext, MQContext):
         default="klat_observer",
         description="Name of the service originating the shout")
     
-    bot_type = Field(default=None, deprecated=True)
-    service_name = Field(default=None, deprecated=True)
-    conversatino_state = Field(default=None, deprecated=True)
-    context = Field(default=None, deprecated=True)
-    omit_reply = Field(default=None, deprecated=True)
-    no_save = Field(default=None, deprecated=True)
+    bot_type: BotType = Field(default=None, deprecated=True)
+    service_name: Any = Field(default=None, deprecated=True)
+    conversation_state: Any = Field(default=None, deprecated=True)
+    context: dict = Field(default=None, deprecated=True)
+    omit_reply: Any = Field(default=None, deprecated=True)
+    no_save: Any = Field(default=None, deprecated=True)
 
     @model_validator(mode='before')
     @classmethod
