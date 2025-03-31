@@ -342,7 +342,7 @@ class ChatbotsMqPromptsDataResponse(MQContext):
 
 
 class ChatbotsMqSubmindConnection(MQContext):
-    nick: str = Field(description="User ID of the submind")
+    user_id: str = Field(description="User ID of the submind", alias="nick")
     time: datetime = Field(
         default= datetime.now(tz=timezone.utc),
         description="Timestamp when the submind last connected")
@@ -352,9 +352,17 @@ class ChatbotsMqSubmindConnection(MQContext):
         default=False,
           description="True if the submind supports unprocessed conversations")
 
+    class Config:
+        # For aliased fields, accept either the canonical name OR the alias
+        populate_by_name = True
+
 
 class ChatbotsMqSubmindDisconnection(MQContext):
-    nick: str = Field(description="User ID of the submind")
+    user_id: str = Field(description="User ID of the submind", alias="nick")
+
+    class Config:
+        # For aliased fields, accept either the canonical name OR the alias
+        populate_by_name = True
 
 
 __all__ = [ChatbotsMqRequest.__name__, ChatbotsMqResponse.__name__,
