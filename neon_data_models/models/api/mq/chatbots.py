@@ -169,7 +169,7 @@ class ChatbotsMqResponse(KlatContext, MQContext):
             by_alias['nick'] = self.user_id
             by_alias['responded_shout'] = self.replied_message
             by_alias['shout'] = self.message_text
-            by_alias['time'] = self.time_created
+            by_alias['time'] = self.time_created.timestamp()
         
         return {**super().model_dump(**kwargs), **by_alias}
 
