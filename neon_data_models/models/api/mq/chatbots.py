@@ -95,7 +95,7 @@ class ChatbotsMqResponse(KlatContext, MQContext):
     """
     Defines a chatbot response to a request.
     """
-    user_id: str = Field(aliases=['userID', 'nick'], 
+    user_id: str = Field(alias='userID', 
                          description="Unique UID of the sender")
     username: Optional[str] = Field(default=None,
                                     alias="userDisplayName",
@@ -119,12 +119,31 @@ class ChatbotsMqResponse(KlatContext, MQContext):
         default='0', alias="isAnnouncement",
         description="`1` if the shout is an announcement")
     time_created: datetime = Field(
+        alias="time",
         default= datetime.now(tz=timezone.utc), alias="timeCreated",
         description="Timestamp when the shout was created")
     source: str = Field(
         default="klat_observer",
         description="Name of the service originating the shout")
     
+    bot_type = Field(default=None, deprecated=True)
+    service_name = Field(default=None, deprecated=True)
+    conversatino_state = Field(default=None, deprecated=True)
+    context = Field(default=None, deprecated=True)
+    omit_reply = Field(default=None, deprecated=True)
+    no_save = Field(default=None, deprecated=True)
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_uid(cls, values):
+        # Some references use `nick` instead of `user_id` or `userID`
+        values.setdefault("user_id", values.get("nick"))
+
+        # Some reference use `shout` instead of `message_text`
+        values.setdefault("message_text", values.get("shout"))
+
+        values.setdefault("replied_message", values.get("responded_shout"))
+
     class Config:
         # For aliased fields, accept either the canonical name OR the alias
         populate_by_name = True
