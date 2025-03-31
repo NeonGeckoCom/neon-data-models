@@ -137,7 +137,7 @@ class KlatContext(BaseModel):
 
 class MQContext(BaseModel):
     routing_key: Optional[str] = None
-    message_id: str = Field(default_factory=uuid4().hex,
+    message_id: str = Field(default_factory=lambda: uuid4().hex,
                             description="MQ unique message ID")
 
     @model_validator(mode='before')
