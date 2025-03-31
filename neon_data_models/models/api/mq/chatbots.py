@@ -115,8 +115,8 @@ class ChatbotsMqResponse(KlatContext, MQContext):
     prompt_state: Optional[int] = Field(
         default=None, deprecated=True, alias="promptState",
         description="State of the CCAI conversation associated with the shout")
-    is_announcement: Literal["0", "1"] = Field(
-        default='0', alias="isAnnouncement",
+    is_announcement: bool = Field(
+        default=False, alias="isAnnouncement",
         description="`1` if the shout is an announcement")
     time_created: datetime = Field(
         default= datetime.now(tz=timezone.utc), alias="timeCreated",
