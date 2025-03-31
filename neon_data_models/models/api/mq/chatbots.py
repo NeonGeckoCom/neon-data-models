@@ -131,6 +131,8 @@ class ChatbotsMqResponse(KlatContext, MQContext):
     dom: Any = Field(default=None, deprecated=True)
     omit_reply: Any = Field(default=None, deprecated=True)
     no_save: Any = Field(default=None, deprecated=True)
+    created_on: Any = Field(default=None, deprecated=True)
+    to_discussion: Any = Field(default=None, deprecated=True)
 
     @model_validator(mode='before')
     @classmethod
