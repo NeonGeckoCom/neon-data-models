@@ -106,7 +106,7 @@ class ChatbotsMqResponse(KlatContext, MQContext):
     replied_message: Optional[str] = Field(
         default=None, alias="repliedMessage",
         description="ID of the shout being replied to")
-    bot: Literal["0", "1"] = Field(default='0',
+    bot: Literal["0", "1"] = Field(default='0', alias='is_bot',
                                    description="1 if the shout is from a bot")
     prompt_id: Optional[str] = Field(
         default=None, alias="promptID",
