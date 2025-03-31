@@ -102,8 +102,7 @@ class ChatbotsMqResponse(KlatContext, MQContext):
                                     description="Username of the sender")
     message_text: str = Field(alias="messageText",
                               description="Text content of the shout")
-    sid: Optional[str] = Field(default=None, alias="messageID",
-                               description="Shout ID")
+    sid: str = Field(default="", alias="messageID", description="Shout ID")
     replied_message: Optional[str] = Field(
         default=None, alias="repliedMessage",
         description="ID of the shout being replied to")
@@ -144,6 +143,9 @@ class ChatbotsMqResponse(KlatContext, MQContext):
             values.setdefault("messageText", values.get("shout"))
             values.setdefault("repliedMessage", values.get("responded_shout"))
             values.setdefault("timeCreated", values.get("time"))
+
+            if "sid" in values and values["sid"] is None:
+                values.pop("sid")
 
             # TODO: Mark as deprecated
             if values.get('bot_type') in ('proctor', 'observer'):
