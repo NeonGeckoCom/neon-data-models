@@ -26,6 +26,7 @@
 
 from datetime import datetime, timedelta, timezone
 from typing import Literal, List, Optional, Any, Tuple
+from uuid import uuid4
 
 from pydantic import Field, model_validator
 
@@ -136,7 +137,8 @@ class KlatContext(BaseModel):
 
 class MQContext(BaseModel):
     routing_key: Optional[str] = None
-    message_id: str
+    message_id: str = Field(default_factory=uuid4().hex,
+                             description="MQ unique message ID")
 
     @model_validator(mode='before')
     @classmethod
