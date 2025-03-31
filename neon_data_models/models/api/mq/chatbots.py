@@ -39,7 +39,7 @@ class ChatbotsMqRequest(KlatContext, MQContext):
     """
     Defines a request from Klat to the Chatbots service.
     """
-    username: str = Field(description="Username of the sender")
+    username: str = Field(description="Username (or 'nick') of the sender")
     cid: str = Field(description="Conversation ID associated with the shout")
     message_text: str = Field(description="Text content of the shout")
     from_bot: bool = Field(
@@ -95,7 +95,7 @@ class ChatbotsMqResponse(KlatContext, MQContext):
     """
     Defines a chatbot response to a request.
     """
-    user_id: str = Field(alias='userID', 
+    user_id: str = Field(aliases=['userID', 'nick'], 
                          description="Unique UID of the sender")
     username: Optional[str] = Field(default=None,
                                     alias="userDisplayName",
