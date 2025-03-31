@@ -195,15 +195,7 @@ class ChatbotsMqSavePrompt(ChatbotsMqResponse):
         description="ID of the CCAI prompt associated with the shout")
     prompt_text: str = Field(default="")
     created_on: str = Field(default="")
-    context: PromptCompletedContext = Field()
-    
-    @model_validator(mode='before')
-    @classmethod
-    def validate_context(cls, values):
-        # If context is empty, remove it from the values so validation passes
-        if "context" in values and not values["context"]:
-            values.pop("context")
-        return values
+    context: PromptCompletedContext = Field(alias="conversation_context")
 
     def model_dump(self, **kwargs):
         return ChatbotsMqResponse.model_dump(self, **kwargs)
