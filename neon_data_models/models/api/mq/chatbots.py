@@ -147,9 +147,9 @@ class ChatbotsMqResponse(KlatContext, MQContext):
             if "sid" in values and values["sid"] is None:
                 values.pop("sid")
 
-            # TODO: Mark as deprecated
-            if values.get('bot_type') in ('proctor', 'observer'):
-                values['bot_type'] = 'facilitator'
+            # # TODO: Mark as deprecated
+            # if values.get('bot_type') in ('proctor', 'observer'):
+            #     values['bot_type'] = 'facilitator'
 
         return values
 
@@ -246,8 +246,8 @@ class ConnectedSubmind(MQContext):
     @classmethod
     def validate_context(cls, values):
         # TODO: Mark as deprecated
-        if values.get('bot_type') in ('proctor', 'observer'):
-            values['bot_type'] = 'facilitator'
+        # if values.get('bot_type') in ('proctor', 'observer'):
+        #     values['bot_type'] = 'facilitator'
         if values.get('shout') == 'hello':
             values['shout'] = 'chatbot state'
         return values
