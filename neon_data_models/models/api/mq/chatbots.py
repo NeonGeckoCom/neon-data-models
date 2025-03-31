@@ -128,6 +128,7 @@ class ChatbotsMqResponse(KlatContext, MQContext):
     service_name: Any = Field(default=None, deprecated=True)
     conversation_state: Any = Field(default=None, deprecated=True)
     context: dict = Field(default=None, deprecated=True)
+    dom: Any = Field(default=None, deprecated=True)
     omit_reply: Any = Field(default=None, deprecated=True)
     no_save: Any = Field(default=None, deprecated=True)
 
@@ -162,7 +163,13 @@ class ChatbotsMqResponse(KlatContext, MQContext):
         by_alias = {}
         if 'by_alias' not in kwargs:
             by_alias = super().model_dump(by_alias=True, **kwargs)
+
+            # TODO: Deprecate below serialization patches
             by_alias['isAnnouncement'] = '1' if self.is_announcement else '0'
+            by_alias['nick'] = self.user_id
+            by_alias['responded_shout'] = self.replied_message
+            by_alias['shout'] = self.message_text
+            by_alias['time'] = self.time_created
         
         return {**super().model_dump(**kwargs), **by_alias}
 
