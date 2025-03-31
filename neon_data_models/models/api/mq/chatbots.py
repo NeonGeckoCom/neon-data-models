@@ -147,8 +147,6 @@ class ChatbotsMqResponse(KlatContext, MQContext):
         # TODO: Mark as deprecated
         if values.get('bot_type') in ('proctor', 'observer'):
             values['bot_type'] = 'facilitator'
-        if values.get('shout') == 'hello':
-            values['shout'] = 'chatbot state'
 
         return values
 
