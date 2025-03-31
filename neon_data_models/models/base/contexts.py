@@ -138,7 +138,7 @@ class KlatContext(BaseModel):
 class MQContext(BaseModel):
     routing_key: Optional[str] = None
     message_id: str = Field(default_factory=uuid4().hex,
-                             description="MQ unique message ID")
+                            description="MQ unique message ID")
 
     @model_validator(mode='before')
     @classmethod
@@ -147,4 +147,7 @@ class MQContext(BaseModel):
         Validate MQContext inputs to normalize messageID to message_id.
         """
         values.setdefault("message_id", values.get("messageID"))
+        if values['message_id'] is None:
+            # Allow default_factory to generate a message_id
+            values.pop("message_id")
         return values
