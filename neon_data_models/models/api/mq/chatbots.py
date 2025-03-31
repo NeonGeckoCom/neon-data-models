@@ -341,10 +341,28 @@ class ChatbotsMqPromptsDataResponse(MQContext):
                    routing_key=request.routing_key)
 
 
+class ChatbotsMqSubmindConnection(MQContext):
+    nick: str = Field(description="User ID of the submind")
+    time: datetime = Field(
+        default= datetime.now(tz=timezone.utc),
+        description="Timestamp when the submind last connected")
+    cids: Optional[List[str]] = Field(
+        default=None, description="List of conversation IDs the submind is in")
+    supports_raw_shouts: bool = Field(
+        default=False,
+          description="True if the submind supports unprocessed conversations")
+
+
+class ChatbotsMqSubmindDisconnection(MQContext):
+    nick: str = Field(description="User ID of the submind")
+
+
 __all__ = [ChatbotsMqRequest.__name__, ChatbotsMqResponse.__name__,
            ChatbotsMqSavePrompt.__name__, ChatbotsMqNewPrompt.__name__,
            ChatbotsMqSubmindsState.__name__, 
            ChatbotsMqConfiguredPersonasRequest.__name__,
            ChatbotsMqConfiguredPersonasResponse.__name__,
            ChatbotsMqPromptsDataRequest.__name__,
-           ChatbotsMqPromptsDataResponse.__name__]
+           ChatbotsMqPromptsDataResponse.__name__,
+           ChatbotsMqSubmindConnection.__name__,
+           ChatbotsMqSubmindDisconnection.__name__]
