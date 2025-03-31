@@ -134,7 +134,7 @@ class ChatbotsMqResponse(KlatContext, MQContext):
 
     @model_validator(mode='before')
     @classmethod
-    def validate_uid(cls, values):
+    def validate_inputs(cls, values):
         # Some references use different keys
         # TODO: prevent `None` values from being added here in place of missing
         #  keys
@@ -143,6 +143,7 @@ class ChatbotsMqResponse(KlatContext, MQContext):
         values.setdefault("messageText", values.get("shout"))
         values.setdefault("repliedMessage", values.get("responded_shout"))
         values.setdefault("timeCreated", values.get("time"))
+        return values
 
     class Config:
         # For aliased fields, accept either the canonical name OR the alias
