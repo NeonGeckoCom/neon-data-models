@@ -197,6 +197,14 @@ class ChatbotsMqSavePrompt(ChatbotsMqResponse):
     created_on: str = Field(default="")
     context: PromptCompletedContext = Field(alias="conversation_context")
 
+    @model_validator(mode='before')
+    @classmethod
+    def validate_context(cls, values):
+        if "context" in values and not values["context"]:
+            # Pop to replace with `conversation_context` or fail
+            values.pop("context")
+        return values
+
     def model_dump(self, **kwargs):
         return ChatbotsMqResponse.model_dump(self, **kwargs)
 
