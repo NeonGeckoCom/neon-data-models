@@ -115,7 +115,7 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
         deprecated=True, alias="conversation_state",
         description="State of the CCAI conversation associated with the shout")
     is_announcement: bool = Field(
-        default=False,
+        default=False, alias="isAnnouncement",
         description="True if the shout is an announcement")
     time_created: datetime = Field(
         default= datetime.now(tz=timezone.utc), alias="timeCreated",
@@ -172,7 +172,7 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
         if 'by_alias' not in kwargs:
             by_alias = super().model_dump(by_alias=True, **kwargs)
 
-        # TODO: Deprecate below serialization patches
+        # TODO: Below are for SIO compat.
         by_alias['isAnnouncement'] = '1' if self.is_announcement else '0'
         by_alias['nick'] = self.user_id
         by_alias['responded_shout'] = self.replied_message
@@ -201,7 +201,7 @@ class ChatbotsMqSavePrompt(ChatbotsMqSubmindResponse):
         default="",
         description="ID of the CCAI prompt associated with the shout")
     prompt_text: str = Field(default="")
-    created_on: Optional[str] = Field(default=None)
+    created_on: str = Field(default="")
     context: PromptCompletedContext = Field(alias="conversation_context")
 
     @model_validator(mode='before')
@@ -212,6 +212,14 @@ class ChatbotsMqSavePrompt(ChatbotsMqSubmindResponse):
             values.pop("context")
         return values
 
+    @model_validator(mode='before')
+    @classmethod
+    def validate_context(cls, values):
+        # TODO: Patching invalid input for backwards-compat.
+        if "created_on" in values and values["created_on"] is None:
+            values.pop("created_on")
+        return values
+    
     def model_dump(self, **kwargs):
         return ChatbotsMqSubmindResponse.model_dump(self, **kwargs)
 
