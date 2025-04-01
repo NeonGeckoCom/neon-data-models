@@ -178,6 +178,7 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
         by_alias['responded_shout'] = self.replied_message
         by_alias['shout'] = self.message_text
         by_alias['time'] = self.time_created.timestamp()
+        by_alias['promptState'] = self.prompt_state
         
         return {**super().model_dump(**kwargs), **by_alias}
 
