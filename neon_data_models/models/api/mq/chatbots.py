@@ -444,6 +444,11 @@ class ChatbotsMqSubmindGlobalBan(MQContext):
         populate_by_name = True
 
 
+class ChatbotsMqSubmindResponseError(MQContext):
+    message: Optional[str] = Field(default=None, alias="msg",
+                                    description="Error message")
+
+
 __all__ = [ChatbotsMqRequest.__name__, ChatbotsMqResponse.__name__,
            ChatbotsMqSubmindResponse.__name__, ChatbotsMqSavePrompt.__name__,
            ChatbotsMqNewPrompt.__name__, ChatbotsMqSubmindsState.__name__, 
@@ -456,4 +461,5 @@ __all__ = [ChatbotsMqRequest.__name__, ChatbotsMqResponse.__name__,
            ChatbotsMqSubmindInvitation.__name__,
            ChatbotsMqUpdateParticipatingSubminds.__name__,
            ChatbotsMqSubmindConversationBan.__name__,
-           ChatbotsMqSubmindGlobalBan.__name__,]
+           ChatbotsMqSubmindGlobalBan.__name__,
+           ChatbotsMqSubmindResponseError.__name__,]
