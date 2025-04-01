@@ -24,9 +24,9 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Any, Dict, Literal, Optional, List, Union, Union
+from typing import Any, Dict, Literal, Optional, List, Union
 from datetime import datetime, timezone
-from pydantic import Field, model_validator, TypeAdapter, TypeAdapter
+from pydantic import Field, model_validator
 
 from neon_data_models.enum import SubmindStatus, CcaiState, CcaiControl
 from neon_data_models.types import BotType
@@ -124,14 +124,19 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
         default="klat_observer",
         description="Name of the service originating the shout")
     
-    bot_type: BotType = Field(default=None, deprecated=True)
-    service_name: Any = Field(default=None, deprecated=True)
-    context: Optional[dict] = Field(default=None)  # TODO Maybe deprecate as responses that need it specify this param separately
-    dom: Any = Field(default=None, deprecated=True)
-    omit_reply: bool = Field(default=True, deprecated=True)
-    no_save: bool = Field(default=False, deprecated=True)
-    created_on: Any = Field(default=None, deprecated=True)
-    to_discussion: Any = Field(default=None, deprecated=True)
+    bot_type: BotType = Field(default=None, deprecated=True,
+                              description="Type of submind sending the shout")
+    # service_name: Any = Field(default=None, deprecated=True)
+    # context: Optional[dict] = Field(default=None, deprecated=True)
+    # dom: Any = Field(default=None, deprecated=True,
+    #                  description="Domain of this conversation")
+    # omit_reply: bool = Field(
+    #     default=True, deprecated=True,
+    #     description="If true, the Proctor will ignore this message")
+    # no_save: bool = Field(default=False, deprecated=True)
+    created_on: datetime = Field(default=datetime.now(timezone.utc),
+                                 description="Timestamp of response")
+    # to_discussion: bool = Field(default=False, deprecated=True)
 
     @model_validator(mode='before')
     @classmethod
@@ -202,24 +207,21 @@ class ChatbotsMqSavePrompt(ChatbotsMqSubmindResponse):
         default="",
         description="ID of the CCAI prompt associated with the shout")
     prompt_text: str = Field(default="")
-    created_on: str = Field(default="")
+    # created_on: str = Field(default="", deprecated=True,
+    #                         description="String date of prompt creation.")
     context: PromptCompletedContext = Field(alias="conversation_context")
 
-    @model_validator(mode='before')
-    @classmethod
-    def validate_context(cls, values):
-        if "context" in values and not values["context"]:
-            # Pop to replace with `conversation_context` or fail
-            values.pop("context")
-        return values
+    # @model_validator(mode='before')
+    # @classmethod
+    # def validate_context(cls, values):
+    #     # if "context" in values and not values["context"]:
+    #     #     # Pop to replace with `conversation_context` or fail
+    #     #     values.pop("context")
 
-    @model_validator(mode='before')
-    @classmethod
-    def validate_context(cls, values):
-        # TODO: Patching invalid input for backwards-compat.
-        if "created_on" in values and values["created_on"] is None:
-            values.pop("created_on")
-        return values
+    #     # TODO: Patching invalid input for backwards-compat.
+    #     if "created_on" in values and values["created_on"] is None:
+    #         values.pop("created_on")
+    #     return values
     
     def model_dump(self, **kwargs):
         return ChatbotsMqSubmindResponse.model_dump(self, **kwargs)
@@ -275,8 +277,8 @@ class ChatbotsMqResponse:
         else:
             return ChatbotsMqSubmindResponse(**kwargs)
     
-    ta = TypeAdapter(Union[ChatbotsMqSavePrompt, ChatbotsMqNewPrompt, 
-                           ChatbotsMqSubmindResponse])
+    # ta = TypeAdapter(Union[ChatbotsMqSavePrompt, ChatbotsMqNewPrompt, 
+    #                        ChatbotsMqSubmindResponse])
 
 
 class ConnectedSubmind(MQContext):

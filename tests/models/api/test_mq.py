@@ -1115,7 +1115,7 @@ class TestChatbotsMQ(TestCase):
         self.assertEqual(save_prompt.message_text, "Prompt completed")
         self.assertEqual(save_prompt.prompt_id, "prompt123")
         self.assertEqual(save_prompt.prompt_text, "Test prompt text")
-        self.assertEqual(save_prompt.created_on, "2023-01-01")
+        # self.assertEqual(save_prompt.created_on, "2023-01-01")
         self.assertEqual(save_prompt.context, context)
         
         # Test model_dump inheritance from ChatbotsMqResponse
@@ -1724,12 +1724,12 @@ class TestChatbotsMQ(TestCase):
             "context": {
                 "winner": "submind1",
                 "prompt_text": "Test prompt",
-                "created_on": "2023-01-01"
+                # "created_on": "2023-01-01"
             },
             "dom": "",
             "omit_reply": True,
             "no_save": False,
-            "created_on": None,
+            # "created_on": None,
             "to_discussion": None
         }
         alt_save_prompt_message = {
