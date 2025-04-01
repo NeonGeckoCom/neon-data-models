@@ -248,6 +248,8 @@ class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
         values.setdefault("context", values.get("conversation_context"))
         if "prompt_text" in values:
             values["messageText"] = values.get("prompt_text")
+        if "nick" in values:
+            values.setdefault("user_id", values.get("nick"))
         return values
     
     def model_dump(self, **kwargs):

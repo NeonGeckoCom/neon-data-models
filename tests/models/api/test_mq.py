@@ -1697,8 +1697,10 @@ class TestChatbotsMQ(TestCase):
         self.assertEqual(result.prompt_id, new_prompt_message['prompt_id'])
         self.assertEqual(result.prompt_text, '')
         
-        self.assertIsInstance(ChatbotsMqResponse(**alt_new_prompt_message),
-                              ChatbotsMqNewPrompt)
+        alt_response = ChatbotsMqResponse(**alt_new_prompt_message)
+        self.assertIsInstance(alt_response, ChatbotsMqNewPrompt)
+        self.assertEqual(alt_response.user_id, alt_new_prompt_message['nick'])
+        
 
         # Test save prompt message
         save_prompt_message = {
