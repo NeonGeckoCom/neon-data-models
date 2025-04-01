@@ -1063,10 +1063,7 @@ class TestChatbotsMQ(TestCase):
         # Test missing required fields
         with self.assertRaises(ValidationError):
             PromptCompletedContext(
-                is_active=True,
-                prompt_text="Test prompt text",
                 available_subminds=["submind1", "submind2"],
-                state=1,
                 participating_subminds=["submind1"],
                 proposed_responses={"submind1": "Response 1"},
                 submind_opinions={"submind1": "Opinion 1"},
