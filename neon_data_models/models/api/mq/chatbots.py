@@ -263,7 +263,8 @@ class ChatbotsMqResponse:
     def __new__(cls, *_, **kwargs) -> Union[ChatbotsMqSavePrompt,
                                             ChatbotsMqNewPrompt, 
                                             ChatbotsMqSubmindResponse]:
-        message_text = kwargs.get("message_text") or kwargs.get("messageText")
+        message_text = kwargs.get("message_text") or kwargs.get("messageText") \
+            or kwargs.get("shout")
         
         if message_text == CcaiControl.SAVE_PROMPT_RESULTS.value:
             return ChatbotsMqSavePrompt(**kwargs)
