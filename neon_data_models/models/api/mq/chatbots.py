@@ -24,11 +24,11 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Any, Dict, Literal, Optional, List
+from typing import Any, Dict, Literal, Optional, List, Union, Union
 from datetime import datetime, timezone
-from pydantic import Field, model_validator
+from pydantic import Field, model_validator, TypeAdapter, TypeAdapter
 
-from neon_data_models.enum import SubmindStatus, CcaiState
+from neon_data_models.enum import SubmindStatus, CcaiState, CcaiControl
 from neon_data_models.types import BotType
 from neon_data_models.models.api.llm import LLMPersona
 from neon_data_models.models.base import BaseModel
@@ -91,7 +91,7 @@ class ChatbotsMqRequest(KlatContext, MQContext):
         return data
 
 
-class ChatbotsMqResponse(KlatContext, MQContext):
+class ChatbotsMqSubmindResponse(KlatContext, MQContext):
     """
     Defines a chatbot response to a request.
     """
@@ -115,7 +115,7 @@ class ChatbotsMqResponse(KlatContext, MQContext):
         deprecated=True, alias="conversation_state",
         description="State of the CCAI conversation associated with the shout")
     is_announcement: bool = Field(
-        default=False, alias="isAnnouncement",
+        default=False,
         description="True if the shout is an announcement")
     time_created: datetime = Field(
         default= datetime.now(tz=timezone.utc), alias="timeCreated",
@@ -142,9 +142,15 @@ class ChatbotsMqResponse(KlatContext, MQContext):
             #  keys
             values.setdefault("userID", values.get("nick"))
 
-            values.setdefault("messageText", values.get("shout"))
-            values.setdefault("repliedMessage", values.get("responded_shout"))
-            values.setdefault("timeCreated", values.get("time"))
+            if values.get("shout"):
+                values.setdefault("messageText", values.get("shout"))
+            
+            if values.get("responded_shout"):
+                values.setdefault("repliedMessage",
+                                   values.get("responded_shout"))
+
+            if values.get("time"):
+                values.setdefault("timeCreated", values.get("time"))
 
             if "sid" in values and values["sid"] is None:
                 values.pop("sid")
@@ -165,12 +171,12 @@ class ChatbotsMqResponse(KlatContext, MQContext):
         if 'by_alias' not in kwargs:
             by_alias = super().model_dump(by_alias=True, **kwargs)
 
-            # TODO: Deprecate below serialization patches
-            by_alias['isAnnouncement'] = '1' if self.is_announcement else '0'
-            by_alias['nick'] = self.user_id
-            by_alias['responded_shout'] = self.replied_message
-            by_alias['shout'] = self.message_text
-            by_alias['time'] = self.time_created.timestamp()
+        # TODO: Deprecate below serialization patches
+        by_alias['isAnnouncement'] = '1' if self.is_announcement else '0'
+        by_alias['nick'] = self.user_id
+        by_alias['responded_shout'] = self.replied_message
+        by_alias['shout'] = self.message_text
+        by_alias['time'] = self.time_created.timestamp()
         
         return {**super().model_dump(**kwargs), **by_alias}
 
@@ -189,7 +195,7 @@ class PromptCompletedContext(BaseModel):
     winner: str = ""
 
 
-class ChatbotsMqSavePrompt(ChatbotsMqResponse):
+class ChatbotsMqSavePrompt(ChatbotsMqSubmindResponse):
     prompt_id: str = Field(
         default="",
         description="ID of the CCAI prompt associated with the shout")
@@ -206,10 +212,10 @@ class ChatbotsMqSavePrompt(ChatbotsMqResponse):
         return values
 
     def model_dump(self, **kwargs):
-        return ChatbotsMqResponse.model_dump(self, **kwargs)
+        return ChatbotsMqSubmindResponse.model_dump(self, **kwargs)
 
 
-class ChatbotsMqNewPrompt(ChatbotsMqResponse):
+class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
     prompt_id: str = Field(
         description="ID of the CCAI prompt associated with the shout"
     )
@@ -230,7 +236,29 @@ class ChatbotsMqNewPrompt(ChatbotsMqResponse):
         return values
     
     def model_dump(self, **kwargs):
-        return ChatbotsMqResponse.model_dump(self, **kwargs)
+        return ChatbotsMqSubmindResponse.model_dump(self, **kwargs)
+
+
+class ChatbotsMqResponse:
+    """
+    Type adapter for validating an arbitrary MQ message. This will always return
+    an instance that extends `BaseMessage` and `MQContext`.
+    """
+    @classmethod
+    def __new__(cls, *args, **kwargs) -> Union[ChatbotsMqSavePrompt,
+                                                 ChatbotsMqNewPrompt, 
+                                                 ChatbotsMqSubmindResponse]:
+        message_text = kwargs.get("message_text") or kwargs.get("messageText")
+        
+        if message_text == CcaiControl.SAVE_PROMPT_RESULTS:
+            return ChatbotsMqSavePrompt.model_validate(kwargs)
+        elif message_text == CcaiControl.CREATE_PROMPT:
+            return ChatbotsMqNewPrompt.model_validate(kwargs)
+        else:
+            return ChatbotsMqSubmindResponse.model_validate(kwargs)
+    
+    ta = TypeAdapter(Union[ChatbotsMqSavePrompt, ChatbotsMqNewPrompt, 
+                           ChatbotsMqSubmindResponse])
 
 
 class ConnectedSubmind(MQContext):
@@ -385,15 +413,22 @@ class ChatbotsMqSubmindConversationBan(MQContext):
     user_id: str = Field(description="User ID of the submind", alias="nick")
     cid: str = Field(description="Conversation ID to (un)ban submind from")
 
+    class Config:
+        # For aliased fields, accept either the canonical name OR the alias
+        populate_by_name = True
+
 
 class ChatbotsMqSubmindGlobalBan(MQContext):
     user_id: str = Field(description="User ID of the submind", alias="nick")
 
+    class Config:
+        # For aliased fields, accept either the canonical name OR the alias
+        populate_by_name = True
 
 
 __all__ = [ChatbotsMqRequest.__name__, ChatbotsMqResponse.__name__,
-           ChatbotsMqSavePrompt.__name__, ChatbotsMqNewPrompt.__name__,
-           ChatbotsMqSubmindsState.__name__, 
+           ChatbotsMqSubmindResponse.__name__, ChatbotsMqSavePrompt.__name__,
+           ChatbotsMqNewPrompt.__name__, ChatbotsMqSubmindsState.__name__, 
            ChatbotsMqConfiguredPersonasRequest.__name__,
            ChatbotsMqConfiguredPersonasResponse.__name__,
            ChatbotsMqPromptsDataRequest.__name__,

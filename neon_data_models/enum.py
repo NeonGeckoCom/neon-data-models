@@ -106,3 +106,11 @@ class CcaiState(IntEnum):
     VOTE = 3  # Voting on responses
     PICK = 4  # Proctor will select response
     WAIT = 5  # Bot is waiting for the proctor to ask them to respond (not participating)
+
+
+class CcaiControl(Enum):
+    PROMPT_REGEX = r"^!PROMPT:"
+    SAVE_PROMPT_RESULTS = "!MSG:SAVE_PROMPT_RESULTS"
+    CREATE_PROMPT = "!MSG:CREATE_PROMPT"
+    START_AUTO_PROMPTS = "!START_AUTO_PROMPTS"
+    STOP_AUTO_PROMPTS = "!STOP_AUTO_PROMPTS"
