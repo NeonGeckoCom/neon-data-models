@@ -1647,7 +1647,7 @@ class TestChatbotsMQ(TestCase):
         # Test save prompt message
         save_prompt_message = {
             "userID": "submind1",
-            "messageText": CcaiControl.SAVE_PROMPT_RESULTS,
+            "messageText": CcaiControl.SAVE_PROMPT_RESULTS.value,
             "prompt_id": "prompt_123",
             "prompt_text": "Test prompt",
             "created_on": "2023-01-01",
@@ -1684,7 +1684,7 @@ class TestChatbotsMQ(TestCase):
         # Test new prompt message
         new_prompt_message = {
             "userID": "submind1",
-            "messageText": CcaiControl.CREATE_PROMPT,
+            "messageText": CcaiControl.CREATE_PROMPT.value,
             "prompt_id": "prompt_456",
             "prompt_text": "New test prompt",
             "conversation_state": 2,

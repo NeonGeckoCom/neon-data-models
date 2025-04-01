@@ -245,14 +245,14 @@ class ChatbotsMqResponse:
     an instance that extends `BaseMessage` and `MQContext`.
     """
     @classmethod
-    def __new__(cls, *args, **kwargs) -> Union[ChatbotsMqSavePrompt,
-                                                 ChatbotsMqNewPrompt, 
-                                                 ChatbotsMqSubmindResponse]:
+    def __new__(cls, *_, **kwargs) -> Union[ChatbotsMqSavePrompt,
+                                            ChatbotsMqNewPrompt, 
+                                            ChatbotsMqSubmindResponse]:
         message_text = kwargs.get("message_text") or kwargs.get("messageText")
         
-        if message_text == CcaiControl.SAVE_PROMPT_RESULTS:
+        if message_text == CcaiControl.SAVE_PROMPT_RESULTS.value:
             return ChatbotsMqSavePrompt.model_validate(kwargs)
-        elif message_text == CcaiControl.CREATE_PROMPT:
+        elif message_text == CcaiControl.CREATE_PROMPT.value:
             return ChatbotsMqNewPrompt.model_validate(kwargs)
         else:
             return ChatbotsMqSubmindResponse.model_validate(kwargs)
