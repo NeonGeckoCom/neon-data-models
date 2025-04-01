@@ -81,11 +81,13 @@ class ChatbotsMqRequest(KlatContext, MQContext):
         )
     
     def model_dump(self, **kwargs):
-        """Override model_dump to include 'bot' field for backwards compatibility"""
+        """
+        Override model_dump to include SIO fields for backwards compatibility
+        """
         data = super().model_dump(**kwargs)
-        # Add the 'bot' parameter as '1' or '0' string for backwards compatibility
-        data["bot"] = "1" if self.from_bot else "0"
+        
         # Add parameters for backwards-compat.
+        data["bot"] = "1" if self.from_bot else "0"
         data["messageText"] = self.message_text
         data["nick"] = self.username
         return data
@@ -123,9 +125,9 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
     source: str = Field(
         default="klat_observer",
         description="Name of the service originating the shout")
-    
     bot_type: BotType = Field(default=None, deprecated=True,
                               description="Type of submind sending the shout")
+
     # service_name: Any = Field(default=None, deprecated=True)
     # context: Optional[dict] = Field(default=None, deprecated=True)
     # dom: Any = Field(default=None, deprecated=True,
@@ -133,9 +135,10 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
     # omit_reply: bool = Field(
     #     default=True, deprecated=True,
     #     description="If true, the Proctor will ignore this message")
-    # no_save: bool = Field(default=False, deprecated=True)
-    created_on: datetime = Field(default=datetime.now(timezone.utc),
-                                 description="Timestamp of response")
+    # no_save: bool = Field(default=False, deprecated=True,
+    #                       description="If true, this message will be ignored")
+    # created_on: datetime = Field(default=datetime.now(timezone.utc),
+    #                              description="Timestamp of response")
     # to_discussion: bool = Field(default=False, deprecated=True)
 
     @model_validator(mode='before')
@@ -148,15 +151,18 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
             if "nick" in values:
                 values.setdefault("userID", values.get("nick"))
 
-            if values.get("shout"):
+            if "shout" in values:
                 values.setdefault("messageText", values.get("shout"))
             
             if values.get("responded_shout"):
                 values.setdefault("repliedMessage",
                                    values.get("responded_shout"))
 
-            if values.get("time"):
+            if "time" in values:
                 values.setdefault("timeCreated", values.get("time"))
+
+            if "created_on" in values:
+                values.setdefault("timeCreated", values.get("created_on"))
 
             if "sid" in values and values["sid"] is None:
                 values.pop("sid")
@@ -166,10 +172,6 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
             #     values['bot_type'] = 'facilitator'
 
         return values
-
-    class Config:
-        # For aliased fields, accept either the canonical name OR the alias
-        populate_by_name = True
 
     def model_dump(self, **kwargs):
         # For backwards-compat, include aliased keys in serialization
@@ -184,6 +186,7 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
         by_alias['shout'] = self.message_text
         by_alias['time'] = self.time_created.timestamp()
         by_alias['promptState'] = self.prompt_state
+        by_alias['created_on'] = self.time_created.timestamp()
         
         return {**super().model_dump(**kwargs), **by_alias}
 
@@ -226,10 +229,6 @@ class ChatbotsMqSavePrompt(ChatbotsMqSubmindResponse):
     def model_dump(self, **kwargs):
         return ChatbotsMqSubmindResponse.model_dump(self, **kwargs)
 
-    class Config:
-        # For aliased fields, accept either the canonical name OR the alias
-        populate_by_name = True
-
 
 class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
     prompt_id: str = Field(
@@ -240,9 +239,6 @@ class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
     context: Optional[dict] = Field(default=None,
                                     alias="conversation_context")
 
-    class Config:
-        # For aliased fields, accept either the canonical name OR the alias
-        populate_by_name = True
 
     @model_validator(mode='before')
     @classmethod
@@ -400,17 +396,9 @@ class ChatbotsMqSubmindConnection(MQContext):
         default=False,
           description="True if the submind supports unprocessed conversations")
 
-    class Config:
-        # For aliased fields, accept either the canonical name OR the alias
-        populate_by_name = True
-
 
 class ChatbotsMqSubmindDisconnection(MQContext):
     user_id: str = Field(description="User ID of the submind", alias="nick")
-
-    class Config:
-        # For aliased fields, accept either the canonical name OR the alias
-        populate_by_name = True
 
 
 class ChatbotsMqSubmindInvitation(MQContext):

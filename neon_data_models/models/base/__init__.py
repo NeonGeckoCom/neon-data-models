@@ -32,8 +32,9 @@ from pydantic import ConfigDict, BaseModel as _BaseModel
 
 class BaseModel(_BaseModel):
     model_config = ConfigDict(extra="allow" if environ.get(
-            "NEON_DATA_MODELS_ALLOW_EXTRA", "false") != "false" else "ignore")
-
+            "NEON_DATA_MODELS_ALLOW_EXTRA", "false") != "false" else "ignore",
+            populate_by_name=environ.get("NEON_DATA_MODELS_POPULATE_BY_NAME",
+                                          "true") != "false",)
         
     def model_dump(self, *args, **kwargs) -> dict:
         """
