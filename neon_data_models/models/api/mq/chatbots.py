@@ -140,7 +140,8 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
             # Some references use different keys
             # TODO: prevent `None` values from being added here in place of missing
             #  keys
-            values.setdefault("userID", values.get("nick"))
+            if "nick" in values:
+                values.setdefault("userID", values.get("nick"))
 
             if values.get("shout"):
                 values.setdefault("messageText", values.get("shout"))
@@ -182,16 +183,16 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
 
 
 class PromptCompletedContext(BaseModel):
-    prompt: ChatbotsMqRequest
-    is_active: bool
+    prompt: Optional[ChatbotsMqRequest] = None
+    is_active: bool = False
     prompt_text: str
-    available_subminds: List[str]
-    state: int
-    participating_subminds: List[str]
-    proposed_responses: Dict[str, str]
-    submind_opinions: Dict[str, str]
-    votes: Dict[str, str]
-    votes_per_submind: Dict[str, List[str]]
+    available_subminds: List[str] = []
+    state: Optional[int] = None
+    participating_subminds: List[str] = []
+    proposed_responses: Dict[str, str] = {}
+    submind_opinions: Dict[str, str] = {}
+    votes: Dict[str, str] = {}
+    votes_per_submind: Dict[str, List[str]] = {}
     winner: str = ""
 
 
@@ -200,7 +201,7 @@ class ChatbotsMqSavePrompt(ChatbotsMqSubmindResponse):
         default="",
         description="ID of the CCAI prompt associated with the shout")
     prompt_text: str = Field(default="")
-    created_on: str = Field(default="")
+    created_on: Optional[str] = Field(default=None)
     context: PromptCompletedContext = Field(alias="conversation_context")
 
     @model_validator(mode='before')
@@ -213,6 +214,10 @@ class ChatbotsMqSavePrompt(ChatbotsMqSubmindResponse):
 
     def model_dump(self, **kwargs):
         return ChatbotsMqSubmindResponse.model_dump(self, **kwargs)
+
+    class Config:
+        # For aliased fields, accept either the canonical name OR the alias
+        populate_by_name = True
 
 
 class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
@@ -232,7 +237,8 @@ class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
     @classmethod
     def validate_context(cls, values):
         values.setdefault("context", values.get("conversation_context"))
-        values["messageText"] = values.get("prompt_text")
+        if "prompt_text" in values:
+            values["messageText"] = values.get("prompt_text")
         return values
     
     def model_dump(self, **kwargs):
@@ -251,11 +257,11 @@ class ChatbotsMqResponse:
         message_text = kwargs.get("message_text") or kwargs.get("messageText")
         
         if message_text == CcaiControl.SAVE_PROMPT_RESULTS.value:
-            return ChatbotsMqSavePrompt.model_validate(kwargs)
+            return ChatbotsMqSavePrompt(**kwargs)
         elif message_text == CcaiControl.CREATE_PROMPT.value:
-            return ChatbotsMqNewPrompt.model_validate(kwargs)
+            return ChatbotsMqNewPrompt(**kwargs)
         else:
-            return ChatbotsMqSubmindResponse.model_validate(kwargs)
+            return ChatbotsMqSubmindResponse(**kwargs)
     
     ta = TypeAdapter(Union[ChatbotsMqSavePrompt, ChatbotsMqNewPrompt, 
                            ChatbotsMqSubmindResponse])

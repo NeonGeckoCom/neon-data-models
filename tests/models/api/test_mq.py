@@ -931,7 +931,7 @@ class TestChatbotsMQ(TestCase):
         sio_request = ChatbotsMqRequest.from_sio_message(sio_message)
         self.assertEqual(sio_request.username, "user_id")
 
-    def test_chatbots_mq_response(self):
+    def test_chatbots_mq_submind_response(self):
         from neon_data_models.models.api.mq.chatbots import ChatbotsMqResponse, ChatbotsMqSubmindResponse
         
         # Test basic initialization with required fields
@@ -994,7 +994,7 @@ class TestChatbotsMQ(TestCase):
         self.assertIn("promptID", serialized)
         self.assertIn("isAnnouncement", serialized)
         self.assertIn("timeCreated", serialized)
-        
+
         # Test invalid literal values
         with self.assertRaises(ValidationError):
             ChatbotsMqResponse(
@@ -1113,6 +1113,8 @@ class TestChatbotsMQ(TestCase):
             "context": context
         }
         
+        # Test Descriminator
+        
         save_prompt = ChatbotsMqSavePrompt(**valid_kwargs)
         self.assertIsInstance(save_prompt, ChatbotsMqSavePrompt)
         self.assertEqual(save_prompt.user_id, "user123")
@@ -1154,6 +1156,9 @@ class TestChatbotsMQ(TestCase):
             "conversation_state": 0
         }
         
+        # Test Descriminator
+
+
         new_prompt = ChatbotsMqNewPrompt(**valid_kwargs)
         self.assertIsInstance(new_prompt, ChatbotsMqNewPrompt)
         self.assertEqual(new_prompt.user_id, "user123")
@@ -1649,58 +1654,76 @@ class TestChatbotsMQ(TestCase):
         self.assertEqual(result.user_id, "submind1")
         self.assertEqual(result.message_text, "Regular response")
         
+        # Test new prompt message
+        new_prompt_message = {
+            "routing_key": None,
+            "message_id": "8ee915f080ae416da1f31081cc4f945a",
+            "sid": "",
+            "cid": "35d5dff220",
+            "title": "",
+            "user_id": "proctor-f3277918bcc947359994f711452450b6",
+            "username": None,
+            "message_text": "!MSG:CREATE_PROMPT",
+            "replied_message": None,
+            "bot": "1",
+            "prompt_id": "f747c1f3caeb4975983b2eb52c35491e",
+            "prompt_state": 1,
+            "is_announcement": False,
+            "time_created": current_time,
+            "source": "klat_observer",
+            "bot_type": "proctor",
+            "service_name": "proctor",
+            "context": {},
+            "dom": "",
+            "omit_reply": True,
+            "no_save": False,
+            "created_on": 1743531762,
+            "to_discussion": None
+        }
+
+        result = ChatbotsMqResponse(**new_prompt_message)
+        self.assertIsInstance(result, ChatbotsMqNewPrompt)
+        self.assertEqual(result.prompt_id, new_prompt_message['prompt_id'])
+        self.assertEqual(result.prompt_text, '')
+        
         # Test save prompt message
         save_prompt_message = {
-            "userID": "submind1",
-            "messageText": CcaiControl.SAVE_PROMPT_RESULTS.value,
+            "routing_key": None,
+            "message_id": "e2ad6e92438f4ec0acaa386e22e24954",
+            "sid": "",
+            "cid": "35d5dff220",
+            "title": "",
+            "user_id": "proctor-f3277918bcc947359994f711452450b6",
+            "username": None,
+            "message_text": "!MSG:SAVE_PROMPT_RESULTS",
+            "replied_message": None,
+            "bot": "1",
             "prompt_id": "prompt_123",
-            "prompt_text": "Test prompt",
-            "created_on": "2023-01-01",
-            "message_id": "test_message_id",
-            "conversation_state": 0,
-            "conversation_context": {
-                "prompt": {
-                    "username": "test_user",
-                    "cid": "test_conversation",
-                    "message_text": "Original prompt",
-                    "message_id": "original_message_id",
-                    "time_created": current_time
-                },
-                "is_active": False,
-                "prompt_text": "Original prompt",
-                "available_subminds": ["submind1", "submind2"],
-                "state": 2,
-                "participating_subminds": ["submind1"],
-                "proposed_responses": {"submind1": "Response 1"},
-                "submind_opinions": {"submind1": "Opinion 1"},
-                "votes": {"submind1": "vote1"},
-                "votes_per_submind": {"submind1": ["vote1"]},
-                "winner": "submind1"
-            }
+            "prompt_state": 4,
+            "is_announcement": False,
+            "time_created": current_time,
+            "source": "klat_observer",
+            "bot_type": "proctor",
+            "service_name": "proctor",
+            "context": {
+                "winner": "submind1",
+                "prompt_text": "Test prompt",
+                "created_on": "2023-01-01"
+            },
+            "dom": "",
+            "omit_reply": True,
+            "no_save": False,
+            "created_on": None,
+            "to_discussion": None
         }
         
         result = ChatbotsMqResponse(**save_prompt_message)
         self.assertIsInstance(result, ChatbotsMqSavePrompt)
         self.assertEqual(result.prompt_id, "prompt_123")
-        self.assertEqual(result.prompt_text, "Test prompt")
-        self.assertEqual(result.created_on, "2023-01-01")
+        self.assertEqual(result.prompt_text, "")
+        self.assertIsNone(result.created_on)
         self.assertEqual(result.context.winner, "submind1")
-        
-        # Test new prompt message
-        new_prompt_message = {
-            "userID": "submind1",
-            "messageText": CcaiControl.CREATE_PROMPT.value,
-            "prompt_id": "prompt_456",
-            "prompt_text": "New test prompt",
-            "conversation_state": 2,
-            "message_id": "test_message_id"
-        }
-        
-        result = ChatbotsMqResponse(**new_prompt_message)
-        self.assertIsInstance(result, ChatbotsMqNewPrompt)
-        self.assertEqual(result.prompt_id, "prompt_456")
-        self.assertEqual(result.prompt_text, "New test prompt")
-        
+
         # Test with message_text vs messageText
         alternate_syntax = {
             "userID": "submind1",
