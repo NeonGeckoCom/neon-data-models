@@ -235,6 +235,9 @@ class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
     user_id: Optional[str] = Field(default=None, alias="nick",
                                    description="User ID of the proctor")
     prompt_text: str = Field(description="The new prompt being discussed")
+    prompt_state: CcaiState = Field(
+        default=CcaiState.IDLE, deprecated=True,
+        description="Implemented for backwards-compat. New Prompt always IDLE")
     context: Optional[dict] = Field(default=None, deprecated=True,
                                     alias="conversation_context")
 
