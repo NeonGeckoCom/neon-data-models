@@ -1153,7 +1153,7 @@ class TestChatbotsMQ(TestCase):
         new_prompt = ChatbotsMqNewPrompt(**valid_kwargs)
         self.assertIsInstance(new_prompt, ChatbotsMqNewPrompt)
         self.assertEqual(new_prompt.user_id, "user123")
-        self.assertEqual(new_prompt.message_text, "Test prompt text")
+        self.assertEqual(new_prompt.message_text, valid_kwargs["messageText"])
         self.assertEqual(new_prompt.prompt_id, "prompt123")
         self.assertEqual(new_prompt.prompt_text, "Test prompt text")
         self.assertIsNone(new_prompt.context)
@@ -1181,9 +1181,8 @@ class TestChatbotsMQ(TestCase):
             "prompt_text": "Only prompt text",
             "conversation_state": 0
         }
-        
-        partial_prompt = ChatbotsMqNewPrompt(**partial_kwargs)
-        self.assertEqual(partial_prompt.message_text, "Only prompt text")
+        with self.assertRaises(ValidationError):
+            partial_prompt = ChatbotsMqNewPrompt(**partial_kwargs)
         
         # Test model_dump inheritance from ChatbotsMqResponse
         serialized = new_prompt.model_dump()
@@ -1292,10 +1291,10 @@ class TestChatbotsMQ(TestCase):
         # Test validation logic for deprecated fields
         deprecated_kwargs = valid_kwargs.copy()
         deprecated_kwargs["bot_type"] = "proctor"
-        deprecated_kwargs["shout"] = "hello"
+        # deprecated_kwargs["shout"] = "hello"
         submind = ConnectedSubmind(**deprecated_kwargs)
         self.assertIsInstance(submind.bot_type, str)
-        self.assertEqual(submind.shout, "chatbot state")
+        # self.assertEqual(submind.shout, "chatbot state")
 
     def test_chatbots_mq_subminds_state(self):
         from neon_data_models.models.api.mq.chatbots import ChatbotsMqSubmindsState, ConnectedSubmind
@@ -1658,6 +1657,7 @@ class TestChatbotsMQ(TestCase):
             "replied_message": None,
             "bot": "1",
             "prompt_id": "f747c1f3caeb4975983b2eb52c35491e",
+            "prompt_text": "Why is testing important?",
             "prompt_state": 1,
             "is_announcement": False,
             "time_created": current_time,
@@ -1695,7 +1695,6 @@ class TestChatbotsMQ(TestCase):
         result = ChatbotsMqResponse(**new_prompt_message)
         self.assertIsInstance(result, ChatbotsMqNewPrompt)
         self.assertEqual(result.prompt_id, new_prompt_message['prompt_id'])
-        self.assertEqual(result.prompt_text, '')
         
         alt_response = ChatbotsMqResponse(**alt_new_prompt_message)
         self.assertIsInstance(alt_response, ChatbotsMqNewPrompt)
@@ -1746,67 +1745,67 @@ class TestChatbotsMQ(TestCase):
             "time": "1743539090",
             "omit_reply": True,
             "conversation_context": {
-            "message_id": "66d5c444961243d9bf95c5a068b0211a",
-            "state": 4,
-            "prompt": {
-                "routing_key": None,
-                "message_id": "98add3204f",
-                "sid": "7f80ae0d-a5a9-440d-f113-df167b70be9e",
-                "cid": "35d5dff220",
-                "title": "",
-                "username": "ca45d1ea45134523af7f",
-                "message_text": "Why is testing important?",
-                "from_bot": False,
-                "prompt_id": "00cbbd4c9f33422f9628c7b0c2e90c5b",
-                "prompt_state": None,
-                "time_created": 1743539036.0,
-                "requested_participants": [
-                "proctor"
+                "message_id": "66d5c444961243d9bf95c5a068b0211a",
+                "state": 4,
+                "prompt": {
+                    "routing_key": None,
+                    "message_id": "98add3204f",
+                    "sid": "7f80ae0d-a5a9-440d-f113-df167b70be9e",
+                    "cid": "35d5dff220",
+                    "title": "",
+                    "username": "ca45d1ea45134523af7f",
+                    "message_text": "Why is testing important?",
+                    "from_bot": False,
+                    "prompt_id": "00cbbd4c9f33422f9628c7b0c2e90c5b",
+                    "prompt_state": None,
+                    "time_created": 1743539036.0,
+                    "requested_participants": [
+                    "proctor"
+                    ],
+                    "recipient": None,
+                    "bound_service": "",
+                    "bot": "0",
+                    "messageText": "Why is testing important?",
+                    "nick": "ca45d1ea45134523af7f"
+                },
+                "is_active": True,
+                "prompt_text": "Why is testing important?",
+                "available_subminds": [
+                    "nucleotidings_vllm",
+                    "logistics_vllm",
+                    "neon_vllm"
                 ],
-                "recipient": None,
-                "bound_service": "",
-                "bot": "0",
-                "messageText": "Why is testing important?",
-                "nick": "ca45d1ea45134523af7f"
-            },
-            "is_active": True,
-            "prompt_text": "Why is testing important?",
-            "available_subminds": [
-                "nucleotidings_vllm",
-                "logistics_vllm",
-                "neon_vllm"
-            ],
-            "nick_mapping": {},
-            "participating_subminds": [
-                "nucleotidings_vllm",
-                "logistics_vllm",
-                "neon_vllm"
-            ],
-            "proposed_responses": {
-                "neon_vllm": "Testing is crucial.",
-                "logistics_vllm": "Testing is important.",
-                "nucleotidings_vllm": "Testing is important."
-            },
-            "submind_opinions": {
-                "neon_vllm": "The answer provided by \"logistics_vllm\" is the best answer",
-                "nucleotidings_vllm": "The answer provided by 'logistics_vllm' is considered the best.",
-                "logistics_vllm": "The answer provided by \"nucleotidings_vllm\" is the best answer."
-            },
-            "votes": {
-                "neon_vllm": "logistics_vllm",
-                "logistics_vllm": "nucleotidings_vllm",
-                "nucleotidings_vllm": "logistics_vllm"
-            },
-            "votes_per_submind": {
-                "logistics_vllm": [
-                "neon_vllm",
-                "nucleotidings_vllm"
+                "nick_mapping": {},
+                "participating_subminds": [
+                    "nucleotidings_vllm",
+                    "logistics_vllm",
+                    "neon_vllm"
                 ],
-                "nucleotidings_vllm": [
-                "logistics_vllm"
-                ]
-            },
-            "winner": "logistics_vllm"
+                "proposed_responses": {
+                    "neon_vllm": "Testing is crucial.",
+                    "logistics_vllm": "Testing is important.",
+                    "nucleotidings_vllm": "Testing is important."
+                },
+                "submind_opinions": {
+                    "neon_vllm": "The answer provided by \"logistics_vllm\" is the best answer",
+                    "nucleotidings_vllm": "The answer provided by 'logistics_vllm' is considered the best.",
+                    "logistics_vllm": "The answer provided by \"nucleotidings_vllm\" is the best answer."
+                },
+                "votes": {
+                    "neon_vllm": "logistics_vllm",
+                    "logistics_vllm": "nucleotidings_vllm",
+                    "nucleotidings_vllm": "logistics_vllm"
+                },
+                "votes_per_submind": {
+                    "logistics_vllm": [
+                    "neon_vllm",
+                    "nucleotidings_vllm"
+                    ],
+                    "nucleotidings_vllm": [
+                    "logistics_vllm"
+                    ]
+                },
+                "winner": "logistics_vllm"
             },
             "no_save": False,
             "message_id": "6924c0422b9347ae9604e4e97cd0847a",
@@ -1816,7 +1815,6 @@ class TestChatbotsMQ(TestCase):
         result = ChatbotsMqResponse(**save_prompt_message)
         self.assertIsInstance(result, ChatbotsMqSavePrompt)
         self.assertEqual(result.prompt_id, "prompt_123")
-        self.assertEqual(result.prompt_text, "")
         # self.assertIsNone(result.created_on)
         self.assertEqual(result.context.winner, "submind1")
         self.assertIsInstance(ChatbotsMqResponse(**alt_save_prompt_message),

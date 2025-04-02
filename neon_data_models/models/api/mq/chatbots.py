@@ -137,8 +137,6 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
     #     description="If true, the Proctor will ignore this message")
     # no_save: bool = Field(default=False, deprecated=True,
     #                       description="If true, this message will be ignored")
-    # created_on: datetime = Field(default=datetime.now(timezone.utc),
-    #                              description="Timestamp of response")
     # to_discussion: bool = Field(default=False, deprecated=True)
 
     @model_validator(mode='before')
@@ -192,39 +190,34 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
 
 
 class PromptCompletedContext(BaseModel):
-    prompt: Optional[ChatbotsMqRequest] = None
-    is_active: bool = False
-    prompt_text: str
-    available_subminds: List[str] = []
-    state: Optional[int] = None
-    participating_subminds: List[str] = []
-    proposed_responses: Dict[str, str] = {}
-    submind_opinions: Dict[str, str] = {}
-    votes: Dict[str, str] = {}
-    votes_per_submind: Dict[str, List[str]] = {}
-    winner: str = ""
+    prompt: Optional[ChatbotsMqRequest] = Field(
+        default=None, description="Original request containing the prompt")
+    is_active: bool = Field(
+        default=False, description="True if a response has not yet been chosen")
+    prompt_text: str = Field(description="The string prompt that is completed")
+    available_subminds: List[str] = Field(
+        default=[], description="List of subminds available to participate")
+    state: Optional[int] = Field(default=None)  # TODO: Define
+    participating_subminds: List[str] = Field(
+        default=[], description="List of subminds participating in the prompt")
+    proposed_responses: Dict[str, str] = Field(
+        default={}, description="Dict of nick to proposal")
+    
+    # In the future, there will be a list of these for multi-round discussion
+    submind_opinions: Dict[str, str] = Field(
+        default={}, description="Dict of nick to discussion")
+
+    votes: Dict[str, str] = Field(default={},
+                                  description="Dict of nick to vote")
+    votes_per_submind: Dict[str, List[str]] = Field(
+        default={}, description="Dict of nick to list of received votes")
+    winner: str = Field(default="", description="Selected winner")
 
 
 class ChatbotsMqSavePrompt(ChatbotsMqSubmindResponse):
-    prompt_id: str = Field(
-        default="",
-        description="ID of the CCAI prompt associated with the shout")
-    prompt_text: str = Field(default="")
-    # created_on: str = Field(default="", deprecated=True,
-    #                         description="String date of prompt creation.")
-    context: PromptCompletedContext = Field(alias="conversation_context")
-
-    # @model_validator(mode='before')
-    # @classmethod
-    # def validate_context(cls, values):
-    #     # if "context" in values and not values["context"]:
-    #     #     # Pop to replace with `conversation_context` or fail
-    #     #     values.pop("context")
-
-    #     # TODO: Patching invalid input for backwards-compat.
-    #     if "created_on" in values and values["created_on"] is None:
-    #         values.pop("created_on")
-    #     return values
+    context: PromptCompletedContext = Field(
+        alias="conversation_context",
+        description="Definition of the completed discussion")
     
     def model_dump(self, **kwargs):
         return ChatbotsMqSubmindResponse.model_dump(self, **kwargs)
@@ -234,20 +227,18 @@ class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
     prompt_id: str = Field(
         description="ID of the CCAI prompt associated with the shout"
     )
-    user_id: Optional[str] = Field(default=None)
-    prompt_text: str = Field(default="")
-    context: Optional[dict] = Field(default=None,
+    user_id: Optional[str] = Field(default=None, alias="nick",
+                                   description="User ID of the proctor")
+    prompt_text: str = Field(description="The new prompt being discussed")
+    context: Optional[dict] = Field(default=None, deprecated=True,
                                     alias="conversation_context")
 
 
     @model_validator(mode='before')
     @classmethod
     def validate_context(cls, values):
-        values.setdefault("context", values.get("conversation_context"))
-        if "prompt_text" in values:
-            values["messageText"] = values.get("prompt_text")
-        if "nick" in values:
-            values.setdefault("user_id", values.get("nick"))
+        values.setdefault("message_text", values.get("shout"))
+        values.setdefault("user_id", values.get("nick"))
         return values
     
     def model_dump(self, **kwargs):
@@ -265,6 +256,7 @@ class ChatbotsMqResponse:
                                             ChatbotsMqSubmindResponse]:
         message_text = kwargs.get("message_text") or kwargs.get("messageText") \
             or kwargs.get("shout")
+        kwargs['message_text'] = message_text
         
         if message_text == CcaiControl.SAVE_PROMPT_RESULTS.value:
             return ChatbotsMqSavePrompt(**kwargs)
@@ -277,31 +269,24 @@ class ChatbotsMqResponse:
     #                        ChatbotsMqSubmindResponse])
 
 
-class ConnectedSubmind(MQContext):
+class ConnectedSubmind(BaseModel):
     bot_type: BotType
     service_name: str
-    cid: str = Field(deprecated=True)
-    dom: str = Field(deprecated=True)
-    conversation_state: CcaiState
-    responded_shout: Optional[str] = Field(deprecated=True)
-    shout: Literal["chatbot state"] = Field(deprecated=True)
-    context: Dict[str, Any]  # TODO: Refactor?
-    prompt_id: Optional[str] = Field(deprecated=True)
-    omit_reply: bool = Field(deprecated=True)
-    no_save: bool = Field(deprecated=True)
-    attached_cids: List[str]
-    supports_raw_shouts: bool  # TODO: Refactor?
-    last_ping: datetime
-
-    @model_validator(mode='before')
-    @classmethod
-    def validate_context(cls, values):
-        # TODO: Mark as deprecated
-        # if values.get('bot_type') in ('proctor', 'observer'):
-        #     values['bot_type'] = 'facilitator'
-        if values.get('shout') == 'hello':
-            values['shout'] = 'chatbot state'
-        return values
+    # cid: str = Field(deprecated=True)
+    # dom: str = Field(deprecated=True)
+    # conversation_state: CcaiState
+    # responded_shout: Optional[str] = Field(deprecated=True)
+    # shout: Literal["chatbot state"] = Field(deprecated=True)
+    # context: Dict[str, Any]
+    # prompt_id: Optional[str] = Field(deprecated=True)
+    # omit_reply: bool = Field(deprecated=True)
+    # no_save: bool = Field(deprecated=True)
+    attached_cids: List[str] = Field(
+        description="List of conversation IDs the submind is participating in")
+    supports_raw_shouts: bool = Field(
+        description="True if the submind will handle all conversation shouts")  # TODO: Refactor?
+    last_ping: datetime = Field(
+        description="Last time the submind pinged the observer")
 
 
 class ChatbotsMqSubmindsState(MQContext):
