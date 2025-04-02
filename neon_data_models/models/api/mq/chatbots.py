@@ -146,7 +146,7 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
                           description="If true, this message will be ignored")
     to_discussion: bool = Field(default=False, deprecated=True)
     prompt_state: CcaiState = Field(
-        default=CcaiState.IDLE, deprecated=True, alias="promptState",
+        default=CcaiState.IDLE.value, deprecated=True, alias="promptState",
         description="State of the CCAI conversation associated with the shout")
     
     @model_validator(mode='before')
@@ -287,7 +287,7 @@ class ConnectedSubmind(BaseModel):
     service_name: Optional[str] = Field(default=None,
                                         description="Unique ID of the submind")
     attached_cids: List[str] = Field(
-        default = [], alias="cids",
+        default=[], alias="cids",
         description="List of conversation IDs the submind is participating in")
     version: Optional[str] = Field(
         default=None,
@@ -296,7 +296,7 @@ class ConnectedSubmind(BaseModel):
         default=False,
         description="True if the submind will handle all conversation shouts")
     last_ping: datetime = Field(
-        default = datetime.now(tz=timezone.utc),
+        default=lambda: datetime.now(tz=timezone.utc),
         description="Last time the submind pinged the observer")
 
     bot_type: BotType = Field(
