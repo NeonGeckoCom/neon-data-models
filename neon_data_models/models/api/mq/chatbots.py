@@ -113,8 +113,8 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
     prompt_id: Optional[str] = Field(
         default=None, alias="promptID",
         description="ID of the CCAI prompt associated with the shout")
-    prompt_state: int = Field(
-        default=CcaiState.IDLE.value,  # Default for backwards-compat. with cb-observer
+    prompt_state: CcaiState = Field(
+        default=CcaiState.IDLE,  # Default for backwards-compat. with cb-observer
         deprecated=True, alias="conversation_state",
         description="State of the CCAI conversation associated with the shout")
     is_announcement: bool = Field(
