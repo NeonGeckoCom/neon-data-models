@@ -48,7 +48,7 @@ class ChatbotsMqRequest(KlatContext, MQContext):
     prompt_id: Optional[str] = Field(
         default=None,
         description="ID of the CCAI prompt associated with the shout")
-    prompt_state: Optional[int] = Field(
+    prompt_state: Optional[CcaiState] = Field(
         default=None, deprecated=True,
         description="State of the CCAI conversation associated with the shout")
     time_created: datetime = Field(
@@ -130,7 +130,9 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
                               description="Type of submind sending the shout")
 
     # service_name: Any = Field(default=None, deprecated=True)
-    # context: Optional[dict] = Field(default=None, deprecated=True)
+    context: Optional[dict] = Field(
+        default=None, deprecated=True,
+        description="Context used for Klat Server backwards-compat.")
     # dom: Any = Field(default=None, deprecated=True,
     #                  description="Domain of this conversation")
     # omit_reply: bool = Field(
