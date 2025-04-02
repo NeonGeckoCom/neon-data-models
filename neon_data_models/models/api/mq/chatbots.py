@@ -120,9 +120,6 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
     prompt_id: Optional[str] = Field(
         default=None, alias="promptID",
         description="ID of the CCAI prompt associated with the shout")
-    prompt_state: CcaiState = Field(
-        deprecated=True, alias="promptState",
-        description="State of the CCAI conversation associated with the shout")
     is_announcement: bool = Field(
         default=False, alias="isAnnouncement",
         description="True if the shout is an announcement")
@@ -148,7 +145,10 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
     no_save: bool = Field(default=False, deprecated=True,
                           description="If true, this message will be ignored")
     to_discussion: bool = Field(default=False, deprecated=True)
-
+    prompt_state: CcaiState = Field(
+        default=CcaiState.IDLE, deprecated=True, alias="promptState",
+        description="State of the CCAI conversation associated with the shout")
+    
     @model_validator(mode='before')
     @classmethod
     def validate_inputs(cls, values):

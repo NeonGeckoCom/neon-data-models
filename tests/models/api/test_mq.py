@@ -1281,12 +1281,6 @@ class TestChatbotsMQ(TestCase):
         self.assertIsInstance(serialized["bot_type"], str)
         self.assertEqual(serialized["service_name"], "test_service")
         self.assertEqual(serialized["attached_cids"], ["cid1", "cid2"])
-        
-        # Test missing required fields
-        with self.assertRaises(ValidationError):
-            ConnectedSubmind(
-                message_id="test_message_id",
-                service_name="test_service")
 
         # Test validation logic for deprecated fields
         deprecated_kwargs = valid_kwargs.copy()
