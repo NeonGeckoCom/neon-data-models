@@ -1181,9 +1181,9 @@ class TestChatbotsMQ(TestCase):
             "prompt_text": "Only prompt text",
             "conversation_state": 0
         }
-        with self.assertRaises(ValidationError):
-            partial_prompt = ChatbotsMqNewPrompt(**partial_kwargs)
-        
+        partial_prompt = ChatbotsMqNewPrompt(**partial_kwargs)
+        self.assertEqual(partial_prompt.message_text, '')
+
         # Test model_dump inheritance from ChatbotsMqResponse
         serialized = new_prompt.model_dump()
         self.assertIn("user_id", serialized)
