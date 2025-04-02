@@ -215,7 +215,7 @@ class PromptCompletedContext(BaseModel):
 
     # Below are deprecated
     is_active: bool = Field(  # Seems to report active all the time
-        default=False, deprecated=True
+        default=False, deprecated=True,
         description="True if a response has not yet been chosen")
     state: Optional[CcaiState] = Field(
         default=CcaiState.PICK, deprecated=True,
