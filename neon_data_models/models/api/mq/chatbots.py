@@ -128,11 +128,13 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
         description="Name of the service originating the shout")
     bot_type: BotType = Field(default=None, deprecated=True,
                               description="Type of submind sending the shout")
-
+    participating_subminds: Optional[List[str]] = Field(
+        default=[], deprecated=True,
+        description="List of subminds participating in the shout")
     # service_name: Any = Field(default=None, deprecated=True)
-    context: Optional[dict] = Field(
-        default=None, deprecated=True,
-        description="Context used for Klat Server backwards-compat.")
+    # context: Optional[dict] = Field(
+    #     default=None, deprecated=True,
+    #     description="Context used for Klat Server backwards-compat.")
     # dom: Any = Field(default=None, deprecated=True,
     #                  description="Domain of this conversation")
     # omit_reply: bool = Field(
