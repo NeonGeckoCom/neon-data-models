@@ -146,7 +146,7 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
                           description="If true, this message will be ignored")
     to_discussion: bool = Field(default=False, deprecated=True)
     prompt_state: CcaiState = Field(
-        default=CcaiState.IDLE.value, deprecated=True, alias="promptState",
+        default=CcaiState.IDLE, deprecated=True, alias="promptState",
         description="State of the CCAI conversation associated with the shout")
     
     @model_validator(mode='before')
@@ -192,7 +192,7 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
         by_alias['responded_shout'] = self.replied_message
         by_alias['shout'] = self.message_text
         by_alias['time'] = self.time_created.timestamp()
-        by_alias['promptState'] = self.prompt_state
+        by_alias['promptState'] = self.prompt_state.value
         by_alias['created_on'] = self.time_created.timestamp()
         
         return {**super().model_dump(**kwargs), **by_alias}
