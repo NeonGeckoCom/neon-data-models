@@ -285,9 +285,9 @@ class ChatbotsMqResponse:
 
 class ConnectedSubmind(BaseModel):
     service_name: Optional[str] = Field(default=None,
-                                        description="Name of the submind")
+                                        description="Unique ID of the submind")
     attached_cids: List[str] = Field(
-        alias="cids",
+        default = [], alias="cids",
         description="List of conversation IDs the submind is participating in")
     version: Optional[str] = Field(
         default=None,
