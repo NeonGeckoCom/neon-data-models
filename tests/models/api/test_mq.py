@@ -1264,7 +1264,7 @@ class TestChatbotsMQ(TestCase):
             "omit_reply": False,
             "no_save": False,
             "attached_cids": ["cid1", "cid2"],
-            "supports_raw_shouts": True,
+            "supports_raw_conversation": True,
             "last_ping": current_time
         }
         
@@ -1274,7 +1274,7 @@ class TestChatbotsMQ(TestCase):
         self.assertEqual(submind.service_name, "test_service")
         self.assertEqual(submind.attached_cids, ["cid1", "cid2"])
         self.assertEqual(submind.last_ping, current_time)
-        self.assertTrue(submind.supports_raw_shouts)
+        self.assertTrue(submind.supports_raw_conversation)
         
         # Test model_dump functionality
         serialized = submind.model_dump()
@@ -1318,7 +1318,7 @@ class TestChatbotsMQ(TestCase):
             omit_reply=False,
             no_save=False,
             attached_cids=["cid1", "cid2"],
-            supports_raw_shouts=True,
+            supports_raw_conversation=True,
             last_ping=current_time
         )
         
@@ -1848,21 +1848,21 @@ class TestChatbotsMQ(TestCase):
         self.assertIsInstance(connection, ChatbotsMqSubmindConnection)
         self.assertEqual(connection.user_id, "submind1")  # Check aliased field
         self.assertEqual(connection.time, current_time)
-        self.assertFalse(connection.supports_raw_shouts)  # Default value
+        self.assertFalse(connection.supports_raw_conversation)  # Default value
         
         # Test with all fields
         full_kwargs = {
             "user_id": "submind2",
             "time": current_time,
             "cids": ["conversation1", "conversation2"],
-            "supports_raw_shouts": True,
+            "supports_raw_conversation": True,
             "message_id": "test_message_id"
         }
         
         full_connection = ChatbotsMqSubmindConnection(**full_kwargs)
         self.assertEqual(full_connection.user_id, "submind2")
         self.assertEqual(full_connection.cids, ["conversation1", "conversation2"])
-        self.assertTrue(full_connection.supports_raw_shouts)
+        self.assertTrue(full_connection.supports_raw_conversation)
         
         # # Test alias interchangeability (populate_by_name config)
         # self.assertEqual(full_connection.user_id, full_connection.nick)

@@ -39,9 +39,11 @@ class ChatbotsMqRequest(KlatContext, MQContext):
     """
     Defines a request from Klat to the Chatbots service.
     """
-    username: str = Field(description="Username (or 'nick') of the sender")
+    username: str = Field(alias="nick",
+                          description="Username (or 'nick') of the sender")
     cid: str = Field(description="Conversation ID associated with the shout")
-    message_text: str = Field(description="Text content of the shout")
+    message_text: str = Field(alias="messageText",
+                              description="Text content of the shout")
     from_bot: bool = Field(
         default=False,
         description="True if the shout is from a bot, False if from a user")
@@ -88,8 +90,6 @@ class ChatbotsMqRequest(KlatContext, MQContext):
         
         # Add parameters for backwards-compat.
         data["bot"] = "1" if self.from_bot else "0"
-        data["messageText"] = self.message_text
-        data["nick"] = self.username
         return data
 
 
@@ -127,33 +127,33 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
         description="Name of the service originating the shout")
     bot_type: Optional[BotType] = Field(default=None, deprecated=True,
                               description="Type of submind sending the shout")
-    # service_name: Any = Field(default=None, deprecated=True)
-    # context: Optional[dict] = Field(
-    #     default=None, deprecated=True,
-    #     description="Context used for Klat Server backwards-compat.")
-    # dom: Any = Field(default=None, deprecated=True,
-    #                  description="Domain of this conversation")
-    # omit_reply: bool = Field(
-    #     default=True, deprecated=True,
-    #     description="If true, the Proctor will ignore this message")
-    # no_save: bool = Field(default=False, deprecated=True,
-    #                       description="If true, this message will be ignored")
-    # to_discussion: bool = Field(default=False, deprecated=True)
+    
+    # Below are deprecated fields for backwards-compat.
+    service_name: Any = Field(default=None, deprecated=True)
+    context: Optional[dict] = Field(
+        default=None, deprecated=True,
+        description="Context used for Klat Server backwards-compat.")
+    dom: Any = Field(default=None, deprecated=True,
+                     description="Domain of this conversation")
+    omit_reply: bool = Field(
+        default=True, deprecated=True,
+        description="If true, the Proctor will ignore this message")
+    no_save: bool = Field(default=False, deprecated=True,
+                          description="If true, this message will be ignored")
+    to_discussion: bool = Field(default=False, deprecated=True)
 
     @model_validator(mode='before')
     @classmethod
     def validate_inputs(cls, values):
         if isinstance(values, dict):
-            # Some references use different keys
-            # TODO: prevent `None` values from being added here in place of missing
-            #  keys
+            # Some additional aliases for backwards-compat.
             if "nick" in values:
                 values.setdefault("userID", values.get("nick"))
 
             if "shout" in values:
                 values.setdefault("messageText", values.get("shout"))
             
-            if values.get("responded_shout"):
+            if "responded_shout" in values:
                 values.setdefault("repliedMessage",
                                    values.get("responded_shout"))
 
@@ -170,19 +170,16 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
                 values.setdefault("promptState",
                                   values.get("conversation_state"))
 
-            # # TODO: Mark as deprecated
-            # if values.get('bot_type') in ('proctor', 'observer'):
-            #     values['bot_type'] = 'facilitator'
-
         return values
 
     def model_dump(self, **kwargs):
-        # For backwards-compat, include aliased keys in serialization
+        # For backwards-compat with Klat Server, include aliased keys in 
+        # serialization. In the future, this should be configurable and
+        # eventually removed.
         by_alias = {}
         if 'by_alias' not in kwargs:
             by_alias = super().model_dump(by_alias=True, **kwargs)
 
-        # TODO: Below are for SIO compat.
         by_alias['isAnnouncement'] = '1' if self.is_announcement else '0'
         by_alias['nick'] = self.user_id
         by_alias['responded_shout'] = self.replied_message
@@ -197,12 +194,10 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
 class PromptCompletedContext(BaseModel):
     prompt: Optional[ChatbotsMqRequest] = Field(
         default=None, description="Original request containing the prompt")
-    is_active: bool = Field(
-        default=False, description="True if a response has not yet been chosen")
+
     prompt_text: str = Field(description="The string prompt that is completed")
-    available_subminds: List[str] = Field(
+    available_subminds: List[str] = Field(  # Seems to always match `participating_subminds`
         default=[], description="List of subminds available to participate")
-    state: Optional[int] = Field(default=None)  # TODO: Define
     participating_subminds: List[str] = Field(
         default=[], description="List of subminds participating in the prompt")
     proposed_responses: Dict[str, str] = Field(
@@ -217,6 +212,14 @@ class PromptCompletedContext(BaseModel):
     votes_per_submind: Dict[str, List[str]] = Field(
         default={}, description="Dict of nick to list of received votes")
     winner: str = Field(default="", description="Selected winner")
+
+    # Below are deprecated
+    is_active: bool = Field(  # Seems to report active all the time
+        default=False, deprecated=True
+        description="True if a response has not yet been chosen")
+    state: Optional[CcaiState] = Field(
+        default=CcaiState.PICK, deprecated=True,
+        description="State of the CCAI conversation (always PICK)")
 
 
 class ChatbotsMqSavePrompt(ChatbotsMqSubmindResponse):
@@ -271,24 +274,22 @@ class ChatbotsMqResponse:
             return ChatbotsMqNewPrompt(**kwargs)
         else:
             return ChatbotsMqSubmindResponse(**kwargs)
-    
-    # ta = TypeAdapter(Union[ChatbotsMqSavePrompt, ChatbotsMqNewPrompt, 
-    #                        ChatbotsMqSubmindResponse])
 
 
 class ConnectedSubmind(BaseModel):
-    bot_type: BotType = Field(
-        description="Type of bot (e.g. facilitator, submind)")  # TODO: Always `submind`?
     service_name: str = Field(
         description="Name of the submind")
     attached_cids: List[str] = Field(
         description="List of conversation IDs the submind is participating in")
-    supports_raw_shouts: bool = Field(
+    supports_raw_conversation: bool = Field(
         default=False,
-        description="True if the submind will handle all conversation shouts")  # TODO: Refactor?
+        description="True if the submind will handle all conversation shouts")
     last_ping: datetime = Field(
         description="Last time the submind pinged the observer")
 
+    bot_type: BotType = Field(
+        deprecated=True,
+        description="Type of bot (always `submind` in this context)")
 
 class ChatbotsMqSubmindsState(MQContext):
     class SubmindState(BaseModel):
@@ -296,8 +297,6 @@ class ChatbotsMqSubmindsState(MQContext):
         status: SubmindStatus = Field(
             description="Subminds's status in a particular conversation")
 
-    msg_type: Literal["subminds_state"] = Field(
-        "subminds_state", description="Message type for SIO", deprecated=True)
     subminds_per_cid: Dict[str, List[SubmindState]] = Field(
         description="List of submind participants per conversation ID")
     connected_subminds: Dict[str, ConnectedSubmind] = Field(
@@ -306,6 +305,9 @@ class ChatbotsMqSubmindsState(MQContext):
         description="Dict of `cid` to list of banned submind `user_id`s")
     banned_subminds: List[str] = Field(
         description="List of globally banned submind `user_id`s")
+
+    msg_type: Literal["subminds_state"] = Field(
+        "subminds_state", description="Message type for SIO", deprecated=True)
 
 
 class ChatbotsMqConfiguredPersonasRequest(MQContext):
@@ -320,6 +322,7 @@ class ChatbotsMqConfiguredPersonasResponse(MQContext):
         description="Time the personas were last checked")
     items: List[LLMPersona] = Field(
         description="List of configured personas from Klat")
+
     context: dict = Field(deprecated=True)
 
     @model_validator(mode='before')
@@ -335,10 +338,12 @@ class ChatbotsMqConfiguredPersonasResponse(MQContext):
         Override model_dump to include 'persona_name' field for each item based 
         on its 'name' for backwards-compat. with Klat server
         """
-        data = super().model_dump(**kwargs)
-        for item in data['items']:
-            item['persona_name'] = item['name']
-        return data
+        by_alias = {}
+        if 'by_alias' not in kwargs:
+            # `by_alias` to include `persona_name` in serialized `LLMPersona`s
+            by_alias = super().model_dump(by_alias=True, **kwargs)
+        
+        return {**super().model_dump(**kwargs), **by_alias}
 
     @classmethod
     def from_persona_request(cls, data: dict,
@@ -357,6 +362,7 @@ class ChatbotsMqPromptsDataRequest(MQContext):
 
 class ChatbotsMqPromptsDataResponse(MQContext):
     records: List[str] = Field(description="List of configured prompts")
+
     context: dict = Field(deprecated=True)
 
     @model_validator(mode='before')
@@ -381,9 +387,9 @@ class ChatbotsMqSubmindConnection(MQContext):
         description="Timestamp when the submind last connected")
     cids: Optional[List[str]] = Field(
         default=None, description="List of conversation IDs the submind is in")
-    supports_raw_shouts: bool = Field(
+    supports_raw_conversation: bool = Field(
         default=False,
-          description="True if the submind supports unprocessed conversations")
+        description="True if the submind supports unprocessed conversations")
 
 
 class ChatbotsMqSubmindDisconnection(MQContext):
