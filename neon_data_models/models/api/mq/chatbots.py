@@ -296,7 +296,7 @@ class ConnectedSubmind(BaseModel):
         default=False,
         description="True if the submind will handle all conversation shouts")
     last_ping: datetime = Field(
-        default=lambda: datetime.now(tz=timezone.utc),
+        default_factory=lambda: datetime.now(tz=timezone.utc),
         description="Last time the submind pinged the observer")
 
     bot_type: BotType = Field(
