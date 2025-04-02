@@ -114,6 +114,7 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
         default=None, alias="promptID",
         description="ID of the CCAI prompt associated with the shout")
     prompt_state: int = Field(
+        default=CcaiState.IDLE.value,  # Default for backwards-compat. with cb-observer
         deprecated=True, alias="conversation_state",
         description="State of the CCAI conversation associated with the shout")
     is_announcement: bool = Field(
@@ -233,11 +234,10 @@ class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
     context: Optional[dict] = Field(default=None, deprecated=True,
                                     alias="conversation_context")
 
-
     @model_validator(mode='before')
     @classmethod
     def validate_context(cls, values):
-        values.setdefault("message_text", values.get("shout"))
+        values.setdefault("message_text", values.get("shout", ""))
         values.setdefault("user_id", values.get("nick"))
         return values
     
@@ -277,6 +277,7 @@ class ConnectedSubmind(BaseModel):
     attached_cids: List[str] = Field(
         description="List of conversation IDs the submind is participating in")
     supports_raw_shouts: bool = Field(
+        default=False,
         description="True if the submind will handle all conversation shouts")  # TODO: Refactor?
     last_ping: datetime = Field(
         description="Last time the submind pinged the observer")
