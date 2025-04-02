@@ -114,8 +114,7 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
         default=None, alias="promptID",
         description="ID of the CCAI prompt associated with the shout")
     prompt_state: CcaiState = Field(
-        default=CcaiState.IDLE,  # Default for backwards-compat. with cb-observer
-        deprecated=True, alias="conversation_state",
+        deprecated=True, alias="promptState",
         description="State of the CCAI conversation associated with the shout")
     is_announcement: bool = Field(
         default=False, alias="isAnnouncement",
@@ -126,11 +125,8 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
     source: str = Field(
         default="klat_observer",
         description="Name of the service originating the shout")
-    bot_type: BotType = Field(default=None, deprecated=True,
+    bot_type: Optional[BotType] = Field(default=None, deprecated=True,
                               description="Type of submind sending the shout")
-    participating_subminds: Optional[List[str]] = Field(
-        default=[], deprecated=True,
-        description="List of subminds participating in the shout")
     # service_name: Any = Field(default=None, deprecated=True)
     # context: Optional[dict] = Field(
     #     default=None, deprecated=True,
@@ -169,6 +165,10 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
 
             if "sid" in values and values["sid"] is None:
                 values.pop("sid")
+
+            if "conversation_state" in values:
+                values.setdefault("promptState",
+                                  values.get("conversation_state"))
 
             # # TODO: Mark as deprecated
             # if values.get('bot_type') in ('proctor', 'observer'):
