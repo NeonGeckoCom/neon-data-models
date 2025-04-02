@@ -36,7 +36,8 @@ class LLMPersonaIdentity(BaseModel):
     """
     Defines metadata for a unique persona.
     """
-    name: str = Field(description="Unique name for this persona")
+    name: str = Field(alias="persona_name", 
+                      description="Unique name for this persona")
     user_id: Optional[str] = Field(
         None, description="`user_id` of the user who created this persona.")
 
@@ -47,13 +48,6 @@ class LLMPersonaIdentity(BaseModel):
         if self.user_id:
             persona_id += f"_{self.user_id}"
         return persona_id
-    
-    @model_validator(mode='before')
-    @classmethod
-    def validate_inputs(cls, values):
-        # MQ API uses `persona_name` here
-        values.setdefault('name', values.get('persona_name'))
-        return values
 
 
 class LLMPersona(LLMPersonaIdentity):
