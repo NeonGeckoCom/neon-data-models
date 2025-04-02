@@ -284,18 +284,23 @@ class ChatbotsMqResponse:
 
 
 class ConnectedSubmind(BaseModel):
-    service_name: str = Field(
-        description="Name of the submind")
+    service_name: Optional[str] = Field(default=None,
+                                        description="Name of the submind")
     attached_cids: List[str] = Field(
+        alias="cids",
         description="List of conversation IDs the submind is participating in")
+    version: Optional[str] = Field(
+        default=None,
+        description="Version of chatbot-core the submind is using")
     supports_raw_conversation: bool = Field(
         default=False,
         description="True if the submind will handle all conversation shouts")
     last_ping: datetime = Field(
+        default = datetime.now(tz=timezone.utc),
         description="Last time the submind pinged the observer")
 
     bot_type: BotType = Field(
-        deprecated=True,
+        deprecated=True, default="submind",
         description="Type of bot (always `submind` in this context)")
 
 class ChatbotsMqSubmindsState(MQContext):
@@ -394,9 +399,9 @@ class ChatbotsMqSubmindConnection(MQContext):
         description="Timestamp when the submind last connected")
     cids: Optional[List[str]] = Field(
         default=None, description="List of conversation IDs the submind is in")
-    supports_raw_conversation: bool = Field(
-        default=False,
-        description="True if the submind supports unprocessed conversations")
+    context: Optional[ConnectedSubmind] = Field(
+        default=None,
+        description="ConnectedSubmind definition of the connecting bot")
 
 
 class ChatbotsMqSubmindDisconnection(MQContext):

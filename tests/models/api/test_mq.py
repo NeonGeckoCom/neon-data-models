@@ -1844,7 +1844,6 @@ class TestChatbotsMQ(TestCase):
         self.assertIsInstance(connection, ChatbotsMqSubmindConnection)
         self.assertEqual(connection.user_id, "submind1")  # Check aliased field
         self.assertEqual(connection.time, current_time)
-        self.assertFalse(connection.supports_raw_conversation)  # Default value
         
         # Test with all fields
         full_kwargs = {
@@ -1858,7 +1857,6 @@ class TestChatbotsMQ(TestCase):
         full_connection = ChatbotsMqSubmindConnection(**full_kwargs)
         self.assertEqual(full_connection.user_id, "submind2")
         self.assertEqual(full_connection.cids, ["conversation1", "conversation2"])
-        self.assertTrue(full_connection.supports_raw_conversation)
         
         # # Test alias interchangeability (populate_by_name config)
         # self.assertEqual(full_connection.user_id, full_connection.nick)
