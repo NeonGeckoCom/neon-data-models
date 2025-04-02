@@ -86,11 +86,18 @@ class ChatbotsMqRequest(KlatContext, MQContext):
         """
         Override model_dump to include SIO fields for backwards compatibility
         """
-        data = super().model_dump(**kwargs)
-        
+
+        # For backwards-compat with Klat Server, include aliased keys in 
+        # serialization. In the future, this should be configurable and
+        # eventually removed.
+        by_alias = {}
+        if 'by_alias' not in kwargs:
+            by_alias = super().model_dump(by_alias=True, **kwargs)
+
         # Add parameters for backwards-compat.
-        data["bot"] = "1" if self.from_bot else "0"
-        return data
+        by_alias["bot"] = "1" if self.from_bot else "0"
+
+        return {**super().model_dump(**kwargs), **by_alias}
 
 
 class ChatbotsMqSubmindResponse(KlatContext, MQContext):
