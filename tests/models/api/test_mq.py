@@ -1669,7 +1669,6 @@ class TestChatbotsMQ(TestCase):
             "omit_reply": True,
             "no_save": False,
             "created_on": 1743531762,
-            "to_discussion": None
         }
 
         alt_new_prompt_message = {
@@ -1722,14 +1721,11 @@ class TestChatbotsMQ(TestCase):
             "service_name": "proctor",
             "context": {
                 "winner": "submind1",
-                "prompt_text": "Test prompt",
-                # "created_on": "2023-01-01"
+                "prompt_text": "Test prompt"
             },
             "dom": "",
             "omit_reply": True,
-            "no_save": False,
-            # "created_on": None,
-            "to_discussion": None
+            "no_save": False
         }
         alt_save_prompt_message = {
             "nick": "proctor-ac18f03d0937490080c798d3b242ecd0",
