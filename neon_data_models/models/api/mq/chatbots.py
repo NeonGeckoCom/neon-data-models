@@ -270,17 +270,10 @@ class ChatbotsMqResponse:
 
 
 class ConnectedSubmind(BaseModel):
-    bot_type: BotType
-    service_name: str
-    # cid: str = Field(deprecated=True)
-    # dom: str = Field(deprecated=True)
-    # conversation_state: CcaiState
-    # responded_shout: Optional[str] = Field(deprecated=True)
-    # shout: Literal["chatbot state"] = Field(deprecated=True)
-    # context: Dict[str, Any]
-    # prompt_id: Optional[str] = Field(deprecated=True)
-    # omit_reply: bool = Field(deprecated=True)
-    # no_save: bool = Field(deprecated=True)
+    bot_type: BotType = Field(
+        description="Type of bot (e.g. facilitator, submind)")  # TODO: Always `submind`?
+    service_name: str = Field(
+        description="Name of the submind")
     attached_cids: List[str] = Field(
         description="List of conversation IDs the submind is participating in")
     supports_raw_shouts: bool = Field(
@@ -297,10 +290,12 @@ class ChatbotsMqSubmindsState(MQContext):
 
     msg_type: Literal["subminds_state"] = Field(
         "subminds_state", description="Message type for SIO", deprecated=True)
-    subminds_per_cid: Dict[str, List[SubmindState]]
-    connected_subminds: Dict[str, ConnectedSubmind]
+    subminds_per_cid: Dict[str, List[SubmindState]] = Field(
+        description="List of submind participants per conversation ID")
+    connected_subminds: Dict[str, ConnectedSubmind] = Field(
+        description="Dict of submind `user_id` to `ConnectedSubmind` object")
     cid_submind_bans: Dict[str, List[str]] = Field(
-        description="List of banned submind `user_id`s per `cid`")
+        description="Dict of `cid` to list of banned submind `user_id`s")
     banned_subminds: List[str] = Field(
         description="List of globally banned submind `user_id`s")
 
@@ -315,7 +310,8 @@ class ChatbotsMqConfiguredPersonasRequest(MQContext):
 class ChatbotsMqConfiguredPersonasResponse(MQContext):
     update_time: datetime = Field(
         description="Time the personas were last checked")
-    items: List[LLMPersona]
+    items: List[LLMPersona] = Field(
+        description="List of configured personas from Klat")
     context: dict = Field(deprecated=True)
 
     @model_validator(mode='before')
@@ -329,7 +325,7 @@ class ChatbotsMqConfiguredPersonasResponse(MQContext):
     def model_dump(self, **kwargs):
         """
         Override model_dump to include 'persona_name' field for each item based 
-        on its 'name' for backwards-compat.
+        on its 'name' for backwards-compat. with Klat server
         """
         data = super().model_dump(**kwargs)
         for item in data['items']:
@@ -406,17 +402,9 @@ class ChatbotsMqSubmindConversationBan(MQContext):
     user_id: str = Field(description="User ID of the submind", alias="nick")
     cid: str = Field(description="Conversation ID to (un)ban submind from")
 
-    class Config:
-        # For aliased fields, accept either the canonical name OR the alias
-        populate_by_name = True
-
 
 class ChatbotsMqSubmindGlobalBan(MQContext):
     user_id: str = Field(description="User ID of the submind", alias="nick")
-
-    class Config:
-        # For aliased fields, accept either the canonical name OR the alias
-        populate_by_name = True
 
 
 class ChatbotsMqSubmindResponseError(MQContext):
