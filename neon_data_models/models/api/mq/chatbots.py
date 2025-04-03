@@ -31,6 +31,7 @@ from pydantic import Field, model_validator
 from neon_data_models.enum import SubmindStatus, CcaiState, CcaiControl
 from neon_data_models.types import BotType
 from neon_data_models.models.api.llm import LLMPersona
+from neon_data_models.models.api.chatbots import ConnectedSubmind
 from neon_data_models.models.base import BaseModel
 from neon_data_models.models.base.contexts import KlatContext, MQContext
 
@@ -283,25 +284,7 @@ class ChatbotsMqResponse:
             return ChatbotsMqSubmindResponse(**kwargs)
 
 
-class ConnectedSubmind(BaseModel):
-    service_name: Optional[str] = Field(default=None,
-                                        description="Unique ID of the submind")
-    attached_cids: List[str] = Field(
-        default=[], alias="cids",
-        description="List of conversation IDs the submind is participating in")
-    version: Optional[str] = Field(
-        default=None,
-        description="Version of chatbot-core the submind is using")
-    supports_raw_conversation: bool = Field(
-        default=False,
-        description="True if the submind will handle all conversation shouts")
-    last_ping: datetime = Field(
-        default_factory=lambda: datetime.now(tz=timezone.utc),
-        description="Last time the submind pinged the observer")
 
-    bot_type: BotType = Field(
-        deprecated=True, default="submind",
-        description="Type of bot (always `submind` in this context)")
 
 class ChatbotsMqSubmindsState(MQContext):
     class SubmindState(BaseModel):
@@ -402,6 +385,15 @@ class ChatbotsMqSubmindConnection(MQContext):
     context: Optional[ConnectedSubmind] = Field(
         default=None,
         description="ConnectedSubmind definition of the connecting bot")
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_context(cls, values):
+        if "context" in values:
+            values["context"].setdefault("service_name",
+                                          values.get("user_id").rsplit('-',
+                                                                        1)[0])
+            return values
 
 
 class ChatbotsMqSubmindDisconnection(MQContext):
