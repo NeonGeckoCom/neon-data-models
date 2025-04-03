@@ -390,9 +390,9 @@ class ChatbotsMqSubmindConnection(MQContext):
     @classmethod
     def validate_context(cls, values):
         if "context" in values and isinstance(values["context"], dict):
+            user_id = values.get("user_id") or values.get("nick") or ""
             values["context"].setdefault("service_name",
-                                          values.get("user_id").rsplit('-',
-                                                                        1)[0])
+                                          user_id.rsplit('-',1)[0])
         return values
 
 
