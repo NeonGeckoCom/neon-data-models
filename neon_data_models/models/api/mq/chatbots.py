@@ -389,11 +389,11 @@ class ChatbotsMqSubmindConnection(MQContext):
     @model_validator(mode='before')
     @classmethod
     def validate_context(cls, values):
-        if "context" in values:
+        if "context" in values and isinstance(values["context"], dict):
             values["context"].setdefault("service_name",
                                           values.get("user_id").rsplit('-',
                                                                         1)[0])
-            return values
+        return values
 
 
 class ChatbotsMqSubmindDisconnection(MQContext):

@@ -1840,7 +1840,7 @@ class TestChatbotsMQ(TestCase):
         self.assertEqual(connection.time, current_time)
         
         # Test with all fields
-        full_kwargs = {
+        minimal_kwargs = {
             "user_id": "submind2",
             "time": current_time,
             "cids": ["conversation1", "conversation2"],
@@ -1848,12 +1848,21 @@ class TestChatbotsMQ(TestCase):
             "message_id": "test_message_id"
         }
         
-        full_connection = ChatbotsMqSubmindConnection(**full_kwargs)
+        full_connection = ChatbotsMqSubmindConnection(**minimal_kwargs)
         self.assertEqual(full_connection.user_id, "submind2")
         self.assertEqual(full_connection.cids, ["conversation1", "conversation2"])
         
-        # # Test alias interchangeability (populate_by_name config)
-        # self.assertEqual(full_connection.user_id, full_connection.nick)
+        # With context
+        minimal_kwargs = {
+            "user_id": "submind_2-longuuidstring",
+            "time": current_time,
+            "cids": ["conversation1", "conversation2"],
+            "supports_raw_conversation": True,
+            "message_id": "test_message_id",
+            "context": {}
+        }
+        parsed_service_name = ChatbotsMqSubmindConnection(**minimal_kwargs)
+        self.assertEqual(parsed_service_name.context.service_name, "submind_2")
         
         # Test missing required fields
         with self.assertRaises(ValidationError):
@@ -2004,3 +2013,95 @@ class TestChatbotsMQ(TestCase):
         # Test missing required fields
         with self.assertRaises(ValidationError):
             ChatbotsMqSubmindGlobalBan(message_id="test_id")
+
+    def test_chatbots_mq_submind_response_error(self):
+        from neon_data_models.models.api.mq.chatbots import ChatbotsMqSubmindResponseError
+        
+        # Test basic initialization
+        valid_kwargs = {
+            "message": "An error occurred",
+            "message_id": "test_message_id"
+        }
+        
+        error_response = ChatbotsMqSubmindResponseError(**valid_kwargs)
+        self.assertIsInstance(error_response, ChatbotsMqSubmindResponseError)
+        self.assertEqual(error_response.message, "An error occurred")
+        self.assertEqual(error_response.message_id, "test_message_id")
+        
+        # Test with alias field
+        alias_kwargs = {
+            "msg": "An error with alias field",
+            "message_id": "test_message_id"
+        }
+        
+        alias_response = ChatbotsMqSubmindResponseError(**alias_kwargs)
+        self.assertEqual(alias_response.message, "An error with alias field")
+        
+        # Test serialization
+        serialized = error_response.model_dump()
+        self.assertEqual(serialized["message"], "An error occurred")
+        
+        # Test by_alias serialization
+        serialized_alias = error_response.model_dump(by_alias=True)
+        self.assertEqual(serialized_alias["msg"], "An error occurred")
+        
+        # Test without message (should be None by default)
+        no_message = ChatbotsMqSubmindResponseError(message_id="test_message_id")
+        self.assertIsNone(no_message.message)
+
+    def test_chatbots_mq_response_edge_cases(self):
+        from neon_data_models.models.api.mq.chatbots import ChatbotsMqResponse
+        from neon_data_models.models.api.mq.chatbots import ChatbotsMqSubmindResponse
+        
+        # Test with empty/minimal valid message
+        minimal_message = {
+            "userID": "test_user",
+            "messageText": "",
+            "message_id": "test_message_id"
+        }
+        
+        result = ChatbotsMqResponse(**minimal_message)
+        self.assertIsInstance(result, ChatbotsMqSubmindResponse)
+        self.assertEqual(result.message_text, "")
+        
+        # Test with mixed aliased and non-aliased fields
+        mixed_fields = {
+            "userID": "test_user",
+            "shout": "Using aliased shout field",
+            "message_id": "test_message_id",
+            "nick": "nick_value"  # This should be used for user_id too
+        }
+        
+        result = ChatbotsMqResponse(**mixed_fields)
+        self.assertIsInstance(result, ChatbotsMqSubmindResponse)
+        self.assertEqual(result.message_text, "Using aliased shout field")
+        self.assertEqual(result.user_id, "test_user")  # userID takes precedence over nick
+        
+        # Test with malformed timestamps that should be converted
+        timestamp_message = {
+            "userID": "test_user",
+            "messageText": "Timestamp test",
+            "created_on": "1611234567",  # String timestamp
+            "time": 1611234567,  # Integer timestamp
+            "message_id": "test_message_id"
+        }
+        
+        result = ChatbotsMqResponse(**timestamp_message)
+        self.assertIsInstance(result, ChatbotsMqSubmindResponse)
+        # Ensure the timestamps are properly handled in serialization
+        serialized = result.model_dump(by_alias=True)
+        self.assertEqual(serialized["created_on"], 1611234567)
+        
+        # Test with null/None fields that should be handled
+        null_fields = {
+            "userID": "test_user",
+            "messageText": "Test with nulls",
+            "message_id": "test_message_id",
+            "sid": None,  # Should be handled by the model validator
+            "repliedMessage": None,
+            "promptID": None
+        }
+        
+        result = ChatbotsMqResponse(**null_fields)
+        self.assertIsInstance(result, ChatbotsMqSubmindResponse)
+        self.assertEqual(result.sid, "")  # Default value when None is provided
