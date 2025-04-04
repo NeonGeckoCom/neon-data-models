@@ -29,4 +29,4 @@ from typing import Literal
 
 Gender = Literal["male", "female"]
 BotType = Literal["submind", "facilitator", "proctor", "observer"]
-# TODO: consider deprecating special facilitator types in `BoType`
+# TODO: consider deprecating special facilitator types in `BotType`
