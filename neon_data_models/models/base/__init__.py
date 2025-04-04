@@ -24,6 +24,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from enum import Enum
 from os import environ
 from datetime import datetime, timedelta
 from pydantic import ConfigDict, BaseModel as _BaseModel
@@ -31,8 +32,9 @@ from pydantic import ConfigDict, BaseModel as _BaseModel
 
 class BaseModel(_BaseModel):
     model_config = ConfigDict(extra="allow" if environ.get(
-            "NEON_DATA_MODELS_ALLOW_EXTRA", "false") != "false" else "ignore")
-
+            "NEON_DATA_MODELS_ALLOW_EXTRA", "false") != "false" else "ignore",
+            populate_by_name=environ.get("NEON_DATA_MODELS_POPULATE_BY_NAME",
+                                          "true") != "false",)
         
     def model_dump(self, *args, **kwargs) -> dict:
         """
@@ -60,6 +62,9 @@ class BaseModel(_BaseModel):
         elif isinstance(data, timedelta):
             # Convert timedelta to seconds
             return data.total_seconds()
+        elif isinstance(data, Enum):
+            # Always serialize `Enum` objects by value
+            return data.value
         else:
             # Return other types unchanged
             return data

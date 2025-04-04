@@ -365,8 +365,9 @@ class TestContexts(TestCase):
 
     def test_mq_context(self):
         from neon_data_models.models.base.contexts import MQContext
-        with self.assertRaises(ValidationError):
-            MQContext()
+        default = MQContext()
+        self.assertIsInstance(default.message_id, str)
+        self.assertNotEqual(default.message_id, MQContext().message_id)
 
         minimal_ctx = MQContext(message_id="test_message_id_string")
         self.assertEqual(minimal_ctx, MQContext(**minimal_ctx.model_dump()))

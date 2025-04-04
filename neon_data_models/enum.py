@@ -24,7 +24,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from enum import IntEnum
+from enum import Enum, IntEnum
 
 
 class AccessRoles(IntEnum):
@@ -92,3 +92,34 @@ class Weekdays(IntEnum):
     FRI = 4
     SAT = 5
     SUN = 6
+
+
+class SubmindStatus(Enum):
+    """
+    Defines status of a submind in a particular conversation
+    """
+    BANNED = "banned"
+    ACTIVE = "active"
+
+
+class CcaiState(IntEnum):
+    """
+    Defines status of a conversation where a CCAI is operating
+    """
+    IDLE = 0  # No active prompt
+    RESP = 1  # Gathering responses to prompt
+    DISC = 2  # Discussing responses
+    VOTE = 3  # Voting on responses
+    PICK = 4  # Proctor will select response
+    WAIT = 5  # Bot is waiting for an invitation to participate
+
+
+class CcaiControl(Enum):
+    """
+    Defines control messages for a CCAI conversation
+    """
+    PROMPT_REGEX = r"^!PROMPT:"
+    SAVE_PROMPT_RESULTS = "!MSG:SAVE_PROMPT_RESULTS"
+    CREATE_PROMPT = "!MSG:CREATE_PROMPT"
+    START_AUTO_PROMPTS = "!START_AUTO_PROMPTS"
+    STOP_AUTO_PROMPTS = "!STOP_AUTO_PROMPTS"

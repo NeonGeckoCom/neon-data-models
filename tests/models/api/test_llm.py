@@ -37,6 +37,11 @@ class TestLLM(TestCase):
         self.assertEqual(legacy_mq_persona.system_prompt,
                          legacy_mq_persona.description)
 
+        # By alias
+        alias_mq_persona = LLMPersona(persona_name="my persona",
+                                      description="You are a helpful chatbot.")
+        self.assertEqual(alias_mq_persona, legacy_mq_persona)
+
         # Valid system prompt
         legacy_bf_persona = LLMPersona(name="neon",
                                        system_prompt="You are NeonLLM.")
