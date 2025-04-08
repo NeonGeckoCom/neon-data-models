@@ -61,7 +61,7 @@ class ChatbotsMqRequest(KlatContext, MQContext):
         default=None, 
         description="List of CCAI participants requested to handle the shout")
     recipient: Optional[str] = Field(
-        default=None, description="Explicitly defined recipient of the shout. ")
+        default=None, description="Explicitly defined recipient of the shout")
     bound_service: Optional[str] = Field(
         default=None, description="Service bound to the conversation")
     
@@ -82,7 +82,7 @@ class ChatbotsMqRequest(KlatContext, MQContext):
             recipient=sio_message.get("recipient"),
             bound_service=sio_message.get("bound_service"),
         )
-    
+
     def model_dump(self, **kwargs):
         """
         Override model_dump to include SIO fields for backwards compatibility

@@ -28,7 +28,8 @@ from typing import Optional, List, Union
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from neon_data_models.models.base import BaseModel
-from neon_data_models.models.base.contexts import (SessionContext, KlatContext,
+from neon_data_models.models.base.contexts import (GradioContext, 
+                                                   SessionContext, KlatContext,
                                                    TimingContext, MQContext)
 from neon_data_models.models.client.node import NodeData
 from neon_data_models.models.user.database import NeonUserConfig
@@ -61,6 +62,9 @@ class MessageContext(BaseModel):
         description="List of destination modules expected to handle the message"
         )
     neon_should_respond: bool = True
+    gradio: Optional[GradioContext] = Field(
+        default=None,
+        description="Context for messages originating from a Gradio interface")
     
     @field_validator('destination')
     def validate_destination(cls, v):
