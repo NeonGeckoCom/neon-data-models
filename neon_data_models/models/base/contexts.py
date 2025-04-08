@@ -151,3 +151,7 @@ class MQContext(BaseModel):
             # Allow default_factory to generate a message_id
             values.pop("message_id")
         return values
+
+
+class GradioContext(BaseModel):
+    session: str = Field(description="Gradio session ID")
