@@ -24,6 +24,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from neon_data_models.models.api.mq.brainforge import *
 from neon_data_models.models.api.mq.chatbots import *
 from neon_data_models.models.api.mq.llm import *
 from neon_data_models.models.api.mq.neon import *

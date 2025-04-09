@@ -109,4 +109,7 @@ class LLMGetInferenceResponse(LLMResponse, MQContext):
 
 __all__ = [LLMGetModels.__name__, LLMGetModelsResponse.__name__,
            LLMGetPersonas.__name__, LLMGetPersonasResponse.__name__,
-           LLMGetInference.__name__, LLMGetInferenceResponse.__name__]
+           LLMGetInference.__name__, LLMGetInferenceResponse.__name__,
+           LLMGetCompletion.__name__, LLMGetCompletionResponse.__name__,
+           LLMGetTokenizerChatTemplatedString.__name__,
+           LLMGetTokenizerChatTemplatedStringResponse.__name__]
