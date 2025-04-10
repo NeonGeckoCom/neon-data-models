@@ -2105,3 +2105,306 @@ class TestChatbotsMQ(TestCase):
         result = ChatbotsMqResponse(**null_fields)
         self.assertIsInstance(result, ChatbotsMqSubmindResponse)
         self.assertEqual(result.sid, "")  # Default value when None is provided
+
+
+class TestBrainforgeMQ(TestCase):
+    def test_llm_get_models(self):
+        from neon_data_models.models.api.mq.brainforge import LLMGetModels
+        from neon_data_models.models.base.contexts import MQContext
+
+        # Test valid initialization
+        valid_kwargs = {"user_id": "test_user", "message_id": "test_id"}
+        models_request = LLMGetModels(**valid_kwargs)
+        self.assertIsInstance(models_request, LLMGetModels)
+        self.assertIsInstance(models_request, MQContext)
+        self.assertEqual(models_request.user_id, "test_user")
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            LLMGetModels(message_id="test_id")  # Missing user_id
+
+    def test_llm_get_models_response(self):
+        from neon_data_models.models.api.mq.brainforge import LLMGetModelsResponse
+        from neon_data_models.models.base.contexts import MQContext
+        from neon_data_models.models.api.http.brainforge import LLMGetModelsHttpResponse
+
+        # Test valid initialization
+        valid_kwargs = {
+            "models": [{"version": "v1", "name": "model_1"}],
+            "message_id": "test_id"
+        }
+        models_response = LLMGetModelsResponse(**valid_kwargs)
+        self.assertIsInstance(models_response, LLMGetModelsResponse)
+        self.assertIsInstance(models_response, LLMGetModelsHttpResponse)
+        self.assertIsInstance(models_response, MQContext)
+        self.assertEqual(len(models_response.models), 1)
+        self.assertEqual(models_response.models[0].vllm_spec, "model_1@v1")
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            LLMGetModelsResponse(message_id="test_id")  # Missing models
+
+    def test_llm_get_personas(self):
+        from neon_data_models.models.api.mq.brainforge import LLMGetPersonas
+        from neon_data_models.models.api.mq.brainforge import LLMGetModels
+        from neon_data_models.models.api.http.brainforge import LLMGetPersonasHttpRequest
+
+        # Test valid initialization
+        valid_kwargs = {
+            "user_id": "test_user", 
+            "model_id": "model1@v1.0", 
+            "message_id": "test_id"
+        }
+        personas_request = LLMGetPersonas(**valid_kwargs)
+        self.assertIsInstance(personas_request, LLMGetPersonas)
+        self.assertIsInstance(personas_request, LLMGetModels)
+        self.assertIsInstance(personas_request, LLMGetPersonasHttpRequest)
+        
+        # Test properties
+        self.assertEqual(personas_request.model_name, "model1")
+        self.assertEqual(personas_request.model_version, "v1.0")
+        
+        # Test with complex model version
+        complex_version_kwargs = {
+            "user_id": "test_user", 
+            "model_id": "model1@version/with/slashes", 
+            "message_id": "test_id"
+        }
+        complex_request = LLMGetPersonas(**complex_version_kwargs)
+        self.assertEqual(complex_request.model_name, "model1")
+        self.assertEqual(complex_request.model_version, "version/with/slashes")
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            LLMGetPersonas(user_id="test_user", message_id="test_id")  # Missing model_id
+        
+        with self.assertRaises(ValidationError):
+            LLMGetPersonas(model_id="model1@v1", message_id="test_id")  # Missing user_id
+
+    def test_llm_get_personas_response(self):
+        from neon_data_models.models.api.mq.brainforge import LLMGetPersonasResponse
+        from neon_data_models.models.base.contexts import MQContext
+        from neon_data_models.models.api.llm import BrainForgeLLM, LLMPersona
+
+        # Test with model (personas available)
+        model_with_personas = BrainForgeLLM(
+            version="v1",
+            name="model1",
+            personas=[
+                LLMPersona(name="persona1", system_prompt="System prompt 1"),
+                LLMPersona(name="persona2", system_prompt="System prompt 2")
+            ]
+        )
+        
+        valid_kwargs = {
+            "model": model_with_personas,
+            "message_id": "test_id"
+        }
+        
+        personas_response = LLMGetPersonasResponse(**valid_kwargs)
+        self.assertIsInstance(personas_response, LLMGetPersonasResponse)
+        self.assertIsInstance(personas_response, MQContext)
+        
+        # Test personas property
+        self.assertEqual(len(personas_response.personas), 2)
+        self.assertEqual(personas_response.personas[0].name, "persona1")
+        self.assertEqual(personas_response.personas[1].name, "persona2")
+        
+        # Test with model=None
+        no_model_kwargs = {"model": None, "message_id": "test_id"}
+        no_model_response = LLMGetPersonasResponse(**no_model_kwargs)
+        self.assertEqual(no_model_response.personas, [])
+        
+        # # Test missing required field (message_id)
+        # with self.assertRaises(ValidationError):
+        #     LLMGetPersonasResponse(model=model_with_personas)
+
+    def test_llm_get_inference(self):
+        from neon_data_models.models.api.mq.brainforge import LLMGetInference
+        from neon_data_models.models.api.llm import LLMRequest
+        
+        # Test with all optional parameters
+        full_kwargs = {
+            "user_id": "test_user",
+            "query": "test query",
+            "history": [("user", "previous message")],
+            "model": "test_model",
+            "persona": {"name": "test_persona", "system_prompt": "test prompt"},
+            "message_id": "test_id",
+            "context": {"some_key": "some_value"}
+        }
+        full_request = LLMGetInference(**full_kwargs)
+        self.assertEqual(full_request.user_id, "test_user")
+        self.assertEqual(full_request.model, "test_model")
+        
+        # Test as_llm_request method
+        llm_request = full_request.as_llm_request()
+        self.assertIsInstance(llm_request, LLMRequest)
+        self.assertNotIsInstance(llm_request, LLMGetInference)  # Should not be a LLMGetInference
+        self.assertEqual(llm_request.query, "test query")
+        self.assertEqual(llm_request.model, "test_model")
+        
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            LLMGetInference(user_id="test_user", history=[], message_id="test_id")  # Missing query
+        
+        with self.assertRaises(ValidationError):
+            LLMGetInference(query="test query", history=[], message_id="test_id")  # Missing user_id
+
+    def test_llm_get_inference_response(self):
+        from neon_data_models.models.api.mq.brainforge import LLMGetInferenceResponse
+        from neon_data_models.models.base.contexts import MQContext
+        from neon_data_models.models.api.llm import LLMResponse
+
+        # Test valid initialization
+        valid_kwargs = {
+            "response": "This is a test response",
+            "message_id": "test_id",
+            "history": [("user", "prompt"), ("assistant", "response")],
+        }
+        inference_response = LLMGetInferenceResponse(**valid_kwargs)
+        self.assertIsInstance(inference_response, LLMGetInferenceResponse)
+        self.assertIsInstance(inference_response, LLMResponse)
+        self.assertIsInstance(inference_response, MQContext)
+        self.assertEqual(inference_response.response, "This is a test response")
+        
+        # Test with all optional fields
+        full_kwargs = {
+            "response": "Test response with metadata",
+            "model": "test_model",
+            "persona": {"name": "test_persona"},
+            "message_id": "test_id",
+            "context": {"some_key": "some_value"},
+            "history": [("user", "prompt"), ("assistant", "response")]
+        }
+        full_response = LLMGetInferenceResponse(**full_kwargs)
+        self.assertEqual(full_response.response, full_kwargs["response"])
+        # self.assertEqual(full_response.persona["name"], "test_persona")
+        
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            LLMGetInferenceResponse(message_id="test_id")  # Missing response
+        
+        with self.assertRaises(ValidationError):
+            LLMGetInferenceResponse(response="test response")  # Missing message_id
+
+    def test_llm_get_completion(self):
+        from neon_data_models.models.api.mq.brainforge import LLMGetCompletion
+        from neon_data_models.models.api.mq.brainforge import LLMGetModels
+
+        # Test valid initialization with minimum required parameters
+        valid_kwargs = {
+            "user_id": "test_user",
+            "model": "model1@v1",
+            "completion_kwargs": {"temperature": 0.7, "max_tokens": 100},
+            "message_id": "test_id"
+        }
+        completion_request = LLMGetCompletion(**valid_kwargs)
+        self.assertIsInstance(completion_request, LLMGetCompletion)
+        self.assertIsInstance(completion_request, LLMGetModels)
+        self.assertEqual(completion_request.model, "model1@v1")
+        self.assertEqual(completion_request.completion_kwargs["temperature"], 0.7)
+        
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            LLMGetCompletion(user_id="test_user", completion_kwargs={}, message_id="test_id")  # Missing model
+        
+        with self.assertRaises(ValidationError):
+            LLMGetCompletion(user_id="test_user", model="model1@v1", message_id="test_id")  # Missing completion_kwargs
+
+    def test_llm_get_completion_response(self):
+        from neon_data_models.models.api.mq.brainforge import LLMGetCompletionResponse
+        from neon_data_models.models.base.contexts import MQContext
+
+        # Test valid initialization
+        valid_kwargs = {
+            "openai_response": {
+                "id": "chatcmpl-123",
+                "choices": [{
+                    "index": 0,
+                    "message": {"role": "assistant", "content": "Test response"},
+                    "finish_reason": "stop"
+                }]
+            },
+            "message_id": "test_id"
+        }
+        completion_response = LLMGetCompletionResponse(**valid_kwargs)
+        self.assertIsInstance(completion_response, LLMGetCompletionResponse)
+        self.assertIsInstance(completion_response, MQContext)
+        self.assertEqual(completion_response.openai_response["id"], "chatcmpl-123")
+        
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            LLMGetCompletionResponse(message_id="test_id")  # Missing openai_response
+
+    def test_llm_get_tokenizer_chat_templated_string(self):
+        from neon_data_models.models.api.mq.brainforge import LLMGetTokenizerChatTemplatedString
+        from neon_data_models.models.api.mq.brainforge import LLMGetModels
+
+        # Test valid initialization with minimum required parameters
+        valid_kwargs = {
+            "user_id": "test_user",
+            "model": "model1@v1",
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant"},
+                {"role": "user", "content": "Hello"}
+            ],
+            "add_generation_prompt": True,
+            "message_id": "test_id"
+        }
+        tokenizer_request = LLMGetTokenizerChatTemplatedString(**valid_kwargs)
+        self.assertIsInstance(tokenizer_request, LLMGetTokenizerChatTemplatedString)
+        self.assertIsInstance(tokenizer_request, LLMGetModels)
+        self.assertEqual(tokenizer_request.model, "model1@v1")
+        self.assertEqual(len(tokenizer_request.messages), 2)
+        self.assertTrue(tokenizer_request.add_generation_prompt)
+        self.assertFalse(tokenizer_request.tokenize)  # Default value
+        
+        # Test with tokenize=True
+        tokenize_kwargs = valid_kwargs.copy()
+        tokenize_kwargs["tokenize"] = True
+        tokenize_request = LLMGetTokenizerChatTemplatedString(**tokenize_kwargs)
+        self.assertTrue(tokenize_request.tokenize)
+        
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            LLMGetTokenizerChatTemplatedString(
+                user_id="test_user", 
+                messages=[{"role": "user", "content": "Hello"}],
+                add_generation_prompt=True, 
+                message_id="test_id"
+            )  # Missing model
+        
+        with self.assertRaises(ValidationError):
+            LLMGetTokenizerChatTemplatedString(
+                user_id="test_user", 
+                model="model1@v1", 
+                add_generation_prompt=True, 
+                message_id="test_id"
+            )  # Missing messages
+
+    def test_llm_get_tokenizer_chat_templated_string_response(self):
+        from neon_data_models.models.api.mq.brainforge import LLMGetTokenizerChatTemplatedStringResponse
+        from neon_data_models.models.base.contexts import MQContext
+
+        # Test valid initialization with string prompt
+        string_kwargs = {
+            "prompt": "This is a templated prompt string",
+            "message_id": "test_id"
+        }
+        string_response = LLMGetTokenizerChatTemplatedStringResponse(**string_kwargs)
+        self.assertIsInstance(string_response, LLMGetTokenizerChatTemplatedStringResponse)
+        self.assertIsInstance(string_response, MQContext)
+        self.assertEqual(string_response.prompt, "This is a templated prompt string")
+        
+        # Test with list of tokens
+        tokens_kwargs = {
+            "prompt": ["This", "is", "a", "tokenized", "prompt"],
+            "message_id": "test_id"
+        }
+        tokens_response = LLMGetTokenizerChatTemplatedStringResponse(**tokens_kwargs)
+        self.assertEqual(tokens_response.prompt, ["This", "is", "a", "tokenized", "prompt"])
+        
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            LLMGetTokenizerChatTemplatedStringResponse(message_id="test_id")  # Missing prompt

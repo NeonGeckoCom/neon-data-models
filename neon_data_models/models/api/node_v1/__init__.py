@@ -33,6 +33,11 @@ from neon_data_models.models.base import BaseModel
 from neon_data_models.models.base.messagebus import BaseMessage, MessageContext
 
 
+"""
+This module contains models for interacting via the Node socket (WS).
+"""
+
+
 class AudioInputData(BaseModel):
     audio_data: str = Field(description="base64-encoded audio")
     lang: str = Field(description="BCP-47 language code")

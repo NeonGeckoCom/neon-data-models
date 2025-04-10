@@ -1,6 +1,6 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2025 Neongecko.com Inc.
+# Copyright 2008-2024 Neongecko.com Inc.
 # BSD-3
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -24,12 +24,34 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from neon_data_models.models.api.mq.brainforge import *
-from neon_data_models.models.api.mq.chatbots import *
-from neon_data_models.models.api.mq.llm import *
-from neon_data_models.models.api.mq.neon import *
-from neon_data_models.models.api.mq.users import *
+from typing import List, Optional
+from pydantic import Field
 
-"""
-This module contains models for interacting via the MQ bus.
-"""
+from neon_data_models.models.base import BaseModel
+from neon_data_models.models.api.llm import BrainForgeLLM, LLMPersona, LLMRequest
+
+
+class LLMGetModelsHttpResponse(BaseModel):
+    models: List[BrainForgeLLM]
+
+
+class LLMGetPersonasHttpRequest(BaseModel):
+    model_id: str = Field(
+        description="Model ID (<name>@<version>) to get personas for")
+
+
+class LLMGetPersonasHttpResponse(BaseModel):
+    personas: List[LLMPersona] = Field(
+        description="List of personas associated with the requested model.")
+
+
+class LLMGetInferenceHttpRequest(LLMRequest):
+    llm_name: str = Field(description="Model name to request")
+    llm_revision: str = Field(description="Model revision to request")
+    model: Optional[str] = None
+
+
+__all__ = [LLMGetModelsHttpResponse.__name__,
+           LLMGetPersonasHttpRequest.__name__,
+           LLMGetPersonasHttpResponse.__name__,
+           LLMGetInferenceHttpRequest.__name__]
