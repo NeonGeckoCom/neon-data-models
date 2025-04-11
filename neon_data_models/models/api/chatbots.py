@@ -24,7 +24,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 from datetime import datetime, timezone
 from pydantic import Field
 from neon_data_models.models.base import BaseModel
@@ -51,5 +51,32 @@ class ConnectedSubmind(BaseModel):
         deprecated=True, default="submind",
         description="Type of bot (always `submind` in this context)")
 
+
+class CcaiCycle(BaseModel):
+    proposed_responses: Dict[str, str] = Field(
+        default={},
+        description="Proposed responses by submind name")
+    discussion: List[Dict[str, str]] = Field(
+        default=[{}],
+        description="List of discussion rounds")
+    votes: Dict[str, str] = Field(
+        default={}, description="Vote responses by submind name")
+
+
+class PromptData(BaseModel):
+    bot_name: str = Field(
+        description="Name of the bot this object is associated with")
+    participating_subminds: List[str] = Field(
+        description="List of subminds participating in this prompt")
+    prompt: str = Field(
+        description="Prompt being discussed")
+    cycles: List[CcaiCycle] = Field(
+        description="List of cycles for this prompt")
+    response: Optional[str] = Field(
+        default=None,
+        description="Chosen response from the CCAI")
+    winner: Optional[str] = Field(
+        default=None,
+        description="Name of the submind who submitted the chosen response")
 
 __all__ = [ConnectedSubmind.__name__]

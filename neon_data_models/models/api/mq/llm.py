@@ -25,9 +25,10 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from typing import Optional, Dict, List
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from neon_data_models.models.api.llm import LLMRequest, LLMPersona
+from neon_data_models.models.api.chatbots import PromptData
 from neon_data_models.models.base.contexts import MQContext
 
 
@@ -41,6 +42,9 @@ class LLMProposeRequest(MQContext, LLMRequest):
         description="MQ implementation defines `persona` as an optional "
                     "parameter, with default behavior hard-coded into each "
                     "LLM module.")
+    prompt_data: Optional[PromptData] = Field(
+        default=None,
+        description="Prompt data associated with the request.")
 
 
 class LLMProposeResponse(MQContext):
@@ -49,6 +53,7 @@ class LLMProposeResponse(MQContext):
 
 class LLMDiscussRequest(LLMProposeRequest):
     options: Dict[str, str] = Field(
+        deprecated=True,
         description="Mapping of participant name to response to be discussed.")
 
 
@@ -58,6 +63,7 @@ class LLMDiscussResponse(MQContext):
 
 class LLMVoteRequest(LLMProposeRequest):
     responses: List[str] = Field(
+        deprecated=True,
         description="List of responses to choose from.")
 
 
