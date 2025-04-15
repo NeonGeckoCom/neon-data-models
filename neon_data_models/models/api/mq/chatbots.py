@@ -58,7 +58,7 @@ class ChatbotsMqRequest(KlatContext, MQContext):
         default= datetime.now(tz=timezone.utc),
         description="Timestamp when the shout was created")
     requested_participants: Optional[List[str]] = Field(
-        default=None, 
+        default=None, alias="participating_subminds",
         description="List of CCAI participants requested to handle the shout")
     recipient: Optional[str] = Field(
         default=None, description="Explicitly defined recipient of the shout")
@@ -150,6 +150,12 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
         default=CcaiState.IDLE, deprecated=True, alias="promptState",
         description="State of the CCAI conversation associated with the shout")
     
+    @model_validator(mode='after')
+    def set_username_from_user_id(self):
+        if self.username is None and self.user_id:
+            self.username = self.user_id.rsplit('-', 1)[0]
+        return self
+
     @model_validator(mode='before')
     @classmethod
     def validate_inputs(cls, values):
