@@ -32,7 +32,7 @@ from neon_data_models.models.base.contexts import (GradioContext,
                                                    SessionContext, KlatContext,
                                                    TimingContext, MQContext)
 from neon_data_models.models.client.node import NodeData
-from neon_data_models.models.user.database import NeonUserConfig
+from neon_data_models.models.user.neon_profile import UserProfile
 
 
 class MessageContext(BaseModel):
@@ -43,7 +43,7 @@ class MessageContext(BaseModel):
     timing: TimingContext = Field(
         description="User Interaction Timing Information", 
         default=TimingContext())
-    user_profiles: Optional[List[NeonUserConfig]] = (
+    user_profiles: Optional[List[UserProfile]] = (
         Field(description="List of relevant user profiles", default=None))
     klat_data: Optional[KlatContext] = Field(
         description="Klat context for Klat-generated messages", default=None)

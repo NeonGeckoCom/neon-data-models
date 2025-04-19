@@ -31,7 +31,7 @@ from neon_data_models.models.base import BaseModel
 from neon_data_models.models.base.contexts import KlatContext, MQContext, \
     SessionContext, TimingContext
 from neon_data_models.models.base.messagebus import BaseMessage, MessageContext
-from neon_data_models.models.user.database import NeonUserConfig
+from neon_data_models.models.user.neon_profile import UserProfile
 from neon_data_models.models.api.messagebus import NeonGetLanguages, NeonGetTts, NeonGetStt, \
     NeonAudioInput, NeonLanguagesResponse, NeonTextInput, NeonSttResponse, NeonTtsResponse
 
@@ -170,7 +170,7 @@ class NeonApiMessage:
                                  client=sio_message.get("client", "unknown"),
                                  username=sio_message.get("nick", "guest"),
                                  klat_data=klat_context, mq=mq_context,
-                                 user_profiles=[NeonUserConfig()],
+                                 user_profiles=[UserProfile()],
                                  session=SessionContext(
                                      session_id=sio_message.get("cid", "klat")),
                                  timing=TimingContext(

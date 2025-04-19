@@ -378,7 +378,7 @@ class TestMessagebus(TestCase):
         from ovos_bus_client.message import Message
         from neon_data_models.models.base.messagebus import BaseMessage
         from neon_data_models.models.client import NodeData
-        from neon_data_models.models.user import NeonUserConfig
+        from neon_data_models.models.user import UserProfile
 
         with self.assertRaises(ValidationError):
             BaseMessage()
@@ -395,7 +395,7 @@ class TestMessagebus(TestCase):
                                                 "extra_key": "text"})
         # Defined keys will generate objects
         self.assertIsInstance(message.context.node_data, NodeData)
-        self.assertIsInstance(message.context.user_profiles[0], NeonUserConfig)
+        self.assertIsInstance(message.context.user_profiles[0], UserProfile)
 
         as_messagebus = message.as_messagebus_message()
         self.assertIsInstance(as_messagebus, Message)
@@ -413,7 +413,7 @@ class TestMessagebus(TestCase):
     def test_message_context(self):
         from neon_data_models.models.base.messagebus import MessageContext
         from neon_data_models.models.client import NodeData
-        from neon_data_models.models.user import NeonUserConfig
+        from neon_data_models.models.user import UserProfile
 
         # Default Behavior
         default_context = MessageContext()
@@ -431,7 +431,7 @@ class TestMessagebus(TestCase):
         from neon_data_models.models.base.contexts import SessionContext
         self.assertIsInstance(extra_context.session, SessionContext)
         self.assertIsInstance(extra_context.node_data, NodeData)
-        self.assertIsInstance(extra_context.user_profiles[0], NeonUserConfig)
+        self.assertIsInstance(extra_context.user_profiles[0], UserProfile)
         from neon_data_models.models.base.contexts import KlatContext
         self.assertIsInstance(extra_context.klat_data, KlatContext)
         from neon_data_models.models.base.contexts import MQContext
