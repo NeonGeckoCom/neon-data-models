@@ -1645,12 +1645,13 @@ class TestChatbotsMQ(TestCase):
         self.assertEqual(preserved_username.username, "custom_name")
 
         # Test when user_id is None
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError) as e:
             none_user_id = ChatbotsMqSubmindResponse(
                 userID=None,
                 messageText="Test message",
                 message_id="test_id"
             )
+            self.assertEqual(str(e), "user_id cannot be None")
 
         # Test missing required fields
         with self.assertRaises(ValidationError):
