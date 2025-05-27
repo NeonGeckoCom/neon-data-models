@@ -25,7 +25,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from typing import List, Optional
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from neon_data_models.models.base import BaseModel
 from neon_data_models.models.api.llm import BrainForgeLLM, LLMPersona, LLMRequest
@@ -48,8 +48,15 @@ class LLMGetPersonasHttpResponse(BaseModel):
 class LLMGetInferenceHttpRequest(LLMRequest):
     llm_name: str = Field(description="Model name to request")
     llm_revision: str = Field(description="Model revision to request")
-    model: Optional[str] = None
+    model: Optional[str] = Field(
+        default=None, 
+        description="Model ID (<name>@<version>) used for vLLM inference")
 
+    @model_validator(mode='after')
+    def set_model_from_name_and_revision(self):
+        if self.model is None:
+            self.model = f"{self.llm_name}@{self.llm_revision}"
+        return self
 
 __all__ = [LLMGetModelsHttpResponse.__name__,
            LLMGetPersonasHttpRequest.__name__,
