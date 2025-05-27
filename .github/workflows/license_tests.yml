@@ -7,6 +7,4 @@ on:
       - master
 jobs:
   license_tests:
-    uses: neongeckocom/.github/.github/workflows/license_tests.yml@master
-    with:
-      packages-exclude: '^(neon-data-models|dnspython|typing_extensions).*'
+    uses: neongeckocom/.github/.github/workflows/license_tests.yml@FEAT_UpdateLicenseTests
