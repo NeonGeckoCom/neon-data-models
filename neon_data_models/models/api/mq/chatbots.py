@@ -249,6 +249,9 @@ class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
     prompt_state: CcaiState = Field(
         default=CcaiState.IDLE, deprecated=True,
         description="Implemented for backwards-compat. New Prompt always IDLE")
+    discussion_rounds: int = Field(
+        default=2, 
+        description="Number of discussion rounds per cycle for this prompt")
     context: Optional[dict] = Field(default=None, deprecated=True,
                                     alias="conversation_context")
 
