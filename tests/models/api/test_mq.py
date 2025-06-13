@@ -1610,6 +1610,49 @@ class TestChatbotsMQ(TestCase):
         self.assertEqual(serialized["nick"], "submind1")  # Check backwards compatibility field
         self.assertEqual(serialized["shout"], "Full test response")  # Check backwards compatibility field
         
+
+        # Test username from user_id with a single hyphen
+        hyphen_user_id = ChatbotsMqSubmindResponse(
+            userID="service-123456",
+            messageText="Test message",
+            message_id="test_id"
+        )
+        self.assertEqual(hyphen_user_id.username, "service")
+
+        # Test username from user_id with multiple hyphens
+        multiple_hyphens = ChatbotsMqSubmindResponse(
+            userID="service-name-with-hyphens-123456",
+            messageText="Test message",
+            message_id="test_id"
+        )
+        self.assertEqual(multiple_hyphens.username, "service-name-with-hyphens")
+
+        # Test username from user_id without hyphen
+        no_hyphen = ChatbotsMqSubmindResponse(
+            userID="servicename",
+            messageText="Test message", 
+            message_id="test_id"
+        )
+        self.assertEqual(no_hyphen.username, "servicename")
+
+        # Test existing username is preserved when both fields are provided
+        preserved_username = ChatbotsMqSubmindResponse(
+            userID="service-123456",
+            username="custom_name",
+            messageText="Test message",
+            message_id="test_id"
+        )
+        self.assertEqual(preserved_username.username, "custom_name")
+
+        # Test when user_id is None
+        with self.assertRaises(ValidationError) as e:
+            none_user_id = ChatbotsMqSubmindResponse(
+                userID=None,
+                messageText="Test message",
+                message_id="test_id"
+            )
+            self.assertEqual(str(e), "user_id cannot be None")
+
         # Test missing required fields
         with self.assertRaises(ValidationError):
             ChatbotsMqSubmindResponse(messageText="Missing user_id", message_id="test_id")
