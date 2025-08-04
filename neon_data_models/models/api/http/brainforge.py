@@ -86,6 +86,26 @@ class OpenAiCompletionRequest(BaseModel):
     )
     persona: Optional[LLMPersona] = Field(default=None)
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "model": "<name>@<version>",
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "You are a helpful assistant.",
+                        },
+                        {"role": "user", "content": "Who are you?"},
+                    ],
+                    "max_tokens": 512,
+                    "temperature": 0.0,
+                    "stream": False,
+                }
+            ]
+        }
+    }
+
     @model_validator(mode="after")
     def ensure_default_values(self):
         """Set default values for compat with BrainForge API."""
@@ -130,7 +150,7 @@ class OpenAiCompletionRequest(BaseModel):
             temperature=self.temperature,
             query=query,
             history=history,
-            persona=self.persona
+            persona=self.persona,
         )
 
 
@@ -148,6 +168,27 @@ class OpenAiCompletionResponse(BaseModel):
     choices: List[
         Dict[Literal["message"], Dict[Literal["role", "content"], str]]
     ] = Field(description="List of responses from the model")
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "id": uuid4().hex,
+                    "object": "chat.completion",
+                    "created": time(),
+                    "model": "<name>@<version>",
+                    "choices": [
+                        {
+                            "message": {
+                                "role": "assistant",
+                                "content": "This is a sample response",
+                            }
+                        }
+                    ],
+                }
+            ]
+        }
+    }
 
     @classmethod
     def from_llm_response(
