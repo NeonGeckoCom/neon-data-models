@@ -121,6 +121,9 @@ class LLMRequest(BaseModel):
         for idx, itm in enumerate(values.get('history', [])):
             if itm[0] == "assistant":
                 values['history'][idx] = ("llm", itm[1])
+        # OpenAI `extra_body` may be included in input; parse those inputs
+        if values.get('use_beam_search') is not None:
+            values['beam_search'] = values['use_beam_search']
         return values
 
     @model_validator(mode='after')
@@ -161,7 +164,7 @@ class LLMRequest(BaseModel):
 
         # If beam search is enabled, temperature must be set to 0.0
         if self.beam_search:
-            assert self.temperature == 0.0
+            assert self.temperature == 0.0, "Beam search requires temperature 0"
         return self
 
     @property

@@ -138,8 +138,10 @@ class TestBrainForgeHttp(TestCase):
                 {"role": "user", "content": "who are you?"},
             ],
             max_tokens=1024,
-            temperature=0.5,
+            temperature=0.0,
             stream=False,
+            extra_body={"use_beam_search": True,
+                        "best_of": 3},
         )
         self.assertIsInstance(valid_request_no_system.persona, LLMPersona)
         self.assertEqual(valid_request_no_system.persona.name, "vanilla")
@@ -151,6 +153,7 @@ class TestBrainForgeHttp(TestCase):
         self.assertEqual(len(as_llm_request.history), 2)
         self.assertEqual(as_llm_request.query, "who are you?")
         self.assertEqual(as_llm_request.model, valid_request_no_system.model)
+        self.assertTrue(as_llm_request.beam_search)
 
         # Invalid no history
         with self.assertRaises(ValidationError):

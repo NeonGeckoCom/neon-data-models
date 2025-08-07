@@ -24,7 +24,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import List, Optional, Dict, Literal
+from typing import List, Optional, Dict, Literal, Any
 from uuid import uuid4
 from time import time
 from pydantic import Field, model_validator
@@ -85,6 +85,7 @@ class OpenAiCompletionRequest(BaseModel):
         default=False, description="Not Implemented."
     )
     persona: Optional[LLMPersona] = Field(default=None)
+    extra_body: Optional[Dict[str, Any]] = Field(default=None)
 
     model_config = {
         "json_schema_extra": {
@@ -101,6 +102,10 @@ class OpenAiCompletionRequest(BaseModel):
                     "max_tokens": 512,
                     "temperature": 0.0,
                     "stream": False,
+                    "extra_body": {
+                        "use_beam_search": True,
+                        "best_of": 3,
+                    }
                 }
             ]
         }
@@ -113,6 +118,8 @@ class OpenAiCompletionRequest(BaseModel):
         self.temperature = self.temperature or 0.0
         if self.stream is None:
             self.stream = False
+        if self.extra_body is None:
+            self.extra_body = {}
         return self
 
     @model_validator(mode="after")
@@ -134,6 +141,7 @@ class OpenAiCompletionRequest(BaseModel):
     def validate_messages(self):
         if len(self.messages) < 1:
             raise ValueError("At least one `user` message is required.")
+        return self
 
     def to_llm_inference_http_request(self) -> LLMGetInferenceHttpRequest:
         """
@@ -151,6 +159,7 @@ class OpenAiCompletionRequest(BaseModel):
             query=query,
             history=history,
             persona=self.persona,
+            **self.extra_body
         )
 
 
