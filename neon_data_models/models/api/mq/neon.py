@@ -33,7 +33,8 @@ from neon_data_models.models.base.contexts import KlatContext, MQContext, \
 from neon_data_models.models.base.messagebus import BaseMessage, MessageContext
 from neon_data_models.models.user.neon_profile import UserProfile
 from neon_data_models.models.api.messagebus import NeonGetLanguages, NeonGetTts, NeonGetStt, \
-    NeonAudioInput, NeonLanguagesResponse, NeonTextInput, NeonSttResponse, NeonTtsResponse
+    NeonAudioInput, NeonLanguagesResponse, NeonTextInput, NeonSttResponse, NeonTtsResponse, \
+    NeonGetSkillsApi, NeonSkillsApiResponse, NeonCallSkillApi, NeonCallSkillApiResponse
 
 
 class GetTtsData(BaseModel):
@@ -122,6 +123,29 @@ class NeonMqLanguagesResponse(NeonLanguagesResponse, MQContext):
     """
 
 
+class NeonMqGetSkillsApi(NeonGetSkillsApi, MQContext):
+    """
+    Data model for an MQ message requesting available skill APIs
+    """
+
+
+class NeonMqSkillsApiResponse(NeonSkillsApiResponse, MQContext):
+    """
+    Data model for an MQ message containing available skill APIs
+    """
+
+class NeonMqCallSkillApi(NeonCallSkillApi, MQContext):
+    """
+    Data model for an MQ message calling a skill API
+    """
+
+
+class NeonMqCallSkillApiResponse(NeonCallSkillApiResponse, MQContext):
+    """
+    Data model for an MQ message containing a skill API response
+    """
+
+
 class NeonMqUnknownMessage(BaseMessage, MQContext):
     """
     Default message class for validating Messagebus messages that should be
@@ -137,7 +161,9 @@ class NeonApiMessage:
     ta = TypeAdapter(Annotated[Union[NeonMqGetStt, NeonMqGetTts,
                                      NeonMqTextInput, NeonMqSttResponse,
                                      NeonMqTtsResponse, NeonMqGetLanguages,
-                                     NeonMqLanguagesResponse],
+                                     NeonMqLanguagesResponse, NeonMqGetSkillsApi,
+                                     NeonMqSkillsApiResponse, NeonMqCallSkillApi,
+                                     NeonMqCallSkillApiResponse],
                                Field(discriminator='msg_type')])
 
     @classmethod
@@ -194,4 +220,6 @@ __all__ = [NeonMqGetTts.__name__, NeonMqGetStt.__name__,
            NeonMqTextInput.__name__, NeonMqAudioInput.__name__,
            NeonMqSttResponse.__name__, NeonMqTtsResponse.__name__,
            NeonMqGetLanguages.__name__, NeonMqLanguagesResponse.__name__,
-           NeonApiMessage.__name__, NeonMqUnknownMessage.__name__]
+           NeonApiMessage.__name__, NeonMqGetSkillsApi.__name__,
+           NeonMqSkillsApiResponse.__name__, NeonMqCallSkillApi.__name__,
+           NeonMqCallSkillApiResponse.__name__, NeonMqUnknownMessage.__name__]
