@@ -138,12 +138,14 @@ class NeonMqCallSkillApi(NeonCallSkillApi, MQContext):
     """
     Data model for an MQ message calling a skill API
     """
+    # TODO: This doesn't have a known message type, so it cannot be used with the descriminator
 
 
 class NeonMqCallSkillApiResponse(NeonCallSkillApiResponse, MQContext):
     """
     Data model for an MQ message containing a skill API response
     """
+    # TODO: This doesn't have a known message type, so it cannot be used with the descriminator
 
 
 class NeonMqUnknownMessage(BaseMessage, MQContext):
@@ -162,8 +164,8 @@ class NeonApiMessage:
                                      NeonMqTextInput, NeonMqSttResponse,
                                      NeonMqTtsResponse, NeonMqGetLanguages,
                                      NeonMqLanguagesResponse, NeonMqGetSkillsApi,
-                                     NeonMqSkillsApiResponse, NeonMqCallSkillApi,
-                                     NeonMqCallSkillApiResponse],
+                                     NeonMqSkillsApiResponse, 
+                                     ],
                                Field(discriminator='msg_type')])
 
     @classmethod
