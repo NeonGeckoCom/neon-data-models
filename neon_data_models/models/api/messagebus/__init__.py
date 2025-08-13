@@ -247,23 +247,24 @@ class NeonGetSkillsApi(BaseMessage):
     msg_type: Literal["neon.skill_api.get"] = "neon.skill_api.get"
 
 
-class NeonSkillsApiResponse(BaseMessage):
-    class NeonSkillApiData(BaseModel):
-        help: str = Field(description="API Method docstring")
-        request_schema: Optional[dict] = Field(
-            default=None, description="JSON request schema for the API method"
-        )
-        response_schema: Optional[dict] = Field(
-            default=None, description="JSON response schema for the API method"
-        )
-        signature: Optional[str] = Field(
-            default=None, description="Python signature of the API method"
-        )
-        msg_type: str = Field(
-            alias="type",
-            description="Message type associated with this API method",
-        )
+class NeonSkillApiData(BaseModel):
+    help: str = Field(description="API Method docstring")
+    request_schema: Optional[dict] = Field(
+        default=None, description="JSON request schema for the API method"
+    )
+    response_schema: Optional[dict] = Field(
+        default=None, description="JSON response schema for the API method"
+    )
+    signature: Optional[str] = Field(
+        default=None, description="Python signature of the API method"
+    )
+    msg_type: str = Field(
+        alias="type",
+        description="Message type associated with this API method",
+    )
 
+
+class NeonSkillsApiResponse(BaseMessage):
     msg_type: Literal["neon.skill_api.get.response"] = (
         "neon.skill_api.get.response"
     )
@@ -272,13 +273,22 @@ class NeonSkillsApiResponse(BaseMessage):
     )
 
 
-class NeonCallSkillApi(BaseMessage):
-    class SkillApiRequestData(BaseModel):
-        args: List[Any] = Field(default=[], description="Positional arguments")
-        kwargs: Dict[str, Any] = Field(
-            default={}, description="Keyword arguments"
-        )
+class SkillApiRequestData(BaseModel):
+    args: List[Any] = Field(default=[], description="Positional arguments")
+    kwargs: Dict[str, Any] = Field(default={}, description="Keyword arguments")
 
+
+class SkillApiResponseData(BaseModel):
+    result: Any = Field(
+        description="Result of the API method call",
+        default=None,
+    )
+    error: Optional[str] = Field(
+        default=None, description="Error message if the call failed"
+    )
+
+
+class NeonCallSkillApi(BaseMessage):
     msg_type: str = Field(description="Requested API Message type")
     data: SkillApiRequestData = Field(
         default=SkillApiRequestData(),
@@ -287,15 +297,6 @@ class NeonCallSkillApi(BaseMessage):
 
 
 class NeonCallSkillApiResponse(BaseMessage):
-    class SkillApiResponseData(BaseModel):
-        result: Any = Field(
-            description="Result of the API method call",
-            default=None,
-        )
-        error: Optional[str] = Field(
-            default=None, description="Error message if the call failed"
-        )
-
     msg_type: str = Field(description="Requested API response Message type")
     data: SkillApiResponseData = Field(description="API Method response data")
 
@@ -313,4 +314,7 @@ __all__ = [
     NeonSkillsApiResponse.__name__,
     NeonCallSkillApi.__name__,
     NeonCallSkillApiResponse.__name__,
+    SkillApiRequestData.__name__,
+    SkillApiResponseData.__name__,
+    NeonSkillApiData.__name__,
 ]
