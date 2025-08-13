@@ -25,7 +25,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from typing import Dict
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, RootModel
 from neon_data_models.models.api.messagebus import (
     NeonSkillApiData,
     SkillApiRequestData,
@@ -33,8 +33,8 @@ from neon_data_models.models.api.messagebus import (
 )
 
 
-class NeonHttpListResponse(BaseModel):
-    __root__: Dict[str, Dict[str, NeonSkillApiData]]
+class NeonHttpListResponse(RootModel):
+    root: Dict[str, Dict[str, NeonSkillApiData]]
 
 
 class NeonHttpSkillApiRequest(SkillApiRequestData):
