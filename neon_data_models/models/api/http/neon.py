@@ -39,7 +39,7 @@ class NeonHttpListSkillApiResponse(RootModel):
 
 class NeonHttpSkillApiRequest(SkillApiRequestData):
     skill_id: str = Field(description="skill_id being requested")
-    skill_method: str = Field(description="API method being requested")
+    api_method: str = Field(description="API method being requested")
 
 
 class NeonHttpSkillApiResponse(SkillApiResponseData):
