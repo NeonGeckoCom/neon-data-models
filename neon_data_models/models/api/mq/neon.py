@@ -165,8 +165,8 @@ class NeonMqCallSkillApi(NeonCallSkillApi, MQContext):
             description="Message type associated with the specific API requested"
         )
 
-    msg_type: Literal["neon.skill_api.query"] = Field(
-        default="neon.skill_api.query",
+    msg_type: Literal["neon.skill_api.call"] = Field(
+        default="neon.skill_api.call",
         description="Message type for skill API calls",
     )
     data: _RequestData = Field(
