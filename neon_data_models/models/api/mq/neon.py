@@ -50,6 +50,7 @@ from neon_data_models.models.api.messagebus import (
     NeonSkillsApiResponse,
     NeonCallSkillApi,
     NeonCallSkillApiResponse,
+    SkillApiRequestData
 )
 
 
@@ -160,7 +161,7 @@ class NeonMqCallSkillApi(NeonCallSkillApi, MQContext):
     Data model for an MQ message calling a skill API
     """
 
-    class _RequestData(NeonCallSkillApi.SkillApiRequestData):
+    class _RequestData(SkillApiRequestData):
         msg_type: str = Field(
             description="Message type associated with the specific API requested"
         )
