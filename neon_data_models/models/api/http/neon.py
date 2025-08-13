@@ -35,9 +35,10 @@ from neon_data_models.models.api.messagebus import (
 
 class NeonSkillApiHttpData(NeonSkillApiData):
     skill_id: str = Field(
-            description="ID of the skill providing this API method")
-    api_method: str = Field(
-            description="API method name")
+        description="ID of the skill providing this API method"
+    )
+    api_method: str = Field(description="API method name")
+
 
 class NeonHttpListSkillApiResponse(RootModel):
     root: List[NeonSkillApiHttpData]
@@ -45,6 +46,47 @@ class NeonHttpListSkillApiResponse(RootModel):
     model_config = {
         "json_schema_extra": {
             "examples": [
+                {
+                    "help": "\n        API Method to build a list of examples as listed in skill metadata.\n        ",
+                    "request_schema": None,
+                    "response_schema": None,
+                    "signature": None,
+                    "type": "skill-about.neongeckocom.skill_info_examples",
+                    "skill_id": "skill-about.neongeckocom",
+                    "api_method": "skill_info_examples",
+                },
+                {
+                    "help": "\n        Get the current timestamp in seconds since epoch.\n        :param request: Request containing location to get time of\n        :returns: Response containing current timestamp\n        ",
+                    "request_schema": {
+                        "properties": {
+                            "location": {
+                                "anyOf": [
+                                    {"type": "string"},
+                                    {"type": "null"},
+                                ],
+                                "default": None,
+                                "title": "Location",
+                            }
+                        },
+                        "title": "_CurrentTimeRequest",
+                        "type": "object",
+                    },
+                    "response_schema": {
+                        "properties": {
+                            "current_timestamp": {
+                                "title": "Current Timestamp",
+                                "type": "number",
+                            }
+                        },
+                        "required": ["current_timestamp"],
+                        "title": "_CurrentTimeResponse",
+                        "type": "object",
+                    },
+                    "signature": "(request: skill_date_time._CurrentTimeRequest) -> skill_date_time._CurrentTimeResponse",
+                    "type": "skill-date_time.neongeckocom.get_current_time",
+                    "skill_id": "skill-date_time.neongeckocom",
+                    "api_method": "get_current_time",
+                },
             ]
         }
     }
