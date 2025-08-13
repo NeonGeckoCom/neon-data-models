@@ -36,16 +36,93 @@ from neon_data_models.models.api.messagebus import (
 class NeonHttpListSkillApiResponse(RootModel):
     root: Dict[str, Dict[str, NeonSkillApiData]]
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "root": {
+                        "skill-about.neongeckocom": {
+                            "skill_info_examples": {
+                                "help": "API method to build a list of skill examples",
+                                "request_schema": None,
+                                "response_schema": None,
+                                "signature": "() -> List[str]",
+                                "type": "skill-about.neongeckocom.skill_info_examples",
+                            }
+                        },
+                        "skill-date_time.neongeckocom": {
+                            "get_current_time": {
+                                "help": "\n        Get the current timestamp in seconds since epoch.\n        :param request: Request containing location to get time of\n        :returns: Response containing current timestamp\n        ",
+                                "request_schema": {
+                                    "properties": {
+                                        "location": {
+                                            "anyOf": [
+                                                {"type": "string"},
+                                                {"type": "null"},
+                                            ],
+                                            "default": None,
+                                            "title": "Location",
+                                        }
+                                    },
+                                    "title": "_CurrentTimeRequest",
+                                    "type": "object",
+                                },
+                                "response_schema": {
+                                    "properties": {
+                                        "current_timestamp": {
+                                            "title": "Current Timestamp",
+                                            "type": "number",
+                                        }
+                                    },
+                                    "required": ["current_timestamp"],
+                                    "title": "_CurrentTimeResponse",
+                                    "type": "object",
+                                },
+                                "signature": "(request: skill_date_time._CurrentTimeRequest) -> skill_date_time._CurrentTimeResponse",
+                                "type": "skill-date_time.neongeckocom.get_current_time",
+                            },
+                        },
+                    }
+                }
+            ]
+        }
+    }
+
 
 class NeonHttpSkillApiRequest(SkillApiRequestData):
     skill_id: str = Field(description="skill_id being requested")
     api_method: str = Field(description="API method being requested")
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "skill_id": "skill-about.neongeckocom",
+                    "api_method": "skill_info_examples",
+                    "args": [],
+                    "kwargs": {},
+                }
+            ]
+        }
+    }
 
 
 class NeonHttpSkillApiResponse(SkillApiResponseData):
     """
     Convenience wrapper to implement examples for Swagger UI
     """
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "result": "API Response matching advertised schema",
+                    "error": None,
+                },
+                {"result": None, "error": "API Method error message"},
+            ]
+        }
+    }
 
 
 __all__ = [
