@@ -314,7 +314,4 @@ __all__ = [
     NeonSkillsApiResponse.__name__,
     NeonCallSkillApi.__name__,
     NeonCallSkillApiResponse.__name__,
-    SkillApiRequestData.__name__,
-    SkillApiResponseData.__name__,
-    NeonSkillApiData.__name__,
 ]

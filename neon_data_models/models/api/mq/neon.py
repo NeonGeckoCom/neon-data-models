@@ -187,7 +187,9 @@ class NeonMqCallSkillApi(NeonCallSkillApi, MQContext):
 
 class NeonMqCallSkillApiResponse(NeonCallSkillApiResponse, MQContext):
     """
-    Data model for an MQ message containing a skill API response
+    Data model for an MQ message containing a skill API response.
+    Note that `msg_type` is overridden from the internal API-specific value
+    to a generic type for MQ routing.
     """
     msg_type: Literal["neon.skill_api.response"] = Field(
         default="neon.skill_api.response",
