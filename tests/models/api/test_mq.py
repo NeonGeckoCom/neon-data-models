@@ -445,10 +445,28 @@ class TestNeonMQ(TestCase):
         # with self.assertRaises(ValidationError):
         #     NeonMqTtsResponse(message_id="test_mid")
 
+    def test_neon_mq_get_skills_api(self):
+        from neon_data_models.models.api.mq.neon import NeonMqGetSkillsApi
+        # TODO
+    
+    def test_neon_mq_skills_api_response(self):
+        from neon_data_models.models.api.mq.neon import NeonMqSkillsApiResponse
+        # TODO
+    
+    def test_neon_mq_call_skill_api(self):
+        from neon_data_models.models.api.mq.neon import NeonMqCallSkillApi
+        # TODO
+    
+    def test_neon_mq_call_skill_api_response(self):
+        from neon_data_models.models.api.mq.neon import NeonMqCallSkillApiResponse
+        # TODO
+
     def test_neon_api_message(self):
         from neon_data_models.models.api.mq.neon import NeonApiMessage, GetTtsData, GetSttData, GetResponseData
         from neon_data_models.models.api.mq.neon import NeonMqGetTts, NeonMqGetStt, NeonMqTextInput
         from neon_data_models.models.api.mq.neon import NeonMqSttResponse, NeonMqTtsResponse
+        from neon_data_models.models.api.mq.neon import NeonMqGetSkillsApi, NeonMqSkillsApiResponse
+        from neon_data_models.models.api.mq.neon import NeonMqCallSkillApi, NeonMqCallSkillApiResponse
 
         # Test TTS message
         tts_message = NeonApiMessage(
@@ -500,6 +518,62 @@ class TestNeonMQ(TestCase):
             message_id="test_mid"
         )
         self.assertIsInstance(tts_response, NeonMqTtsResponse)
+
+        # Test Get Skills API message
+        skills_api_message = NeonApiMessage(
+            msg_type="neon.skill_api.get",
+            data={},
+            context={},
+            message_id="test_mid"
+        )
+        self.assertIsInstance(skills_api_message, NeonMqGetSkillsApi)
+
+        # Test Skills API Response message
+        skills_api_response = NeonApiMessage(
+            msg_type="neon.skill_api.get.response",
+            data={
+                "skill-date_time.neongeckocom": {
+                    "get_current_time": {
+                        "help": "Get the current timestamp",
+                        "type": "skill-date_time.neongeckocom.get_current_time",
+                        "request_schema": None,
+                        "response_schema": None,
+                        "signature": None
+                    }
+                }
+            },
+            context={},
+            message_id="test_mid"
+        )
+        self.assertIsInstance(skills_api_response, NeonMqSkillsApiResponse)
+
+        # Test Call Skill API message
+        call_skill_api_message = NeonApiMessage(
+            msg_type="neon.skill_api.call",
+            data={
+                "msg_type": "skill-date_time.neongeckocom.get_current_time",
+                "args": ["Seattle"],
+                "kwargs": {"format": "iso"}
+            },
+            context={},
+            message_id="test_mid"
+        )
+        self.assertIsInstance(call_skill_api_message, NeonMqCallSkillApi)
+
+        # Test Call Skill API Response message
+        call_skill_api_response = NeonApiMessage(
+            msg_type="neon.skill_api.response",
+            data={
+                "result": {
+                    "current_timestamp": 1640995200.0,
+                    "formatted_time": "2022-01-01 00:00:00 UTC"
+                },
+                "error": None
+            },
+            context={},
+            message_id="test_mid"
+        )
+        self.assertIsInstance(call_skill_api_response, NeonMqCallSkillApiResponse)
 
         # Test from_sio_message for STT
         sio_stt = {
