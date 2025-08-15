@@ -25,54 +25,76 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from typing import Annotated, List, Literal, Union
+from ovos_bus_client.message import Message
 from pydantic import Field, TypeAdapter, model_validator
 
 from neon_data_models.models.base import BaseModel
-from neon_data_models.models.base.contexts import KlatContext, MQContext, \
-    SessionContext, TimingContext
+from neon_data_models.models.base.contexts import (
+    KlatContext,
+    MQContext,
+    SessionContext,
+    TimingContext,
+)
 from neon_data_models.models.base.messagebus import BaseMessage, MessageContext
 from neon_data_models.models.user.neon_profile import UserProfile
-from neon_data_models.models.api.messagebus import NeonGetLanguages, NeonGetTts, NeonGetStt, \
-    NeonAudioInput, NeonLanguagesResponse, NeonTextInput, NeonSttResponse, NeonTtsResponse
+from neon_data_models.models.api.messagebus import (
+    NeonGetLanguages,
+    NeonGetTts,
+    NeonGetStt,
+    NeonAudioInput,
+    NeonLanguagesResponse,
+    NeonTextInput,
+    NeonSttResponse,
+    NeonTtsResponse,
+    NeonGetSkillsApi,
+    NeonSkillsApiResponse,
+    NeonCallSkillApi,
+    NeonCallSkillApiResponse,
+    SkillApiRequestData
+)
 
 
 class GetTtsData(BaseModel):
     text: str = Field(description="Text to be spoken")
-    lang: str = Field(default="en-us",
-                      description="BCP-47 language code for TTS")
+    lang: str = Field(
+        default="en-us", description="BCP-47 language code for TTS"
+    )
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def validate_inputs(cls, values):
-        if 'text' not in values:
-            values['text'] = values.pop('utterance', None)
+        if "text" not in values:
+            values["text"] = values.pop("utterance", None)
         return values
 
 
 class GetSttData(BaseModel):
     audio_data: str = Field(description="Base64-encoded audio data")
-    lang: str = Field(default="en-us",
-                      description="BCP-47 language code for STT")
+    lang: str = Field(
+        default="en-us", description="BCP-47 language code for STT"
+    )
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def validate_inputs(cls, values):
-        if 'audio_data' not in values:
-            values['audio_data'] = values.get('message_body')
+        if "audio_data" not in values:
+            values["audio_data"] = values.get("message_body")
         return values
 
 
 class GetResponseData(BaseModel):
     utterances: List[str] = Field(description="List of input utterance(s)")
-    lang: str = Field(default="en-us",
-                      description="BCP-47 language code for input/response")
+    lang: str = Field(
+        default="en-us", description="BCP-47 language code for input/response"
+    )
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def validate_inputs(cls, values):
-        if 'utterances' not in values:
-            values['utterances'] = [values.pop('messageText', '')]
+        if "utterances" not in values:
+            values["utterances"] = [values.pop("messageText", "")]
         return values
+
 
 class NeonMqGetTts(NeonGetTts, MQContext):
     """
@@ -122,6 +144,59 @@ class NeonMqLanguagesResponse(NeonLanguagesResponse, MQContext):
     """
 
 
+class NeonMqGetSkillsApi(NeonGetSkillsApi, MQContext):
+    """
+    Data model for an MQ message requesting available skill APIs
+    """
+
+
+class NeonMqSkillsApiResponse(NeonSkillsApiResponse, MQContext):
+    """
+    Data model for an MQ message containing available skill APIs
+    """
+
+
+class NeonMqCallSkillApi(NeonCallSkillApi, MQContext):
+    """
+    Data model for an MQ message calling a skill API
+    """
+
+    class _RequestData(SkillApiRequestData):
+        msg_type: str = Field(
+            description="Message type associated with the specific API requested"
+        )
+
+    msg_type: Literal["neon.skill_api.call"] = Field(
+        default="neon.skill_api.call",
+        description="Message type for skill API calls",
+    )
+    data: _RequestData = Field(
+        description="API request data including `msg_type` and call params"
+    )
+
+    def as_messagebus_message(self) -> Message:
+        """
+        Override default Message translation to account for `msg_type` being
+        specified in request data
+        """
+        return Message(
+            msg_type=self.data.msg_type,
+            data={"args": self.data.args, "kwargs": self.data.kwargs},
+            context=self.context.model_dump()
+            )
+
+class NeonMqCallSkillApiResponse(NeonCallSkillApiResponse, MQContext):
+    """
+    Data model for an MQ message containing a skill API response.
+    Note that `msg_type` is overridden from the internal API-specific value
+    to a generic type for MQ routing.
+    """
+    msg_type: Literal["neon.skill_api.response"] = Field(
+        default="neon.skill_api.response",
+        description="Message type for skill API responses",
+    )
+
+
 class NeonMqUnknownMessage(BaseMessage, MQContext):
     """
     Default message class for validating Messagebus messages that should be
@@ -134,21 +209,35 @@ class NeonApiMessage:
     Type adapter for validating an arbitrary MQ message. This will always return
     an instance that extends `BaseMessage` and `MQContext`.
     """
-    ta = TypeAdapter(Annotated[Union[NeonMqGetStt, NeonMqGetTts,
-                                     NeonMqTextInput, NeonMqSttResponse,
-                                     NeonMqTtsResponse, NeonMqGetLanguages,
-                                     NeonMqLanguagesResponse],
-                               Field(discriminator='msg_type')])
+
+    ta = TypeAdapter(
+        Annotated[
+            Union[
+                NeonMqGetStt,
+                NeonMqGetTts,
+                NeonMqTextInput,
+                NeonMqSttResponse,
+                NeonMqTtsResponse,
+                NeonMqGetLanguages,
+                NeonMqLanguagesResponse,
+                NeonMqGetSkillsApi,
+                NeonMqSkillsApiResponse,
+                NeonMqCallSkillApi,
+                NeonMqCallSkillApiResponse,
+            ],
+            Field(discriminator="msg_type"),
+        ]
+    )
 
     @classmethod
     def __new__(cls, *args, **kwargs) -> BaseMessage:
         # Parse the MQ Context from a `Message` input to create a proper API message
-        if 'message_id' not in kwargs:
+        if "message_id" not in kwargs:
             # Extract MQ context data from the message
-            mq_data = kwargs.get('context', {}).get('mq', {})
+            mq_data = kwargs.get("context", {}).get("mq", {})
             # Update values with MQ context data
             kwargs.update(mq_data)
-        
+
         try:
             return cls.ta.validate_python(kwargs)
         except Exception as e:
@@ -160,38 +249,61 @@ class NeonApiMessage:
         """
         Parse a Klat SocketIO message into a valid MQ API message
         """
-        requested_service = sio_message.get("requested_skill",
-                                         "recognizer").lower()
+        requested_service = sio_message.get(
+            "requested_skill", "recognizer"
+        ).lower()
         if requested_service not in ["stt", "tts", "recognizer"]:
-            raise ValueError(f"Invalid requested service '{requested_service}'")
+            raise ValueError(
+                f"Invalid requested service '{requested_service}'"
+            )
         klat_context = KlatContext(**sio_message)
         mq_context = MQContext(**sio_message)
-        context = MessageContext(source="mq_api",
-                                 client=sio_message.get("client", "unknown"),
-                                 username=sio_message.get("nick", "guest"),
-                                 klat_data=klat_context, mq=mq_context,
-                                 user_profiles=[UserProfile()],
-                                 session=SessionContext(
-                                     session_id=sio_message.get("cid", "klat")),
-                                 timing=TimingContext(
-                                     client_sent=sio_message.get("timeCreated"))
+        context = MessageContext(
+            source="mq_api",
+            client=sio_message.get("client", "unknown"),
+            username=sio_message.get("nick", "guest"),
+            klat_data=klat_context,
+            mq=mq_context,
+            user_profiles=[UserProfile()],
+            session=SessionContext(session_id=sio_message.get("cid", "klat")),
+            timing=TimingContext(client_sent=sio_message.get("timeCreated")),
         )
         if requested_service == "stt":
             context.destination = ["speech"]
-            return NeonMqGetStt(data=GetSttData(**sio_message), context=context,
-                              **mq_context.model_dump())
+            return NeonMqGetStt(
+                data=GetSttData(**sio_message),
+                context=context,
+                **mq_context.model_dump(),
+            )
         elif requested_service == "tts":
             context.destination = ["audio"]
-            return NeonMqGetTts(data=GetTtsData(**sio_message), context=context,
-                              **mq_context.model_dump())
+            return NeonMqGetTts(
+                data=GetTtsData(**sio_message),
+                context=context,
+                **mq_context.model_dump(),
+            )
         elif requested_service == "recognizer":
             context.destination = ["skills"]
-            return NeonMqTextInput(data=GetResponseData(**sio_message),
-                                   context=context, **mq_context.model_dump())
+            return NeonMqTextInput(
+                data=GetResponseData(**sio_message),
+                context=context,
+                **mq_context.model_dump(),
+            )
 
 
-__all__ = [NeonMqGetTts.__name__, NeonMqGetStt.__name__, 
-           NeonMqTextInput.__name__, NeonMqAudioInput.__name__,
-           NeonMqSttResponse.__name__, NeonMqTtsResponse.__name__,
-           NeonMqGetLanguages.__name__, NeonMqLanguagesResponse.__name__,
-           NeonApiMessage.__name__, NeonMqUnknownMessage.__name__]
+__all__ = [
+    NeonMqGetTts.__name__,
+    NeonMqGetStt.__name__,
+    NeonMqTextInput.__name__,
+    NeonMqAudioInput.__name__,
+    NeonMqSttResponse.__name__,
+    NeonMqTtsResponse.__name__,
+    NeonMqGetLanguages.__name__,
+    NeonMqLanguagesResponse.__name__,
+    NeonApiMessage.__name__,
+    NeonMqGetSkillsApi.__name__,
+    NeonMqSkillsApiResponse.__name__,
+    NeonMqCallSkillApi.__name__,
+    NeonMqCallSkillApiResponse.__name__,
+    NeonMqUnknownMessage.__name__,
+]

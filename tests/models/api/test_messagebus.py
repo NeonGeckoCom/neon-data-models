@@ -717,3 +717,394 @@ class TestMessagebusModels(TestCase):
         }
         stt_response = SttReponseData(**valid_empty_parser)
         self.assertEqual(len(stt_response.parser_data), 0)
+
+    def test_neon_get_skills_api(self):
+        from neon_data_models.models.api.messagebus import NeonGetSkillsApi
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid message
+        valid_message = NeonGetSkillsApi(data={}, context={})
+        self.assertIsInstance(valid_message, NeonGetSkillsApi)
+        self.assertIsInstance(valid_message, BaseMessage)
+        self.assertEqual(valid_message.msg_type, "neon.skill_api.get")
+        self.assertEqual(valid_message.data, {})
+
+        # Test with custom context
+        context_data = {"source": "test_client", "destination": ["skills"]}
+        message_with_context = NeonGetSkillsApi(data={}, context=context_data)
+        self.assertEqual(message_with_context.context.source, "test_client")
+        self.assertEqual(message_with_context.context.destination, ["skills"])
+
+        # Test with invalid msg_type (should fail due to Literal constraint)
+        with self.assertRaises(ValidationError):
+            NeonGetSkillsApi(data={}, context={}, msg_type="invalid.type")
+
+    def test_neon_skill_api_data(self):
+        from neon_data_models.models.api.messagebus import NeonSkillApiData
+
+        # Test valid data with all fields
+        valid_data = {
+            "help": "Get the current timestamp in seconds since epoch.",
+            "request_schema": {
+                "properties": {
+                    "location": {
+                        "anyOf": [{"type": "string"}, {"type": "null"}],
+                        "default": None,
+                        "title": "Location",
+                    }
+                },
+                "title": "_CurrentTimeRequest",
+                "type": "object",
+            },
+            "response_schema": {
+                "properties": {
+                    "current_timestamp": {
+                        "title": "Current Timestamp",
+                        "type": "number",
+                    }
+                },
+                "required": ["current_timestamp"],
+                "title": "_CurrentTimeResponse",
+                "type": "object",
+            },
+            "signature": "(request: skill_date_time._CurrentTimeRequest) -> skill_date_time._CurrentTimeResponse",
+            "type": "skill-date_time.neongeckocom.get_current_time",
+        }
+        skill_api_data = NeonSkillApiData(**valid_data)
+        self.assertIsInstance(skill_api_data, NeonSkillApiData)
+        self.assertEqual(skill_api_data.help, "Get the current timestamp in seconds since epoch.")
+        self.assertEqual(skill_api_data.msg_type, "skill-date_time.neongeckocom.get_current_time")
+        self.assertIsInstance(skill_api_data.request_schema, dict)
+        self.assertIsInstance(skill_api_data.response_schema, dict)
+        self.assertIsNotNone(skill_api_data.signature)
+
+        # Test valid data with minimal fields (only required fields)
+        minimal_data = {
+            "help": "Simple API method",
+            "type": "test.skill.method"
+        }
+        minimal_skill_api = NeonSkillApiData(**minimal_data)
+        self.assertEqual(minimal_skill_api.help, "Simple API method")
+        self.assertEqual(minimal_skill_api.msg_type, "test.skill.method")
+        self.assertIsNone(minimal_skill_api.request_schema)
+        self.assertIsNone(minimal_skill_api.response_schema)
+        self.assertIsNone(minimal_skill_api.signature)
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            NeonSkillApiData(help="Missing type field")
+        
+        with self.assertRaises(ValidationError):
+            NeonSkillApiData(type="missing.help.field")
+
+    def test_neon_skills_api_response(self):
+        from neon_data_models.models.api.messagebus import NeonSkillsApiResponse, NeonSkillApiData
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid response with multiple skills
+        skill1_data = NeonSkillApiData(
+            help="Get current time",
+            msg_type="skill-date_time.neongeckocom.get_current_time",
+            request_schema={"type": "object"},
+            response_schema={"type": "object"}
+        )
+        skill2_data = NeonSkillApiData(
+            help="Get weather info",
+            msg_type="skill-weather.neongeckocom.get_weather"
+        )
+        
+        response_data = {
+            "skill-date_time.neongeckocom": {
+                "get_current_time": skill1_data
+            },
+            "skill-weather.neongeckocom": {
+                "get_weather": skill2_data
+            }
+        }
+        
+        valid_response = NeonSkillsApiResponse(data=response_data, context={})
+        self.assertIsInstance(valid_response, NeonSkillsApiResponse)
+        self.assertIsInstance(valid_response, BaseMessage)
+        self.assertEqual(valid_response.msg_type, "neon.skill_api.get.response")
+        self.assertEqual(len(valid_response.data), 2)
+        self.assertIn("skill-date_time.neongeckocom", valid_response.data)
+        self.assertIn("skill-weather.neongeckocom", valid_response.data)
+        self.assertEqual(
+            valid_response.data["skill-date_time.neongeckocom"]["get_current_time"].help,
+            "Get current time"
+        )
+
+        # Test empty response
+        empty_response = NeonSkillsApiResponse(data={}, context={})
+        self.assertEqual(len(empty_response.data), 0)
+
+        # Test response with complex nested structure
+        complex_skill_data = {
+            "skill-complex.test": {
+                "method1": NeonSkillApiData(help="Method 1", msg_type="test.method1"),
+                "method2": NeonSkillApiData(help="Method 2", msg_type="test.method2"),
+                "method3": NeonSkillApiData(help="Method 3", msg_type="test.method3")
+            }
+        }
+        complex_response = NeonSkillsApiResponse(data=complex_skill_data, context={})
+        self.assertEqual(len(complex_response.data["skill-complex.test"]), 3)
+        self.assertIn("method2", complex_response.data["skill-complex.test"])
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            NeonSkillsApiResponse(context={})
+    
+    def test_skill_api_request_data(self):
+        from neon_data_models.models.api.messagebus import SkillApiRequestData
+
+        # Test valid data with no args/kwargs
+        valid_request = SkillApiRequestData()
+        self.assertIsInstance(valid_request, SkillApiRequestData)
+        self.assertEqual(valid_request.args, [])
+        self.assertEqual(valid_request.kwargs, {})
+
+        # Test valid data with args and kwargs
+        valid_request_with_data = SkillApiRequestData(
+            args=["arg1", "arg2", 123],
+            kwargs={"location": "Seattle", "timezone": "UTC", "verbose": True}
+        )
+        self.assertEqual(valid_request_with_data.args, ["arg1", "arg2", 123])
+        self.assertEqual(
+            valid_request_with_data.kwargs,
+            {"location": "Seattle", "timezone": "UTC", "verbose": True}
+        )
+
+        # Test with complex args and kwargs
+        complex_request = SkillApiRequestData(
+            args=[
+                {"nested": "dict"},
+                ["list", "of", "items"],
+                42,
+                True,
+                None
+            ],
+            kwargs={
+                "nested_dict": {"key": "value", "number": 123},
+                "nested_list": [1, 2, 3],
+                "boolean": False,
+                "null_value": None
+            }
+        )
+        self.assertIsInstance(complex_request.args[0], dict)
+        self.assertIsInstance(complex_request.args[1], list)
+        self.assertEqual(complex_request.kwargs["nested_dict"]["number"], 123)
+
+        # Test with empty lists/dicts
+        empty_request = SkillApiRequestData(args=[], kwargs={})
+        self.assertEqual(len(empty_request.args), 0)
+        self.assertEqual(len(empty_request.kwargs), 0)
+
+    def test_skill_api_response_data(self):
+        from neon_data_models.models.api.messagebus import SkillApiResponseData
+
+        # Test valid response with result
+        valid_response_with_result = SkillApiResponseData(
+            result="API Response matching advertised schema",
+            error=None
+        )
+        self.assertEqual(
+            valid_response_with_result.result,
+            "API Response matching advertised schema"
+        )
+        self.assertIsNone(valid_response_with_result.error)
+
+        # Test valid response with error
+        valid_response_with_error = SkillApiResponseData(
+            result=None,
+            error="API Method error message"
+        )
+        self.assertIsNone(valid_response_with_error.result)
+        self.assertEqual(valid_response_with_error.error, "API Method error message")
+
+        # Test valid response with complex result
+        complex_result = {
+            "timestamp": 1640995200.0,
+            "timezone": "UTC",
+            "formatted_time": "2022-01-01 00:00:00",
+            "metadata": {
+                "source": "system_clock",
+                "accuracy": "high"
+            }
+        }
+        valid_response_complex = SkillApiResponseData(result=complex_result)
+        self.assertEqual(valid_response_complex.result, complex_result)
+        self.assertIsNone(valid_response_complex.error)
+
+        # Test valid response with list result
+        list_result = ["item1", "item2", "item3"]
+        valid_response_list = SkillApiResponseData(result=list_result)
+        self.assertEqual(valid_response_list.result, list_result)
+
+        # Test response with both result and error (should be allowed)
+        both_fields_response = SkillApiResponseData(
+            result="some result",
+            error="some error"
+        )
+        self.assertEqual(both_fields_response.result, "some result")
+        self.assertEqual(both_fields_response.error, "some error")
+
+        # Test default values (both None)
+        default_response = SkillApiResponseData()
+        self.assertIsNone(default_response.result)
+        self.assertIsNone(default_response.error)
+
+        # Test with various data types as result
+        int_result = SkillApiResponseData(result=42)
+        float_result = SkillApiResponseData(result=3.14159)
+        bool_result = SkillApiResponseData(result=True)
+        
+        self.assertEqual(int_result.result, 42)
+        self.assertEqual(float_result.result, 3.14159)
+        self.assertTrue(bool_result.result)
+    
+    def test_neon_call_skill_api(self):
+        from neon_data_models.models.api.messagebus import NeonCallSkillApi, SkillApiRequestData
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid message with specific msg_type
+        request_data = SkillApiRequestData(
+            args=["test_location"],
+            kwargs={"format": "iso"}
+        )
+        valid_message = NeonCallSkillApi(
+            msg_type="skill-date_time.neongeckocom.get_current_time",
+            data=request_data,
+            context={}
+        )
+        self.assertIsInstance(valid_message, NeonCallSkillApi)
+        self.assertIsInstance(valid_message, BaseMessage)
+        self.assertEqual(valid_message.msg_type, "skill-date_time.neongeckocom.get_current_time")
+        self.assertEqual(valid_message.data.args, ["test_location"])
+        self.assertEqual(valid_message.data.kwargs, {"format": "iso"})
+
+        # Test with default data
+        message_with_default = NeonCallSkillApi(
+            msg_type="test.skill.method",
+            context={}
+        )
+        self.assertEqual(message_with_default.data.args, [])
+        self.assertEqual(message_with_default.data.kwargs, {})
+
+        # Test with empty request data
+        empty_request = SkillApiRequestData()
+        message_empty = NeonCallSkillApi(
+            msg_type="test.skill.empty",
+            data=empty_request,
+            context={}
+        )
+        self.assertEqual(message_empty.data.args, [])
+        self.assertEqual(message_empty.data.kwargs, {})
+
+        # Test with complex arguments
+        complex_args = [
+            {"nested": "object"},
+            [1, 2, 3],
+            "simple_string",
+            42,
+            True
+        ]
+        complex_kwargs = {
+            "config": {"setting": "value"},
+            "options": ["opt1", "opt2"],
+            "enabled": True
+        }
+        complex_request = SkillApiRequestData(args=complex_args, kwargs=complex_kwargs)
+        complex_message = NeonCallSkillApi(
+            msg_type="skill.complex.method",
+            data=complex_request,
+            context={"source": "test"}
+        )
+        self.assertEqual(complex_message.data.args[0]["nested"], "object")
+        self.assertEqual(complex_message.data.kwargs["config"]["setting"], "value")
+
+        # Test missing required msg_type
+        with self.assertRaises(ValidationError):
+            NeonCallSkillApi(data=request_data, context={})
+    
+    def test_neon_call_skill_api_response(self):
+        from neon_data_models.models.api.messagebus import NeonCallSkillApiResponse, SkillApiResponseData
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid response with successful result
+        response_data = SkillApiResponseData(
+            result={
+                "current_timestamp": 1640995200.0,
+                "formatted_time": "2022-01-01 00:00:00 UTC"
+            },
+            error=None
+        )
+        valid_response = NeonCallSkillApiResponse(
+            msg_type="skill-date_time.neongeckocom.get_current_time.response",
+            data=response_data,
+            context={}
+        )
+        self.assertIsInstance(valid_response, NeonCallSkillApiResponse)
+        self.assertIsInstance(valid_response, BaseMessage)
+        self.assertEqual(valid_response.msg_type, "skill-date_time.neongeckocom.get_current_time.response")
+        self.assertEqual(valid_response.data.result["current_timestamp"], 1640995200.0)
+        self.assertIsNone(valid_response.data.error)
+
+        # Test response with error
+        error_response_data = SkillApiResponseData(
+            result=None,
+            error="Failed to get current time: Network error"
+        )
+        error_response = NeonCallSkillApiResponse(
+            msg_type="skill-date_time.neongeckocom.get_current_time.response",
+            data=error_response_data,
+            context={}
+        )
+        self.assertIsNone(error_response.data.result)
+        self.assertEqual(error_response.data.error, "Failed to get current time: Network error")
+
+        # Test with simple result types
+        string_response = NeonCallSkillApiResponse(
+            msg_type="test.skill.string.response",
+            data=SkillApiResponseData(result="Simple string result"),
+            context={}
+        )
+        self.assertEqual(string_response.data.result, "Simple string result")
+
+        number_response = NeonCallSkillApiResponse(
+            msg_type="test.skill.number.response",
+            data=SkillApiResponseData(result=42),
+            context={}
+        )
+        self.assertEqual(number_response.data.result, 42)
+
+        list_response = NeonCallSkillApiResponse(
+            msg_type="test.skill.list.response",
+            data=SkillApiResponseData(result=["item1", "item2", "item3"]),
+            context={}
+        )
+        self.assertEqual(len(list_response.data.result), 3)
+        self.assertEqual(list_response.data.result[1], "item2")
+
+        # Test with both result and error (edge case)
+        mixed_response = NeonCallSkillApiResponse(
+            msg_type="test.skill.mixed.response",
+            data=SkillApiResponseData(
+                result="Partial result",
+                error="Warning: incomplete data"
+            ),
+            context={}
+        )
+        self.assertEqual(mixed_response.data.result, "Partial result")
+        self.assertEqual(mixed_response.data.error, "Warning: incomplete data")
+
+        # Test missing required msg_type
+        with self.assertRaises(ValidationError):
+            NeonCallSkillApiResponse(data=response_data, context={})
+
+        # Test missing required data
+        with self.assertRaises(ValidationError):
+            NeonCallSkillApiResponse(
+                msg_type="test.response",
+                context={}
+            )
+    

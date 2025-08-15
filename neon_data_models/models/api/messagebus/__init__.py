@@ -38,96 +38,109 @@ from neon_data_models.models.base.messagebus import BaseMessage
 # Data models
 class GetTtsData(BaseModel):
     text: str = Field(description="Text to be spoken")
-    lang: str = Field(default="en-us",
-                      description="BCP-47 language code for TTS")
+    lang: str = Field(
+        default="en-us", description="BCP-47 language code for TTS"
+    )
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def validate_inputs(cls, values):
         # Ensure input values are normalized to valid field names
-        if hasattr(values, 'model_dump'):
+        if hasattr(values, "model_dump"):
             values = values.model_dump()
-        if 'text' not in values:
-            values['text'] = values.get('utterance')
+        if "text" not in values:
+            values["text"] = values.get("utterance")
         return values
 
 
 class TtsResponse(BaseModel):
     sentence: str = Field(description="Text to be spoken")
     translated: bool = Field(
-        default=False, 
-        description="True if the text has been translated before TTS synthesis")
+        default=False,
+        description="True if the text has been translated before TTS synthesis",
+    )
     phonemes: Optional[str] = Field(
-        default=None, description="Phoneme representation of the sentence")
+        default=None, description="Phoneme representation of the sentence"
+    )
     genders: List[Gender] = Field(
         description="List of genders included in the response `audio` field",
-        deprecated=True)
-    male: Optional[str] = Field(default=None,
-                                 description="Path to audio file in male voice")
+        deprecated=True,
+    )
+    male: Optional[str] = Field(
+        default=None, description="Path to audio file in male voice"
+    )
     female: Optional[str] = Field(
-        default=None, description="Path to audio file in female voice")
+        default=None, description="Path to audio file in female voice"
+    )
     audio: Dict[Gender, str]
-    
-    @model_validator(mode='after')
+
+    @model_validator(mode="after")
     def validate_gender_audio_match(self):
         """Validate that the genders list matches the audio dictionary keys."""
         if not set(self.genders) == set(self.audio.keys()):
             raise ValueError(
                 "All genders listed in 'genders' must have corresponding "
-                "entries in 'audio'")
+                "entries in 'audio'"
+            )
         return self
 
 
 class TtsSpeaker(BaseModel):
     name: str = Field(default="Neon", description="Name of the speaker")
     speaker: Optional[str] = Field(
-        default=None, 
+        default=None,
         description="Deprecated: Use 'name' instead",
-        deprecated=True)
+        deprecated=True,
+    )
     language: str = Field(default="en-us", description="BCP-47 language code")
-    gender: Gender = Field(default="female",
-                          description="Requested or synthesized gender")
+    gender: Gender = Field(
+        default="female", description="Requested or synthesized gender"
+    )
     voice: Optional[str] = Field(
-        default=None, description="Requested or synthesized voice name")
-    
-    @model_validator(mode='before')
+        default=None, description="Requested or synthesized voice name"
+    )
+
+    @model_validator(mode="before")
     @classmethod
     def map_speaker_to_name(cls, values):
-        if hasattr(values, 'model_dump'):
+        if hasattr(values, "model_dump"):
             values = values.model_dump()
-        if 'name' not in values and 'speaker' in values:
-            values['name'] = values['speaker']
+        if "name" not in values and "speaker" in values:
+            values["name"] = values["speaker"]
         return values
 
 
 class TtsReponseData(BaseModel):
     responses: Dict[str, TtsResponse] = Field(
-        description="Dictionary of BCP-47 lang codes to TTS responses")
+        description="Dictionary of BCP-47 lang codes to TTS responses"
+    )
     speaker: Optional[TtsSpeaker] = Field(
-        default=None, description="Optional speaker metadata")
+        default=None, description="Optional speaker metadata"
+    )
 
 
 class GetSttData(BaseModel):
     audio_data: str = Field(description="Base64-encoded audio data")
-    lang: str = Field(default="en-us",
-                      description="BCP-47 language code for STT")
+    lang: str = Field(
+        default="en-us", description="BCP-47 language code for STT"
+    )
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def validate_inputs(cls, values):
         # Ensure input values are normalized to valid field names
-        if hasattr(values, 'model_dump'):
+        if hasattr(values, "model_dump"):
             values = values.model_dump()
-        if 'audio_data' not in values:
-            values['audio_data'] = values.get('message_body')
+        if "audio_data" not in values:
+            values["audio_data"] = values.get("message_body")
         return values
 
 
 class SttReponseData(BaseModel):
     transcripts: List[str]
     parser_data: Dict[str, Any]
-    
-    @model_validator(mode='after')
+
+    @model_validator(mode="after")
     def validate_transcripts_not_empty(self):
         """Validate that the transcripts list is not empty."""
         if not self.transcripts:
@@ -137,17 +150,18 @@ class SttReponseData(BaseModel):
 
 class GetResponseData(BaseModel):
     utterances: List[str] = Field(description="List of input utterance(s)")
-    lang: str = Field(default="en-us",
-                      description="BCP-47 language code for input/response")
+    lang: str = Field(
+        default="en-us", description="BCP-47 language code for input/response"
+    )
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def validate_inputs(cls, values):
         # Ensure input values are normalized to valid field names
-        if hasattr(values, 'model_dump'):
+        if hasattr(values, "model_dump"):
             values = values.model_dump()
-        if 'utterances' not in values:
-            values['utterances'] = [values.pop('messageText', '')]
+        if "utterances" not in values:
+            values["utterances"] = [values.pop("messageText", "")]
         return values
 
 
@@ -162,7 +176,7 @@ class NeonGetTts(BaseMessage):
     msg_type: Literal["neon.get_tts"] = "neon.get_tts"
     data: GetTtsData
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def ensure_audio_destination(self):
         if "audio" not in self.context.destination:
             self.context.destination = ["audio"]
@@ -173,7 +187,7 @@ class NeonGetStt(BaseMessage):
     msg_type: Literal["neon.get_stt"] = "neon.get_stt"
     data: GetSttData
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def ensure_audio_destination(self):
         if "audio" not in self.context.destination:
             # Default context is not valid for this request, so override it
@@ -182,10 +196,12 @@ class NeonGetStt(BaseMessage):
 
 
 class NeonTextInput(BaseMessage):
-    msg_type: Literal["recognizer_loop:utterance"] = "recognizer_loop:utterance"
+    msg_type: Literal["recognizer_loop:utterance"] = (
+        "recognizer_loop:utterance"
+    )
     data: GetResponseData
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def ensure_skills_destination(self):
         if "skills" not in self.context.destination:
             self.context.destination.append("skills")
@@ -196,7 +212,7 @@ class NeonAudioInput(BaseMessage):
     msg_type: Literal["neon.audio_input"] = "neon.audio_input"
     data: GetSttData
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def ensure_audio_destination(self):
         if "audio" not in self.context.destination:
             # Default context is not valid for this request, so override it
@@ -210,21 +226,92 @@ class NeonSttResponse(BaseMessage):
 
 
 class NeonTtsResponse(BaseMessage):
-    msg_type: Literal["neon.get_tts.response",
-                      "klat.response"] = "neon.get_tts.response"
+    msg_type: Literal["neon.get_tts.response", "klat.response"] = (
+        "neon.get_tts.response"
+    )
     data: TtsReponseData
 
 
 class NeonGetLanguages(BaseMessage):
     msg_type: Literal["neon.languages.get"] = "neon.languages.get"
-    
+
 
 class NeonLanguagesResponse(BaseMessage):
-    msg_type: Literal["neon.languages.get.response"] = "neon.languages.get.response"
+    msg_type: Literal["neon.languages.get.response"] = (
+        "neon.languages.get.response"
+    )
     data: NeonLanguagesData
 
 
-__all__ = [NeonGetTts.__name__, NeonGetStt.__name__, NeonTextInput.__name__,
-           NeonAudioInput.__name__, NeonSttResponse.__name__,
-           NeonTtsResponse.__name__, NeonGetLanguages.__name__,
-           NeonLanguagesResponse.__name__]
+class NeonGetSkillsApi(BaseMessage):
+    msg_type: Literal["neon.skill_api.get"] = "neon.skill_api.get"
+
+
+class NeonSkillApiData(BaseModel):
+    help: str = Field(description="API Method docstring")
+    request_schema: Optional[dict] = Field(
+        default=None, description="JSON request schema for the API method"
+    )
+    response_schema: Optional[dict] = Field(
+        default=None, description="JSON response schema for the API method"
+    )
+    signature: Optional[str] = Field(
+        default=None, description="Python signature of the API method"
+    )
+    msg_type: str = Field(
+        alias="type",
+        description="Message type associated with this API method",
+    )
+
+
+class NeonSkillsApiResponse(BaseMessage):
+    msg_type: Literal["neon.skill_api.get.response"] = (
+        "neon.skill_api.get.response"
+    )
+    data: Dict[str, Dict[str, NeonSkillApiData]] = Field(
+        description="Dict of skill_id to API methods"
+    )
+
+
+class SkillApiRequestData(BaseModel):
+    args: List[Any] = Field(default=[], description="Positional arguments")
+    kwargs: Dict[str, Any] = Field(default={}, description="Keyword arguments")
+
+
+class SkillApiResponseData(BaseModel):
+    result: Any = Field(
+        description="Result of the API method call",
+        default=None,
+    )
+    error: Optional[str] = Field(
+        default=None, description="Error message if the call failed"
+    )
+
+
+class NeonCallSkillApi(BaseMessage):
+    msg_type: str = Field(description="Requested API Message type")
+    data: SkillApiRequestData = Field(
+        default=SkillApiRequestData(),
+        description="Data for the API method call",
+    )
+
+
+class NeonCallSkillApiResponse(BaseMessage):
+    msg_type: str = Field(description="Requested API response Message type")
+    data: SkillApiResponseData = Field(description="API Method response data")
+
+
+__all__ = [
+    NeonGetTts.__name__,
+    NeonGetStt.__name__,
+    NeonTextInput.__name__,
+    NeonAudioInput.__name__,
+    NeonSttResponse.__name__,
+    NeonTtsResponse.__name__,
+    NeonGetLanguages.__name__,
+    NeonLanguagesResponse.__name__,
+    NeonGetSkillsApi.__name__,
+    NeonSkillsApiResponse.__name__,
+    NeonCallSkillApi.__name__,
+    NeonCallSkillApiResponse.__name__,
+]
