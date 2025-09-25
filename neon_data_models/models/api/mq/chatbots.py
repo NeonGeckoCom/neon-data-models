@@ -64,6 +64,8 @@ class ChatbotsMqRequest(KlatContext, MQContext):
         default=None, description="Explicitly defined recipient of the shout")
     bound_service: Optional[str] = Field(
         default=None, description="Service bound to the conversation")
+    context: Optional[dict] = Field(
+            default=None, deprecated=True, description="Extra proctor context")
     
     @classmethod
     def from_sio_message(cls, sio_message: dict) -> 'ChatbotsMqRequest':
