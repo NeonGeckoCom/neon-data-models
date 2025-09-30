@@ -38,71 +38,105 @@ from neon_data_models.models.base import BaseModel
 class GetSttRequest(BaseModel):
     cid: str = Field(description="Conversation ID associated with the request")
     sid: str = Field(
-        description="Client Session ID associated with the request")
+        description="Client Session ID associated with the request"
+    )
+    lang: str = Field(
+        description="BCP-47 Language code associated with audio",
+        default="en-us",
+    )
     message_id: str = Field(
-        description="Message (Shout) ID associated with the request")
+        description="Message (Shout) ID associated with the request"
+    )
     audio_data: str = Field(
-        description="B64-encoded audio file object to transcribe")
+        description="B64-encoded audio file object to transcribe"
+    )
 
 
 class GetTtsRequest(BaseModel):
     cid: str = Field(description="Conversation ID associated with the request")
     sid: str = Field(
-        description="Client Session ID associated with the request")
+        description="Client Session ID associated with the request"
+    )
     message_id: str = Field(
-        description="Message (Shout) ID associated with the request")
+        description="Message (Shout) ID associated with the request"
+    )
     text: str = Field(description="Text to generate audio for")
-    lang: str = Field(description="BCP-47 Language code associated with `text`")
+    lang: str = Field(
+        description="BCP-47 Language code associated with `text`",
+        default="en-us",
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_inputs(cls, values):
+        if "message_text" in values:
+            values.setdefault("text", values.pop("message_text"))
+        return values
 
 
 class NewMessage(BaseModel):
     cid: str = Field(description="Conversation ID associated with the message")
     userID: str = Field(description="User ID associated with the message")
-    userDisplayName: str = Field(description="Username of the sender")
+    userDisplayName: Optional[str] = Field(
+        description="Username of the sender", default=None
+    )
     promptID: Optional[str] = Field(
-        default=None, description="Prompt ID this message is in response to")
+        default=None, description="Prompt ID this message is in response to"
+    )
     promptState: Optional[CcaiState] = Field(
         default=None,
-        description="Associated CCAI state if `prompt_id` is defined")
+        description="Associated CCAI state if `prompt_id` is defined",
+    )
     source: str = Field(description="Service associated with the message")
     messageText: str = Field(
-        description="Message content (input string or audio filename)")
+        description="Message content (input string or audio filename)"
+    )
     repliedMessage: Optional[str] = Field(
-        default=None, description="Message ID this message is a reply to")
-    is_bot: Literal['0', '1'] = Field(
-        default='0', description="'1' if the message came from a bot, else '0'")
-    lang: str = Field(default='en', description="ISO 639-1 Language code")
+        default=None, description="Message ID this message is a reply to"
+    )
+    is_bot: Literal["0", "1"] = Field(
+        default="0", description="'1' if the message came from a bot, else '0'"
+    )
+    lang: str = Field(default="en", description="ISO 639-1 Language code")
     attachments: List[str] = Field(
         default=[],
-        description="List of string filenames attached to this message")
+        description="List of string filenames attached to this message",
+    )
     context: dict = Field(default={}, description="Optional arbitrary context")
     test: bool = Field(
         default=False,
-        description="True if this message is associated with testing")
-    isAudio: Literal['0', '1'] = Field(
+        description="True if this message is associated with testing",
+    )
+    isAudio: Literal["0", "1"] = Field(
         default="0",
-        description="'1' if messageText represents encoded WAV audio")
-    messageTTS: Dict[str, Dict[Literal['male', 'female'], str]] = Field(
+        description="'1' if messageText represents encoded WAV audio",
+    )
+    messageTTS: Dict[str, Dict[Literal["male", "female"], str]] = Field(
         default={},
         description="TTS Audio formatted as {<language>: {<gender>: "
-                    "<b64-encoded WAV>}}")
-    isAnnouncement: Literal['0', '1'] = Field(
-        default='0', description="True if the message is a system announcement")
+        "<b64-encoded WAV>}}",
+    )
+    isAnnouncement: Literal["0", "1"] = Field(
+        default="0", description="True if the message is a system announcement"
+    )
     timeCreated: datetime = Field(description="Unix timestamp (epoch seconds)")
     messageID: str = Field(description="UUID for this message")
-    bound_service: str = Field(default="", description="Service this message is targeting")
+    bound_service: str = Field(
+        default="", description="Service this message is targeting"
+    )
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def validate_inputs(cls, values):
         # Prefer the proper `messageText` key, but accept `message_body` for
         # backwards-compat.
-        values['messageText'] = values.get('messageText') or \
-                                values.pop('message_body')
-        values['is_bot'] = values.get('is_bot') or \
-                          values.pop('isBot', '0')
-        values['promptID'] = values.get('promptID') or \
-                            values.pop('prompt_id', None)
+        values["messageText"] = values.get("messageText") or values.pop(
+            "message_body"
+        )
+        values["is_bot"] = values.get("is_bot") or values.pop("isBot", "0")
+        values["promptID"] = values.get("promptID") or values.pop(
+            "prompt_id", None
+        )
         return values
 
     class Config:
@@ -116,56 +150,57 @@ class GetPromptData(BaseModel):
     limit: int = Field(
         default=5,
         description="Maximum number of prompts to return if `prompt_id` "
-                    "is unset")
+        "is unset",
+    )
     prompt_id: Optional[str] = Field(
-        default=None, description="Optional prompt ID to get data for")
+        default=None, description="Optional prompt ID to get data for"
+    )
 
 
 class PromptData(BaseModel):
     class _PromptData(BaseModel):
         id: str = Field(alias="_id", description="Unique ID for the prompt")
-        is_completed: Literal['0', '1'] = Field(
-            description="'1' if a response to the prompt has been determined")
+        is_completed: Literal["0", "1"] = Field(
+            description="'1' if a response to the prompt has been determined"
+        )
         proposed_responses: Dict[str, str] = Field(
             default={},
-            description="Dict of participant name to proposed response")
+            description="Dict of participant name to proposed response",
+        )
         submind_opinions: Dict[str, str] = Field(
             default={},
-            description="Dict of participant name to opinion response")
+            description="Dict of participant name to opinion response",
+        )
         votes: Dict[str, str] = Field(
-            default={},
-            description="Dict of participant name to vote")
+            default={}, description="Dict of participant name to vote"
+        )
         participating_subminds: List[str] = Field(
             default=[],
-            description="List of subminds that participated in this prompt")
+            description="List of subminds that participated in this prompt",
+        )
 
         @model_serializer
         def alias_serialize(self):
-            return {"_id": self.id,
-                    "is_completed": self.is_completed,
-                    "proposed_responses": self.proposed_responses,
-                    "submind_opinions": self.submind_opinions,
-                    "votes": self.votes,
-                    "participating_subminds": self.participating_subminds}
+            return {
+                "_id": self.id,
+                "is_completed": self.is_completed,
+                "proposed_responses": self.proposed_responses,
+                "submind_opinions": self.submind_opinions,
+                "votes": self.votes,
+                "participating_subminds": self.participating_subminds,
+            }
 
-    data: Union[_PromptData, List[_PromptData]] = Field(description="Prompt data")
-    receiver: str = Field(description="Nickname of user requesting prompt data")
+    data: Union[_PromptData, List[_PromptData]] = Field(
+        description="Prompt data"
+    )
+    receiver: str = Field(
+        description="Nickname of user requesting prompt data"
+    )
     cid: str = Field(description="Conversation ID associated with the prompt")
     request_id: str = Field(
         default_factory=lambda: str(uuid.uuid4()),
-        description="Unique ID of the request to identify the response")
-
-
-class RequestNeonTranslations(BaseModel):
-    class CidTranslationRequest(BaseModel):
-        lang: str = Field(description="Translation target language")
-        source_lang: str = Field(description="Source language of shouts")
-        shouts: Dict[str, str] = Field(
-            default={}, description="Dict of shout ID to text in `lang`")
-
-    request_id: str = Field(description="UUID for this request")
-    data: Dict[str, CidTranslationRequest] = Field(
-        description="Mapping of conversation ID to required translation")
+        description="Unique ID of the request to identify the response",
+    )
 
 
 class AuthExpired(BaseModel):
@@ -175,10 +210,12 @@ class AuthExpired(BaseModel):
 
 
 class ConfiguredPersonasChanged(BaseModel):
-    personas: Dict[str, List[LLMPersona]] = (
-        Field(description="Dict of LLM name to list of supported personas"))
+    personas: Dict[str, List[LLMPersona]] = Field(
+        description="Dict of LLM name to list of supported personas"
+    )
     update_time: int = Field(
-        description="Unix timestamp when the change occurred")
+        description="Unix timestamp when the change occurred"
+    )
 
 
 class BanSubmindFromConversation(BaseModel):
@@ -187,7 +224,13 @@ class BanSubmindFromConversation(BaseModel):
     nick: str = Field(description="Username of the submind to (un-)ban")
 
 
-__all__ = [GetSttRequest.__name__, GetTtsRequest.__name__, NewMessage.__name__,
-           GetPromptData.__name__, PromptData.__name__,
-           RequestNeonTranslations.__name__, AuthExpired.__name__,
-           BanSubmindFromConversation.__name__]
+__all__ = [
+    GetSttRequest.__name__,
+    GetTtsRequest.__name__,
+    NewMessage.__name__,
+    GetPromptData.__name__,
+    PromptData.__name__,
+    RequestNeonTranslations.__name__,
+    AuthExpired.__name__,
+    BanSubmindFromConversation.__name__,
+]
