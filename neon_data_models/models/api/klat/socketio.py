@@ -31,7 +31,7 @@ from datetime import datetime
 from pydantic import Field, model_validator, model_serializer
 
 from neon_data_models.models.api.llm import LLMPersona
-from neon_data_models.enum import CcaiPromptStates
+from neon_data_models.enum import CcaiState
 from neon_data_models.models.base import BaseModel
 
 
@@ -61,7 +61,7 @@ class NewMessage(BaseModel):
     userDisplayName: str = Field(description="Username of the sender")
     promptID: Optional[str] = Field(
         default=None, description="Prompt ID this message is in response to")
-    promptState: Optional[CcaiPromptStates] = Field(
+    promptState: Optional[CcaiState] = Field(
         default=None,
         description="Associated CCAI state if `prompt_id` is defined")
     source: str = Field(description="Service associated with the message")
