@@ -310,6 +310,15 @@ class NewCcaiPrompt(BaseModel):
         description="Extra context for the prompt", deprecated=True, default={}
     )
 
+    @model_validator(mode="before")
+    @classmethod
+    def validate_inputs(cls, values):
+        # Handle an invalid input context as a valid empty dict
+        # for backwards compatibility
+        if values.get("context", {}) is None:
+            values["context"] = {}
+        return values
+
     def to_db_query(self) -> Dict[str, Any]:
         return {
             "_id": self.prompt_id,
