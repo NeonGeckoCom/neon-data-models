@@ -385,17 +385,13 @@ class NewCcaiPrompt(BaseModel):
         }
 
 
-class CcaiPromptCompleted(BaseModel):
+class CcaiPromptCompleted(UserMessage):
     winner: Optional[str] = Field(
         default=None,
         description="Winning response text or `None` in the event of an error",
     )
-    prompt_id: str = Field(description="Unique ID for the prompt")
     request_id: Optional[str] = Field(
         default=None, description="ID of the database transaction request"
-    )
-    context: Dict[str, Any] = Field(
-        description="Extra context for the prompt", default={}
     )
 
     @model_validator(mode="before")
