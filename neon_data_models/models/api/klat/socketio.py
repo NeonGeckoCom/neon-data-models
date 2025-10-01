@@ -356,13 +356,13 @@ class NewCcaiPrompt(BaseModel):
     cid: str = Field(description="Conversation ID associated with the prompt")
     prompt_id: str = Field(
         description="Unique ID for the prompt"
-    )  # TODO: Check for default value creation in Klat server
+    )
     created_on: int = Field(
         descrtion="Epoch seconds of prompt creation",
         default_factory=lambda: int(time()),
     )
     context: Dict[str, Any] = Field(
-        description="Extra context for the prompt", deprecated=True, default={}
+        description="Extra context for the prompt", default={}
     )
 
     @model_validator(mode="before")
@@ -386,16 +386,15 @@ class NewCcaiPrompt(BaseModel):
 
 
 class CcaiPromptCompleted(UserMessage):
-    winner: Optional[str] = Field(
-        default=None,
-        description="Winning response text or `None` in the event of an error",
+    winner: str = Field(
+        default="",
+        description="Winning response text; empty in the event of an error",
     )
     request_id: Optional[str] = Field(
         default=None, description="ID of the database transaction request"
     )
     prompt_id: str = Field(
         description="Prompt ID this message is in response to",
-        alias="promptID",
     )
     sid: str = Field(description="Client Session ID associated with the request")
     conversation_context: Dict[str, Any] = Field(description="Context of the conversation", default={})
@@ -403,10 +402,13 @@ class CcaiPromptCompleted(UserMessage):
     @model_validator(mode="before")
     @classmethod
     def validate_inputs(cls, values):
+        values.setdefault("winner", values.get("context", {}).get("winner", ""))
         values.setdefault(
-            "promptID",
+            "prompt_id",
             values.get("context", {}).get("prompt", {}).get("prompt_id"),
         )
+        # TODO: Below assertion for initial development; remove before merge
+        assert values["prompt_id"] != "", f"prompt_id must be defined: {values}"
         return values
 
     def to_db_query(self) -> Dict[str, Any]:
