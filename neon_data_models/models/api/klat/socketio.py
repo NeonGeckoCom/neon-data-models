@@ -189,7 +189,7 @@ class UserMessage(BaseModel):
         description="Prompt ID this message is in response to",
         alias="promptID",
     )
-    promptState: Optional[CcaiState] = Field(
+    prompt_state: Optional[CcaiState] = Field(
         default=None,
         alias="promptState",
         description="Associated CCAI state if `prompt_id` is defined",
