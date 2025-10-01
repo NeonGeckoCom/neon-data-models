@@ -420,6 +420,15 @@ class CcaiPromptCompleted(UserMessage):
             "prompt_context": self.context,
         }
 
+    def model_dump(self, **kwargs):
+        """
+        Override model_dump to include SIO fields for backwards compatibility
+        """
+
+        # For backwards-compat with Klat Client, include aliased keys
+        by_alias = {"promptID": self.prompt_id}
+        return {**super().model_dump(**kwargs), **by_alias}
+
 
 class GetPromptData(BaseModel):
     nick: str = Field(description="Nickname of user requesting prompt data")
