@@ -403,6 +403,9 @@ class CcaiPromptCompleted(UserMessage):
     @classmethod
     def validate_inputs(cls, values):
         values.setdefault("winner", values.get("context", {}).get("winner", ""))
+        if values.get("prompt_id") in (None, ""):
+            # TODO: Figure out where this is set to an invalid value
+            values.pop("prompt_id")
         values.setdefault(
             "prompt_id",
             values.get("context", {}).get("prompt", {}).get("prompt_id"),
