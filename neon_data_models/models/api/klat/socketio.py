@@ -66,6 +66,7 @@ class GetSttResponse(BaseModel):
         description="Client Session ID associated with the request"
     )
     cid: str = Field(description="Conversation ID associated with the request")
+    context: Dict[str, Any] = Field(default={}, description="Optional context")
 
     @model_validator(mode="before")
     @classmethod
@@ -100,7 +101,7 @@ class GetTtsRequest(BaseModel):
     @classmethod
     def validate_inputs(cls, values):
         if "message_text" in values:
-            values.setdefault("text", values.pop("message_text"))
+            values.setdefault("text", values.get("message_text"))
         return values
 
 
@@ -123,6 +124,7 @@ class GetTtsResponse(BaseModel):
         description="Client Session ID associated with the request"
     )
     cid: str = Field(description="Conversation ID associated with the request")
+    context: Dict[str, Any] = Field(default={}, description="Optional context")
 
     @model_validator(mode="before")
     @classmethod
@@ -172,6 +174,20 @@ class NewPromptMessage(BaseModel):
     context: Dict[str, Any] = Field(
         description="Extra context for the prompt", default={}
     )
+
+    def model_dump(self, **kwargs):
+        """
+        Override model_dump to include SIO fields for backwards compatibility
+        """
+
+        # For backwards-compat with Klat Client, include aliased keys in 
+        # serialization. In the future, this should be configurable and
+        # eventually removed.
+        by_alias = {}
+        if 'by_alias' not in kwargs:
+            by_alias = super().model_dump(by_alias=True, **kwargs)
+
+        return {**super().model_dump(**kwargs), **by_alias}
 
 
 class UserMessage(BaseModel):
@@ -328,6 +344,7 @@ class UserMessage(BaseModel):
         by_alias['bot'] = self.is_bot
         by_alias['shout'] = self.message_body
         by_alias['time'] = int(self.time_created.timestamp())
+        by_alias['created_on'] = by_alias['time']
         by_alias['responded_shout'] = self.replied_message
 
         return {**super().model_dump(**kwargs), **by_alias}
