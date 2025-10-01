@@ -393,12 +393,18 @@ class CcaiPromptCompleted(UserMessage):
     request_id: Optional[str] = Field(
         default=None, description="ID of the database transaction request"
     )
+    prompt_id: str = Field(
+        description="Prompt ID this message is in response to",
+        alias="promptID",
+    )
+    sid: str = Field(description="Client Session ID associated with the request")
+    conversation_context: Dict[str, Any] = Field(description="Context of the conversation", default={})
 
     @model_validator(mode="before")
     @classmethod
     def validate_inputs(cls, values):
         values.setdefault(
-            "prompt_id",
+            "promptID",
             values.get("context", {}).get("prompt", {}).get("prompt_id"),
         )
         return values
