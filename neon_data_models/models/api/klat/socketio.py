@@ -289,7 +289,7 @@ class UserMessage(BaseModel):
             cid=self.cid,
             user_id=self.user_id,
             prompt_id=self.prompt_id,
-            prompt_state=self.promptState,
+            prompt_state=self.prompt_state,
             context=self.context,
         )
 
@@ -331,10 +331,13 @@ class NewCcaiPrompt(BaseModel):
 
 
 class CcaiPromptCompleted(BaseModel):
-    winner: str = Field(description="Winning response text")
+    winner: Optional[str] = Field(
+        default=None,
+        description="Winning response text or `None` in the event of an error",
+    )
     prompt_id: str = Field(description="Unique ID for the prompt")
-    request_id: str = Field(
-        description="ID of the database transaction request"
+    request_id: Optional[str] = Field(
+        default=None, description="ID of the database transaction request"
     )
     context: Dict[str, Any] = Field(
         description="Extra context for the prompt", default={}
