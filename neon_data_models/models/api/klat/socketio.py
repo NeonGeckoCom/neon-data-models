@@ -158,38 +158,51 @@ class GetTtsResponse(BaseModel):
 
 class NewPromptMessage(BaseModel):
     cid: str = Field(description="Conversation ID associated with the prompt")
-    user_id: str = Field(description="User ID associated with the prompt",
-                        alias="userID")
-    prompt_id: str = Field(description="Unique ID for the prompt", alias="promptID")
+    user_id: str = Field(
+        description="User ID associated with the prompt", alias="userID"
+    )
+    prompt_id: str = Field(
+        description="Unique ID for the prompt", alias="promptID"
+    )
     prompt_state: CcaiState = Field(
-        description="CCAI state for the prompt", default=CcaiState.IDLE, alias="promptState"
+        description="CCAI state for the prompt",
+        default=CcaiState.IDLE,
+        alias="promptState",
     )
     context: Dict[str, Any] = Field(
         description="Extra context for the prompt", default={}
     )
 
 
-class NewMessage(BaseModel):
+class UserMessage(BaseModel):
     cid: str = Field(description="Conversation ID associated with the message")
-    user_id: str = Field(description="User ID associated with the message", alias="userID")
+    user_id: str = Field(
+        description="User ID associated with the message", alias="userID"
+    )
     user_nick: Optional[str] = Field(
-        description="Username of the sender", default=None, alias="userDisplayName"
+        description="Username of the sender",
+        default=None,
+        alias="userDisplayName",
     )
     prompt_id: Optional[str] = Field(
-        default=None, description="Prompt ID this message is in response to", alias="promptID"
+        default=None,
+        description="Prompt ID this message is in response to",
+        alias="promptID",
     )
     promptState: Optional[CcaiState] = Field(
-        default=None, alias="promptState",
+        default=None,
+        alias="promptState",
         description="Associated CCAI state if `prompt_id` is defined",
     )
     source: str = Field(description="Service associated with the message")
     message_body: str = Field(
         description="Message content (input string or audio filename)",
-        alias="messageText"
+        alias="messageText",
     )
     replied_message: Optional[str] = Field(
-        default=None, description="Message ID this message is a reply to",
-        alias="repliedMessage"
+        default=None,
+        description="Message ID this message is a reply to",
+        alias="repliedMessage",
     )
     is_bot: Literal["0", "1"] = Field(
         default="0", description="'1' if the message came from a bot, else '0'"
@@ -210,18 +223,24 @@ class NewMessage(BaseModel):
         alias="isAudio",
     )
     message_tts: Dict[str, Dict[Literal["male", "female"], str]] = Field(
-        default={}, alias="messageTTS",
+        default={},
+        alias="messageTTS",
         description="TTS Audio formatted as {<language>: {<gender>: "
         "<b64-encoded WAV>}}",
     )
     is_announcement: Literal["0", "1"] = Field(
-        default="0", description="True if the message is a system announcement",
-        alias="isAnnouncement"
+        default="0",
+        description="True if the message is a system announcement",
+        alias="isAnnouncement",
     )
-    time_created: datetime = Field(description="Unix timestamp (epoch seconds)",
-                                  alias="timeCreated")
-    message_id: str = Field(description="UUID for this message",
-                           alias="messageID")
+    time_created: datetime = Field(
+        description="Unix timestamp (epoch seconds)", alias="timeCreated"
+    )
+    message_id: str = Field(
+        description="UUID for this message",
+        alias="messageID",
+        default_factory=lambda: uuid.uuid4().hex[:10],
+    )
     bound_service: str = Field(
         default="", description="Service this message is targeting"
     )
@@ -231,10 +250,14 @@ class NewMessage(BaseModel):
     def validate_inputs(cls, values):
         # Prefer the proper `messageText` key, but accept `message_body` for
         # backwards-compat.
-        values["messageText"] = values.get("messageText") or values.pop(
+        values["messageText"] = values.get("messageText") or values.get(
             "message_body"
         )
-        values["is_bot"] = values.get("is_bot") or values.pop("isBot", "0")
+        values["is_bot"] = (
+            values.get("is_bot")
+            or values.get("isBot")
+            or values.pop("bot", "0")
+        )
         values["promptID"] = values.get("promptID") or values.pop(
             "prompt_id", None
         )
@@ -301,6 +324,12 @@ class NewCcaiPrompt(BaseModel):
 class CcaiPromptCompleted(BaseModel):
     winner: str = Field(description="Winning response text")
     prompt_id: str = Field(description="Unique ID for the prompt")
+    request_id: str = Field(
+        description="ID of the database transaction request"
+    )
+    context: Dict[str, Any] = Field(
+        description="Extra context for the prompt", default={}
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -310,6 +339,12 @@ class CcaiPromptCompleted(BaseModel):
             values.get("context", {}).get("prompt", {}).get("prompt_id"),
         )
         return values
+
+    def to_db_query(self) -> Dict[str, Any]:
+        return {
+            "prompt_id": self.prompt_id,
+            "prompt_context": self.context,
+        }
 
 
 class GetPromptData(BaseModel):
@@ -406,7 +441,7 @@ __all__ = [
     GetSttResponse.__name__,
     GetTtsRequest.__name__,
     GetTtsResponse.__name__,
-    NewMessage.__name__,
+    UserMessage.__name__,
     NewPromptMessage.__name__,
     GetPromptData.__name__,
     NewCcaiPrompt.__name__,
