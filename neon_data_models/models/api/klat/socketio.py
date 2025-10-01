@@ -242,8 +242,17 @@ class UserMessage(BaseModel):
         default_factory=lambda: uuid.uuid4().hex[:10],
     )
     bound_service: str = Field(
-        default="", description="Service this message is targeting"
+        default="", description="Service this message is targeting",
     )
+
+    # Below are observed as used, but purpose is unclear or deprecated
+    no_save: bool = Field(default=False, deprecated=True)
+    title: Optional[str] = Field(default=None, deprecated=True)
+    routing_key: Optional[str] = Field(default=None, deprecated=True)
+    bot_type: Optional[Any] = Field(default=None, deprecated=True)
+    omit_reply: bool = Field(default=False, deprecated=True)
+    to_discussion: Optional[Any] = Field(default=None, deprecated=True)
+    dom: Optional[str] = Field(default=None, deprecated=True)
 
     @model_validator(mode="before")
     @classmethod
@@ -252,7 +261,7 @@ class UserMessage(BaseModel):
         # backwards-compat.
         values["messageText"] = values.get("messageText") or values.get(
             "message_body"
-        )
+        ) or values.get("shout") or values.get("message_text")
         values["is_bot"] = (
             values.get("is_bot")
             or values.get("isBot")
@@ -261,6 +270,12 @@ class UserMessage(BaseModel):
         values["promptID"] = values.get("promptID") or values.pop(
             "prompt_id", None
         )
+
+        # Map some observed legacy keys
+        values["userDisplayName"] = values.get("userDisplayName") or values.get('nick') or values.get('username')
+        values["bound_service"] = values.get("bound_service") or values.get('service_name')
+        values["repliedMessage"] = values.get("repliedMessage") or values.get('responded_shout')
+
         return values
 
     class Config:
@@ -293,6 +308,29 @@ class UserMessage(BaseModel):
             context=self.context,
         )
 
+    def model_dump(self, **kwargs):
+        """
+        Override model_dump to include SIO fields for backwards compatibility
+        """
+
+        # For backwards-compat with Klat Client, include aliased keys in 
+        # serialization. In the future, this should be configurable and
+        # eventually removed.
+        by_alias = {}
+        if 'by_alias' not in kwargs:
+            by_alias = super().model_dump(by_alias=True, **kwargs)
+
+        # Add parameters for backwards-compat.
+        by_alias['nick'] = self.user_nick
+        by_alias['message_text'] = self.message_body
+        by_alias['username'] = self.user_nick
+        by_alias['service_name'] = self.bound_service
+        by_alias['bot'] = self.is_bot
+        by_alias['shout'] = self.message_body
+        by_alias['time'] = int(self.time_created.timestamp())
+        by_alias['responded_shout'] = self.replied_message
+
+        return {**super().model_dump(**kwargs), **by_alias}
 
 class NewCcaiPrompt(BaseModel):
     prompt_text: str = Field(
