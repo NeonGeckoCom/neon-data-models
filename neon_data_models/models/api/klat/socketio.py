@@ -273,7 +273,7 @@ class UserMessage(BaseModel):
 
         # Map some observed legacy keys
         values["userDisplayName"] = values.get("userDisplayName") or values.get('nick') or values.get('username')
-        values["bound_service"] = values.get("bound_service") or values.get('service_name')
+        values["bound_service"] = values.get("bound_service") or values.get('service_name') or ""
         values["repliedMessage"] = values.get("repliedMessage") or values.get('responded_shout')
 
         return values
