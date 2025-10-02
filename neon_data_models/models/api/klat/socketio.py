@@ -191,6 +191,7 @@ class NewPromptMessage(BaseModel):
 
 
 class UserMessage(BaseModel):
+    sid: str = Field(description="Client Session ID associated with the message")
     cid: str = Field(description="Conversation ID associated with the message")
     user_id: str = Field(
         description="User ID associated with the message", alias="userID"
