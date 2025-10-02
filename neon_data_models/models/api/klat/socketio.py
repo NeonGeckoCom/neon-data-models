@@ -333,6 +333,7 @@ class UserMessage(BaseModel):
             prompt_id=self.prompt_id,
             prompt_state=self.prompt_state,
             context=self.context,
+            message_text=self.message_body
         )
 
     def model_dump(self, **kwargs):
