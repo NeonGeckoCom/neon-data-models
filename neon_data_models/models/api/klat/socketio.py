@@ -213,13 +213,13 @@ class UserMessage(BaseModel):
     )
     cid: str = Field(description="Conversation ID associated with the message")
     user_id: str = Field(
-        description="User ID associated with the message",
-        alias=AliasChoices("userID", "nick"),
+        description="User ID associated with the message (nick plus unique string)",
+        alias=AliasChoices("userID"),
     )
     user_nick: Optional[str] = Field(
         description="Username of the sender",
         default=None,
-        alias="userDisplayName",
+        alias=AliasChoices("nick", "userDisplayName"),
     )
     prompt_id: Optional[str] = Field(
         default=None,
