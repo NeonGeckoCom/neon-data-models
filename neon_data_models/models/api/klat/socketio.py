@@ -165,18 +165,25 @@ class GetTtsResponse(BaseModel):
 
 
 class NewPromptMessage(BaseModel):
-    cid: str = Field(description="Conversation ID associated with the prompt")
+    """
+    Model representing a user message that relates to a CCAI prompt.
+    """
+    cid: str = Field(description="Conversation ID associated with the prompt and this response")
     user_id: str = Field(
-        description="User ID associated with the prompt", alias="userID"
+        description="User ID associated with this message", alias="userID"
     )
     prompt_id: str = Field(
-        description="Unique ID for the prompt", alias="promptID"
+        description="Unique ID for the prompt this message relates to", alias="promptID"
     )
     prompt_state: CcaiState = Field(
-        description="CCAI state for the prompt",
+        description="CCAI state this response is associated with",
         default=CcaiState.IDLE,
         alias="promptState",
     )
+    message_text: str = Field(
+            description="Submind response content",
+            alias="messageText",
+            )
     context: Dict[str, Any] = Field(
         description="Extra context for the prompt", default={}
     )
