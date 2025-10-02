@@ -245,7 +245,7 @@ class UserMessage(BaseModel):
     is_bot: Literal["0", "1"] = Field(
         default="0",
         description="'1' if the message came from a bot, else '0'",
-        # alias=AliasChoices("isBot", "bot"),
+        alias=AliasChoices("bot"),
     )
     lang: str = Field(default="en", description="ISO 639-1 Language code")
     attachments: List[str] = Field(
