@@ -29,7 +29,13 @@ import uuid
 from time import time
 from typing import Optional, Dict, List, Literal, Union, Any
 from datetime import datetime
-from pydantic import Field, model_validator, model_serializer
+from pydantic import (
+    AliasChoices,
+    Field,
+    model_validator,
+    model_serializer,
+    ConfigDict,
+)
 
 from neon_data_models.models.api.llm import LLMPersona
 from neon_data_models.enum import CcaiState
@@ -175,6 +181,9 @@ class NewPromptMessage(BaseModel):
         description="Extra context for the prompt", default={}
     )
 
+    # Allow creation by name and alias inputs for backwards-compat.
+    model_config = ConfigDict(validate_by_alias=True, validate_by_name=True)
+
     def model_dump(self, **kwargs):
         """
         Override model_dump to include SIO fields for backwards compatibility
@@ -196,7 +205,8 @@ class UserMessage(BaseModel):
     )
     cid: str = Field(description="Conversation ID associated with the message")
     user_id: str = Field(
-        description="User ID associated with the message", alias="userID"
+        description="User ID associated with the message",
+        alias=AliasChoices("userID", "nick"),
     )
     user_nick: Optional[str] = Field(
         description="Username of the sender",
@@ -218,15 +228,17 @@ class UserMessage(BaseModel):
     )
     message_body: str = Field(
         description="Message content (input string or audio filename)",
-        alias="messageText",
+        alias=AliasChoices("messageText", "shout", "message_text"),
     )
     replied_message: Optional[str] = Field(
         default=None,
         description="Message ID this message is a reply to",
-        alias="repliedMessage",
+        alias=AliasChoices("repliedMessage", "responded_shout"),
     )
     is_bot: Literal["0", "1"] = Field(
-        default="0", description="'1' if the message came from a bot, else '0'"
+        default="0",
+        description="'1' if the message came from a bot, else '0'",
+        alias=AliasChoices("isBot", "bot"),
     )
     lang: str = Field(default="en", description="ISO 639-1 Language code")
     attachments: List[str] = Field(
@@ -259,7 +271,8 @@ class UserMessage(BaseModel):
         description="True if the message is a system announcement",
     )
     time_created: datetime = Field(
-        description="Unix timestamp (epoch seconds)", alias="timeCreated"
+        description="Unix timestamp (epoch seconds)",
+        alias=AliasChoices("timeCreated", "time", "created_on")
     )
     message_id: str = Field(
         description="UUID for this message",
@@ -269,6 +282,7 @@ class UserMessage(BaseModel):
     bound_service: str = Field(
         default="",
         description="Service this message is targeting",
+        alias="service_name",
     )
 
     # Below are observed as used, but purpose is unclear or deprecated
@@ -280,44 +294,13 @@ class UserMessage(BaseModel):
     to_discussion: bool = Field(default=False, deprecated=True)
     dom: Optional[str] = Field(default=None, deprecated=True)
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_inputs(cls, values):
-        # Prefer the proper `messageText` key, but accept `message_body` for
-        # backwards-compat.
-        values["messageText"] = (
-            values.get("messageText")
-            or values.get("message_body")
-            or values.get("shout")
-            or values.get("message_text")
-        )
-        values["is_bot"] = (
-            values.get("is_bot")
-            or values.get("isBot")
-            or values.pop("bot", "0")
-        )
-        values["promptID"] = values.get("promptID") or values.pop(
-            "prompt_id", None
-        )
-
-        # Map some observed legacy keys
-        values["userDisplayName"] = (
-            values.get("userDisplayName")
-            or values.get("nick")
-            or values.get("username")
-        )
-        values["bound_service"] = (
-            values.get("bound_service") or values.get("service_name") or ""
-        )
-        values["repliedMessage"] = values.get("repliedMessage") or values.get(
-            "responded_shout"
-        )
-
-        return values
 
     class Config:
         use_enum_values = True
         validate_default = True
+        # Allow creation by name and alias inputs for backwards-compat.
+        validate_by_alias=True
+        validate_by_name=True
 
     def to_db_query(self) -> Dict[str, Any]:
         return {
@@ -358,15 +341,7 @@ class UserMessage(BaseModel):
             by_alias = super().model_dump(by_alias=True, **kwargs)
 
         # Add parameters for backwards-compat.
-        by_alias["nick"] = self.user_id
-        by_alias["message_text"] = self.message_body
-        by_alias["username"] = None  # Backwards-compat?
-        by_alias["service_name"] = self.bound_service
-        by_alias["bot"] = self.is_bot
-        by_alias["shout"] = self.message_body
-        by_alias["time"] = self.time_created.timestamp()
-        by_alias["created_on"] = by_alias["time"]
-        by_alias["responded_shout"] = self.replied_message
+        # by_alias["username"] = None  # Backwards-compat?
 
         return {**super().model_dump(**kwargs), **by_alias}
 
