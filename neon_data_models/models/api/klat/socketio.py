@@ -279,8 +279,8 @@ class UserMessage(BaseModel):
         alias="messageID",
         default_factory=lambda: uuid.uuid4().hex[:10],
     )
-    bound_service: str = Field(
-        default="",
+    bound_service: Optional[str] = Field(
+        default=None,
         description="Service this message is targeting",
         alias="service_name",
     )
