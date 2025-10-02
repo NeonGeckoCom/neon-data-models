@@ -214,7 +214,7 @@ class UserMessage(BaseModel):
     cid: str = Field(description="Conversation ID associated with the message")
     user_id: Optional[str] = Field(
         default=None,
-        description="Sometimes a username + string and sometimes a UUID associated with the user",
+        description="UUID associated with the user",
         alias=AliasChoices("userID"),
     )
     user_nick: Optional[str] = Field(
@@ -306,6 +306,16 @@ class UserMessage(BaseModel):
         if values.get("isAudio") and "is_audio" not in values:
             values["is_audio"] = values.get("isAudio") == 1
         return values
+
+    @model_validator(mode="after")
+    def validate_fields(self):
+        # Client appears to send a UID as a nick
+        if self.user_id == self.user_nick:
+            raise ValueError(f"user_id should be a UUID, "
+                             f"not nick ({self.user_nick})")
+        if self.user_nick is None:
+            self.user_nick = "guest"
+        return self
 
     class Config:
         use_enum_values = True
