@@ -180,11 +180,11 @@ class NewPromptMessage(BaseModel):
         Override model_dump to include SIO fields for backwards compatibility
         """
 
-        # For backwards-compat with Klat Client, include aliased keys in 
+        # For backwards-compat with Klat Client, include aliased keys in
         # serialization. In the future, this should be configurable and
         # eventually removed.
         by_alias = {}
-        if 'by_alias' not in kwargs:
+        if "by_alias" not in kwargs:
             by_alias = super().model_dump(by_alias=True, **kwargs)
 
         return {**super().model_dump(**kwargs), **by_alias}
@@ -210,7 +210,9 @@ class UserMessage(BaseModel):
         alias="promptState",
         description="Associated CCAI state if `prompt_id` is defined",
     )
-    source: str = Field(description="Service associated with the message")
+    source: str = Field(
+        default="unknown", description="Service associated with the message"
+    )
     message_body: str = Field(
         description="Message content (input string or audio filename)",
         alias="messageText",
@@ -258,7 +260,8 @@ class UserMessage(BaseModel):
         default_factory=lambda: uuid.uuid4().hex[:10],
     )
     bound_service: str = Field(
-        default="", description="Service this message is targeting",
+        default="",
+        description="Service this message is targeting",
     )
 
     # Below are observed as used, but purpose is unclear or deprecated
@@ -275,9 +278,12 @@ class UserMessage(BaseModel):
     def validate_inputs(cls, values):
         # Prefer the proper `messageText` key, but accept `message_body` for
         # backwards-compat.
-        values["messageText"] = values.get("messageText") or values.get(
-            "message_body"
-        ) or values.get("shout") or values.get("message_text")
+        values["messageText"] = (
+            values.get("messageText")
+            or values.get("message_body")
+            or values.get("shout")
+            or values.get("message_text")
+        )
         values["is_bot"] = (
             values.get("is_bot")
             or values.get("isBot")
@@ -288,9 +294,17 @@ class UserMessage(BaseModel):
         )
 
         # Map some observed legacy keys
-        values["userDisplayName"] = values.get("userDisplayName") or values.get('nick') or values.get('username')
-        values["bound_service"] = values.get("bound_service") or values.get('service_name') or ""
-        values["repliedMessage"] = values.get("repliedMessage") or values.get('responded_shout')
+        values["userDisplayName"] = (
+            values.get("userDisplayName")
+            or values.get("nick")
+            or values.get("username")
+        )
+        values["bound_service"] = (
+            values.get("bound_service") or values.get("service_name") or ""
+        )
+        values["repliedMessage"] = values.get("repliedMessage") or values.get(
+            "responded_shout"
+        )
 
         return values
 
@@ -329,34 +343,33 @@ class UserMessage(BaseModel):
         Override model_dump to include SIO fields for backwards compatibility
         """
 
-        # For backwards-compat with Klat Client, include aliased keys in 
+        # For backwards-compat with Klat Client, include aliased keys in
         # serialization. In the future, this should be configurable and
         # eventually removed.
         by_alias = {}
-        if 'by_alias' not in kwargs:
+        if "by_alias" not in kwargs:
             by_alias = super().model_dump(by_alias=True, **kwargs)
 
         # Add parameters for backwards-compat.
-        by_alias['nick'] = self.user_nick
-        by_alias['message_text'] = self.message_body
-        by_alias['username'] = self.user_nick
-        by_alias['service_name'] = self.bound_service
-        by_alias['bot'] = self.is_bot
-        by_alias['shout'] = self.message_body
-        by_alias['time'] = int(self.time_created.timestamp())
-        by_alias['created_on'] = by_alias['time']
-        by_alias['responded_shout'] = self.replied_message
+        by_alias["nick"] = self.user_nick
+        by_alias["message_text"] = self.message_body
+        by_alias["username"] = self.user_nick
+        by_alias["service_name"] = self.bound_service
+        by_alias["bot"] = self.is_bot
+        by_alias["shout"] = self.message_body
+        by_alias["time"] = int(self.time_created.timestamp())
+        by_alias["created_on"] = by_alias["time"]
+        by_alias["responded_shout"] = self.replied_message
 
         return {**super().model_dump(**kwargs), **by_alias}
+
 
 class NewCcaiPrompt(BaseModel):
     prompt_text: str = Field(
         description="Text of the prompt"
     )  # TODO: Check if formatted to remove prefix
     cid: str = Field(description="Conversation ID associated with the prompt")
-    prompt_id: str = Field(
-        description="Unique ID for the prompt"
-    )
+    prompt_id: str = Field(description="Unique ID for the prompt")
     created_on: int = Field(
         descrtion="Epoch seconds of prompt creation",
         default_factory=lambda: int(time()),
@@ -396,13 +409,19 @@ class CcaiPromptCompleted(UserMessage):
     prompt_id: str = Field(
         description="Prompt ID this message is in response to",
     )
-    sid: str = Field(description="Client Session ID associated with the request")
-    conversation_context: Dict[str, Any] = Field(description="Context of the conversation", default={})
+    sid: str = Field(
+        description="Client Session ID associated with the request"
+    )
+    conversation_context: Dict[str, Any] = Field(
+        description="Context of the conversation", default={}
+    )
 
     @model_validator(mode="before")
     @classmethod
     def validate_inputs(cls, values):
-        values.setdefault("winner", values.get("context", {}).get("winner", ""))
+        values.setdefault(
+            "winner", values.get("context", {}).get("winner", "")
+        )
         if values.get("prompt_id") in (None, ""):
             # TODO: Figure out where this is set to an invalid value
             values.pop("prompt_id")
@@ -411,7 +430,9 @@ class CcaiPromptCompleted(UserMessage):
             values.get("context", {}).get("prompt", {}).get("prompt_id"),
         )
         # TODO: Below assertion for initial development; remove before merge
-        assert values["prompt_id"] != "", f"prompt_id must be defined: {values}"
+        assert values["prompt_id"] != "", (
+            f"prompt_id must be defined: {values}"
+        )
         return values
 
     def to_db_query(self) -> Dict[str, Any]:
