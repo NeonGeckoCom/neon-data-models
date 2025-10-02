@@ -169,8 +169,8 @@ class NewPromptMessage(BaseModel):
     Model representing a user message that relates to a CCAI prompt.
     """
     cid: str = Field(description="Conversation ID associated with the prompt and this response")
-    user_id: str = Field(
-        description="User ID associated with this message", alias="userID"
+    user_id: str = Field(  # TODO: Confirm what this string looks like
+        description="User UUID associated with this message", alias="userID"
     )
     prompt_id: str = Field(
         description="Unique ID for the prompt this message relates to", alias="promptID"
@@ -212,8 +212,9 @@ class UserMessage(BaseModel):
         description="Client Session ID associated with the message"
     )
     cid: str = Field(description="Conversation ID associated with the message")
-    user_id: str = Field(
-        description="User ID associated with the message (nick plus unique string)",
+    user_id: Optional[str] = Field(
+        default=None,
+        description="Sometimes a username + string and sometimes a UUID associated with the user",
         alias=AliasChoices("userID"),
     )
     user_nick: Optional[str] = Field(
@@ -254,14 +255,9 @@ class UserMessage(BaseModel):
         description="List of string filenames attached to this message",
     )
     context: dict = Field(default={}, description="Optional arbitrary context")
-    test: bool = Field(
+    is_audio: bool = Field(
         default=False,
-        description="True if this message is associated with testing",
-    )
-    is_audio: Literal["0", "1"] = Field(
-        default="0",
-        description="'1' if messageText represents encoded WAV audio",
-        alias="isAudio",
+        description="True if message_body represents encoded WAV audio",
     )
     message_tts: Dict[str, Dict[Literal["male", "female"], str]] = Field(
         default={},
@@ -272,11 +268,6 @@ class UserMessage(BaseModel):
     is_announcement: bool = Field(
         description="True if the message is a system announcement",
         default=False,
-    )
-    isAnnouncement: Literal["0", "1"] = Field(
-        default="0",
-        deprecated=True,
-        description="True if the message is a system announcement",
     )
     time_created: datetime = Field(
         description="Unix timestamp (epoch seconds)",
@@ -301,7 +292,20 @@ class UserMessage(BaseModel):
     omit_reply: bool = Field(default=False, deprecated=True)
     to_discussion: bool = Field(default=False, deprecated=True)
     dom: Optional[str] = Field(default=None, deprecated=True)
+    test: bool = Field(
+        default=False,
+        description="True if this message is associated with testing",
+        deprecated=True
+    )
 
+    @model_validator(mode="before")
+    @classmethod
+    def validate_inputs(cls, values):
+        if values.get("isAnnouncement") and "is_announcement" not in values:
+            values["is_announcement"] = values.get("isAnnouncement") == 1
+        if values.get("isAudio") and "is_audio" not in values:
+            values["is_audio"] = values.get("isAudio") == 1
+        return values
 
     class Config:
         use_enum_values = True
