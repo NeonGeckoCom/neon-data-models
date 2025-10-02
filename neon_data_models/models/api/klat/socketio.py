@@ -440,6 +440,16 @@ class CcaiPromptCompleted(UserMessage):
         )
         return values
 
+    @model_validator(mode="after")
+    def validate_fields(self):
+        # Client appears to send a UID as a nick
+        if self.user_id == self.user_nick:
+            # TODO: This is patching backwards-compat.
+            self.user_id = None
+        if self.user_nick is None:
+            self.user_nick = "guest"
+        return self
+
     def to_db_query(self) -> Dict[str, Any]:
         return {
             "prompt_id": self.prompt_id,
