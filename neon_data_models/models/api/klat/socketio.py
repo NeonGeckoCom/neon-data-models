@@ -191,7 +191,9 @@ class NewPromptMessage(BaseModel):
 
 
 class UserMessage(BaseModel):
-    sid: str = Field(description="Client Session ID associated with the message")
+    sid: str = Field(
+        description="Client Session ID associated with the message"
+    )
     cid: str = Field(description="Conversation ID associated with the message")
     user_id: str = Field(
         description="User ID associated with the message", alias="userID"
@@ -247,10 +249,14 @@ class UserMessage(BaseModel):
         description="TTS Audio formatted as {<language>: {<gender>: "
         "<b64-encoded WAV>}}",
     )
-    is_announcement: Literal["0", "1"] = Field(
-        default="0",
+    is_announcement: bool = Field(
         description="True if the message is a system announcement",
-        alias="isAnnouncement",
+        default=False,
+    )
+    isAnnouncement: Literal["0", "1"] = Field(
+        default="0",
+        deprecated=True,
+        description="True if the message is a system announcement",
     )
     time_created: datetime = Field(
         description="Unix timestamp (epoch seconds)", alias="timeCreated"
@@ -267,11 +273,11 @@ class UserMessage(BaseModel):
 
     # Below are observed as used, but purpose is unclear or deprecated
     no_save: bool = Field(default=False, deprecated=True)
-    title: Optional[str] = Field(default=None, deprecated=True)
+    title: str = Field(default="", deprecated=True)
     routing_key: Optional[str] = Field(default=None, deprecated=True)
     bot_type: Optional[Any] = Field(default=None, deprecated=True)
     omit_reply: bool = Field(default=False, deprecated=True)
-    to_discussion: Optional[Any] = Field(default=None, deprecated=True)
+    to_discussion: bool = Field(default=False, deprecated=True)
     dom: Optional[str] = Field(default=None, deprecated=True)
 
     @model_validator(mode="before")
@@ -352,13 +358,13 @@ class UserMessage(BaseModel):
             by_alias = super().model_dump(by_alias=True, **kwargs)
 
         # Add parameters for backwards-compat.
-        by_alias["nick"] = self.user_nick
+        by_alias["nick"] = self.user_id
         by_alias["message_text"] = self.message_body
-        by_alias["username"] = self.user_nick
+        by_alias["username"] = None  # Backwards-compat?
         by_alias["service_name"] = self.bound_service
         by_alias["bot"] = self.is_bot
         by_alias["shout"] = self.message_body
-        by_alias["time"] = int(self.time_created.timestamp())
+        by_alias["time"] = self.time_created.timestamp()
         by_alias["created_on"] = by_alias["time"]
         by_alias["responded_shout"] = self.replied_message
 
