@@ -313,6 +313,12 @@ class UserMessage(BaseModel):
             values["is_announcement"] = values.get("isAnnouncement") == 1
         if values.get("isAudio") and "is_audio" not in values:
             values["is_audio"] = values.get("isAudio") == 1
+        if values.get("userDisplayName") and values.get("nick") and values['nick'].startswith(values['userDisplayName']):
+            # Patch old behavior and ensure `user_id` is nick + suffix
+            values['userID'] = values.pop('nick')
+        # TODO: Below troubleshooting observed incomprehensible error
+        if isinstance(values.get("user_uid"), tuple):
+            raise ValueError(f"user_uid cannot be a tuple: {values['user_uid']}")
         return values
 
     @model_validator(mode="after")
