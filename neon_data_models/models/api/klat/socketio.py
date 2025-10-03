@@ -211,8 +211,7 @@ class NewPromptMessage(BaseModel):
 
 
 class UserMessage(BaseModel):
-    sid: Optional[str] = Field(
-        default=None,
+    sid: str = Field(
         description="Client Session ID associated with the message"
     )
     cid: str = Field(description="Conversation ID associated with the message")
@@ -222,10 +221,11 @@ class UserMessage(BaseModel):
         alias=AliasChoices("userID"),
     )
     user_uid: Optional[str] = Field(default=None, description="User UUID")
-    user_nick: Optional[str] = Field(
+    username: Optional[str] = Field(
         description="Username of the sender",
         default=None,
-        alias=AliasChoices("nick", "userDisplayName"),
+        alias="userDisplayName"
+        # alias=AliasChoices("nick", "userDisplayName", "user_nick"),
     )
     prompt_id: Optional[str] = Field(
         default=None,
@@ -242,7 +242,8 @@ class UserMessage(BaseModel):
     )
     message_body: str = Field(
         description="Message content (input string or audio filename)",
-        alias=AliasChoices("messageText", "shout", "message_text"),
+        alias="messageText"
+        #AliasChoices("messageText", "shout", "message_text"),
     )
     replied_message: Optional[str] = Field(
         default=None,
@@ -276,7 +277,8 @@ class UserMessage(BaseModel):
     )
     time_created: datetime = Field(
         description="Unix timestamp (epoch seconds)",
-        alias=AliasChoices("timeCreated", "time", "created_on")
+        alias="timeCreated"
+        # AliasChoices("timeCreated", "time", "created_on")
     )
     message_id: str = Field(
         description="UUID for this message",
@@ -318,11 +320,12 @@ class UserMessage(BaseModel):
     @model_validator(mode="after")
     def validate_user_params(self):
         # Client appears to send a UID as a nick
-        if self.user_id == self.user_nick and self.user_id is not None:
+        if self.user_id == self.username and self.user_id is not None:
             raise ValueError(f"user_id should be a nick + suffix, "
                              f"not nick ({self.user_id})")
-        if self.user_nick is None:
-            self.user_nick = "guest"
+        if self.username is None:
+            # TODO: Is "guest" fallback necessary?
+            self.username = self.user_id.split('-')[0] or "guest"
         return self
 
     class Config:
@@ -371,6 +374,7 @@ class UserMessage(BaseModel):
         by_alias = {}
         if "by_alias" not in kwargs:
             by_alias = super().model_dump(by_alias=True, **kwargs)
+            # TODO: This doesn't appear to include all aliases?
         return {**super().model_dump(**kwargs), **by_alias}
 
 
@@ -448,11 +452,11 @@ class CcaiPromptCompleted(UserMessage):
     @model_validator(mode="after")
     def validate_fields(self):
         # Client appears to send a UID as a nick
-        if self.user_id == self.user_nick:
+        if self.user_id == self.username:
             # TODO: This is patching backwards-compat.
             self.user_id = None
-        if self.user_nick is None:
-            self.user_nick = "guest"
+        if self.username is None:
+            self.username = "guest"
         return self
 
     def to_db_query(self) -> Dict[str, Any]:
