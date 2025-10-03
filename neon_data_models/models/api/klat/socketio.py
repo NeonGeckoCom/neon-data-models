@@ -316,14 +316,12 @@ class UserMessage(BaseModel):
         if values.get("userDisplayName") and values.get("nick") and values['nick'].startswith(values['userDisplayName']):
             # Patch old behavior and ensure `user_id` is nick + suffix
             values['userID'] = values.pop('nick')
-        # TODO: Below troubleshooting observed incomprehensible error
-        if isinstance(values.get("user_uid"), tuple):
-            print(f"user_uid={values['user_uid']}")
-            values['user_uid'] = None
+        import logging
+        logging.info(f"UserMessage init with values: {values}")
         return values
 
     @model_validator(mode="after")
-    def validate_fields(self):
+    def validate_user_params(self):
         # Client appears to send a UID as a nick
         if self.user_id == self.user_nick:
             raise ValueError(f"user_id should be a nick + suffix, "
