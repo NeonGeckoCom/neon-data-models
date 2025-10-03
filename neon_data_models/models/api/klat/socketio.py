@@ -218,14 +218,13 @@ class UserMessage(BaseModel):
     user_id: Optional[str] = Field(
         default=None,
         description="User ID (nick + suffix) associated with the user",
-        alias=AliasChoices("userID"),
+        alias="userID",
     )
     user_uid: Optional[str] = Field(default=None, description="User UUID")
     username: Optional[str] = Field(
         description="Username of the sender",
         default=None,
         alias="userDisplayName"
-        # alias=AliasChoices("nick", "userDisplayName", "user_nick"),
     )
     prompt_id: Optional[str] = Field(
         default=None,
@@ -243,17 +242,16 @@ class UserMessage(BaseModel):
     message_body: str = Field(
         description="Message content (input string or audio filename)",
         alias="messageText"
-        #AliasChoices("messageText", "shout", "message_text"),
     )
     replied_message: Optional[str] = Field(
         default=None,
         description="Message ID this message is a reply to",
-        alias=AliasChoices("repliedMessage", "responded_shout"),
+        alias="repliedMessage"
     )
     is_bot: Literal["0", "1"] = Field(
         default="0",
         description="'1' if the message came from a bot, else '0'",
-        alias=AliasChoices("bot"),
+        alias="bot",
     )
     lang: str = Field(default="en", description="ISO 639-1 Language code")
     attachments: List[str] = Field(
@@ -278,7 +276,6 @@ class UserMessage(BaseModel):
     time_created: datetime = Field(
         description="Unix timestamp (epoch seconds)",
         alias="timeCreated"
-        # AliasChoices("timeCreated", "time", "created_on")
     )
     message_id: str = Field(
         description="UUID for this message",
