@@ -169,8 +169,12 @@ class NewPromptMessage(BaseModel):
     Model representing a user message that relates to a CCAI prompt.
     """
     cid: str = Field(description="Conversation ID associated with the prompt and this response")
-    user_id: str = Field(  # TODO: Confirm what this string looks like
-        description="User UUID associated with this message", alias="userID"
+    user_id: str = Field(
+            description="User ID (nick + suffix) associated with this message",
+            alias="userID"
+            )
+    user_uid: str = Field(
+        description="User UUID associated with this message"
     )
     prompt_id: str = Field(
         description="Unique ID for the prompt this message relates to", alias="promptID"
@@ -214,9 +218,13 @@ class UserMessage(BaseModel):
     cid: str = Field(description="Conversation ID associated with the message")
     user_id: Optional[str] = Field(
         default=None,
-        description="UUID associated with the user",
+        description="User ID (nick + suffix) associated with the user",
         alias=AliasChoices("userID"),
     )
+    user_uid: Optional[str] = Field(
+            default=None,
+            description="UUID associated with the user database entry"
+            ),
     user_nick: Optional[str] = Field(
         description="Username of the sender",
         default=None,
@@ -311,8 +319,8 @@ class UserMessage(BaseModel):
     def validate_fields(self):
         # Client appears to send a UID as a nick
         if self.user_id == self.user_nick:
-            raise ValueError(f"user_id should be a UUID, "
-                             f"not nick ({self.user_nick})")
+            raise ValueError(f"user_id should be a nick + suffix, "
+                             f"not nick ({self.user_id})")
         if self.user_nick is None:
             self.user_nick = "guest"
         return self
@@ -328,7 +336,7 @@ class UserMessage(BaseModel):
         return {
             "_id": self.message_id,
             "cid": self.cid,
-            "user_id": self.user_id,
+            "user_id": self.user_uid,
             "prompt_id": self.prompt_id,
             "message_text": self.message_body,
             "message_lang": self.lang,
@@ -345,6 +353,7 @@ class UserMessage(BaseModel):
         return NewPromptMessage(
             cid=self.cid,
             user_id=self.user_id,
+            user_uid=self.user_uid,
             prompt_id=self.prompt_id,
             prompt_state=self.prompt_state,
             context=self.context,
@@ -362,10 +371,6 @@ class UserMessage(BaseModel):
         by_alias = {}
         if "by_alias" not in kwargs:
             by_alias = super().model_dump(by_alias=True, **kwargs)
-
-        # Add parameters for backwards-compat.
-        # by_alias["username"] = None  # Backwards-compat?
-
         return {**super().model_dump(**kwargs), **by_alias}
 
 
