@@ -318,7 +318,8 @@ class UserMessage(BaseModel):
             values['userID'] = values.pop('nick')
         # TODO: Below troubleshooting observed incomprehensible error
         if isinstance(values.get("user_uid"), tuple):
-            raise ValueError(f"user_uid cannot be a tuple: {values['user_uid']}")
+            print(f"user_uid={values['user_uid']}")
+            values['user_uid'] = None
         return values
 
     @model_validator(mode="after")
