@@ -25,6 +25,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from unittest import TestCase
+from time import time
 
 
 class TestKlat(TestCase):
@@ -41,3 +42,13 @@ class TestKlat(TestCase):
                                        cid="mock_conversation")
         self.assertEqual(valid_prompt_data,
                          PromptData(**valid_prompt_data.model_dump()))
+
+    def test_user_message(self):
+        from neon_data_models.models.api.klat.socketio import UserMessage
+        test_object = UserMessage(message_text="test message",
+                                  user="test_user",
+                                  time_created=time(),
+                                  cid="test_cid")
+        self.assertIsInstance(test_object, UserMessage)
+        self.assertEqual(test_object,
+                         UserMessage(**test_object.model_dump()))

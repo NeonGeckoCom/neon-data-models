@@ -221,10 +221,7 @@ class UserMessage(BaseModel):
         description="User ID (nick + suffix) associated with the user",
         alias=AliasChoices("userID"),
     )
-    user_uid: Optional[str] = Field(
-            default=None,
-            description="UUID associated with the user database entry"
-            ),
+    user_uid: Optional[str] = Field(default=None, description="User UUID")
     user_nick: Optional[str] = Field(
         description="Username of the sender",
         default=None,
@@ -316,14 +313,12 @@ class UserMessage(BaseModel):
         if values.get("userDisplayName") and values.get("nick") and values['nick'].startswith(values['userDisplayName']):
             # Patch old behavior and ensure `user_id` is nick + suffix
             values['userID'] = values.pop('nick')
-        import logging
-        logging.info(f"UserMessage init with values: {values}")
         return values
 
     @model_validator(mode="after")
     def validate_user_params(self):
         # Client appears to send a UID as a nick
-        if self.user_id == self.user_nick:
+        if self.user_id == self.user_nick and self.user_id is not None:
             raise ValueError(f"user_id should be a nick + suffix, "
                              f"not nick ({self.user_id})")
         if self.user_nick is None:
