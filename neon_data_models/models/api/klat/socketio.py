@@ -30,7 +30,6 @@ from time import time
 from typing import Optional, Dict, List, Literal, Union, Any
 from datetime import datetime
 from pydantic import (
-    AliasChoices,
     Field,
     model_validator,
     model_serializer,
@@ -45,17 +44,12 @@ from neon_data_models.models.base import BaseModel
 class GetSttRequest(BaseModel):
     cid: str = Field(description="Conversation ID associated with the request")
     sid: str = Field(
-        description="Client Session ID associated with the request"
+        description="Shout ID associated with the request",
+        alias="message_id"
     )
     lang: str = Field(
         description="BCP-47 Language code associated with audio",
         default="en-us",
-    )
-    message_id: str = Field(
-        description="Message (Shout) ID associated with the request"
-    )
-    audio_data: str = Field(
-        description="B64-encoded audio file object to transcribe"
     )
 
 
@@ -65,11 +59,9 @@ class GetSttResponse(BaseModel):
         description="BCP-47 Language code associated with `transcript`",
         default="en-us",
     )
-    message_id: str = Field(
-        description="Message (Shout) ID associated with the request"
-    )
     sid: str = Field(
-        description="Client Session ID associated with the request"
+        description="Shout ID associated with the request",
+        alias="message_id"
     )
     cid: str = Field(description="Conversation ID associated with the request")
     context: Dict[str, Any] = Field(default={}, description="Optional context")
@@ -81,9 +73,6 @@ class GetSttResponse(BaseModel):
         Parse out message_id, sid, and cid from context if not handled by the
         Observer module.
         """
-        values.setdefault(
-            "message_id", values.get("context", {}).get("message_id")
-        )
         values.setdefault("sid", values.get("context", {}).get("sid"))
         values.setdefault("cid", values.get("context", {}).get("cid"))
         return values
@@ -92,12 +81,9 @@ class GetSttResponse(BaseModel):
 class GetTtsRequest(BaseModel):
     cid: str = Field(description="Conversation ID associated with the request")
     sid: str = Field(
-        description="Client Session ID associated with the request"
+        description="Shout ID associated with the request",
+        alias="message_id"
     )
-    message_id: str = Field(
-        description="Message (Shout) ID associated with the request"
-    )
-    text: str = Field(description="Text to generate audio for")
     lang: str = Field(
         description="BCP-47 Language code associated with `text`",
         default="en-us",
@@ -123,11 +109,9 @@ class GetTtsResponse(BaseModel):
         description="Gender associated with generated audio",
         default="undefined",
     )
-    message_id: str = Field(
-        description="Message (Shout) ID associated with the request"
-    )
     sid: str = Field(
-        description="Client Session ID associated with the request"
+        description="Shout ID associated with the request",
+        alias="message_id"
     )
     cid: str = Field(description="Conversation ID associated with the request")
     context: Dict[str, Any] = Field(default={}, description="Optional context")
@@ -136,19 +120,16 @@ class GetTtsResponse(BaseModel):
     @classmethod
     def parse_context(cls, values):
         """
-        Parse out message_id, sid, and cid from context if not handled by the
+        Parse out sid, and cid from context if not handled by the
         Observer module.
         """
-        values.setdefault(
-            "message_id", values.get("context", {}).get("message_id")
-        )
         values.setdefault("sid", values.get("context", {}).get("sid"))
         values.setdefault("cid", values.get("context", {}).get("cid"))
         return values
 
     def to_db_query(self) -> Dict[str, Any]:
         return {
-            "shout_id": self.message_id,
+            "shout_id": self.sid,
             "audio_data": self.audio_data,
             "lang": self.lang,
             "gender": self.gender,
@@ -157,7 +138,7 @@ class GetTtsResponse(BaseModel):
     def to_incoming_tts(self) -> Dict[str, Any]:
         return {
             "cid": self.cid,
-            "message_id": self.message_id,
+            "sid": self.sid,
             "audio_data": self.audio_data,
             "lang": self.lang,
             "gender": self.gender,
@@ -212,7 +193,7 @@ class NewPromptMessage(BaseModel):
 
 class UserMessage(BaseModel):
     sid: str = Field(
-        description="Client Session ID associated with the message"
+        description="Shout ID associated with the message"
     )
     cid: str = Field(description="Conversation ID associated with the message")
     user_id: Optional[str] = Field(
@@ -281,7 +262,7 @@ class UserMessage(BaseModel):
         description="UUID for this message",
         alias="messageID",
         default_factory=lambda: uuid.uuid4().hex[:10],
-    )
+        )  # TODO: This is probably `sid` with a different name
     bound_service: Optional[str] = Field(
         default=None,
         description="Service this message is targeting",
@@ -371,14 +352,13 @@ class UserMessage(BaseModel):
         by_alias = {}
         if "by_alias" not in kwargs:
             by_alias = super().model_dump(by_alias=True, **kwargs)
-            # TODO: This doesn't appear to include all aliases?
         return {**super().model_dump(**kwargs), **by_alias}
 
 
 class NewCcaiPrompt(BaseModel):
     prompt_text: str = Field(
-        description="Text of the prompt"
-    )  # TODO: Check if formatted to remove prefix
+            description="Text of the prompt, without the '!PROMPT: ' prefix"
+    )
     cid: str = Field(description="Conversation ID associated with the prompt")
     prompt_id: str = Field(description="Unique ID for the prompt")
     created_on: int = Field(
@@ -441,7 +421,7 @@ class CcaiPromptCompleted(UserMessage):
         description="Prompt ID this message is in response to",
     )
     sid: str = Field(
-        description="Client Session ID associated with the request"
+        description="Shout ID associated with the request"
     )
     conversation_context: Dict[str, Any] = Field(
         description="Context of the conversation", default={}
@@ -460,7 +440,6 @@ class CcaiPromptCompleted(UserMessage):
             "prompt_id",
             values.get("context", {}).get("prompt", {}).get("prompt_id"),
         )
-        # TODO: Below assertion for initial development; remove before merge
         assert values["prompt_id"] != "", (
             f"prompt_id must be defined: {values}"
         )
@@ -560,27 +539,6 @@ class PromptData(BaseModel):
     )
 
 
-class AuthExpired(BaseModel):
-    body: str = Field(description="HTTP error response body")
-    status: int = Field(description="HTTP response status code")
-    handler: str = Field(description="Name of the requested function")
-
-
-class ConfiguredPersonasChanged(BaseModel):
-    personas: Dict[str, List[LLMPersona]] = Field(
-        description="Dict of LLM name to list of supported personas"
-    )
-    update_time: int = Field(
-        description="Unix timestamp when the change occurred"
-    )
-
-
-class BanSubmindFromConversation(BaseModel):
-    # This model is used to both ban and revoke a ban
-    cid: str = Field(description="Conversation ID to (un-)ban submind from")
-    nick: str = Field(description="Username of the submind to (un-)ban")
-
-
 __all__ = [
     GetSttRequest.__name__,
     GetSttResponse.__name__,
@@ -592,6 +550,4 @@ __all__ = [
     NewCcaiPrompt.__name__,
     CcaiPromptCompleted.__name__,
     PromptData.__name__,
-    AuthExpired.__name__,
-    BanSubmindFromConversation.__name__,
 ]
