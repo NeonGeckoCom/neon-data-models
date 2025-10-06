@@ -388,6 +388,24 @@ class NewCcaiPrompt(BaseModel):
     context: Dict[str, Any] = Field(
         description="Extra context for the prompt", default={}
     )
+    # Completed prompts sent to the client use below fields
+    winner: Optional[str] = Field(default=None, description="Winning response User ID")
+    participating_subminds: List[str] = Field(
+        default=[],
+        description="List of subminds by User ID that participated in this prompt",
+    )
+    proposed_responses: Dict[str, str] = Field(
+        default={},
+        description="Dict of participating submind User ID to proposed response",
+    )
+    votes: Dict[str, str] = Field(
+        default={},
+        description="Dict of participating submind User ID to vote",
+    )
+    submind_discussion_history: List[Dict[str, str]] = Field(
+        default=[],
+        description="List of discussoion round dicts of submind User ID to opinion response",
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -396,6 +414,8 @@ class NewCcaiPrompt(BaseModel):
         # for backwards compatibility
         if values.get("context", {}) is None:
             values["context"] = {}
+        if values.get("submind_opinions"):
+            values["submind_discussion_history"] = [values.pop("submind_opinions")]
         return values
 
     def to_db_query(self) -> Dict[str, Any]:
