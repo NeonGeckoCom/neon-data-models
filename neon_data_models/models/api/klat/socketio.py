@@ -196,7 +196,6 @@ class NewPromptMessage(BaseModel):
 class UserMessage(BaseModel):
     sid: str = Field(
         description="Shout ID associated with the message",
-        default_factory=lambda: uuid.uuid4().hex[:10],
         alias="messageID"
     )
     cid: str = Field(description="Conversation ID associated with the message")
@@ -315,7 +314,7 @@ class UserMessage(BaseModel):
 
     def to_db_query(self) -> Dict[str, Any]:
         return {
-            "_id": self.message_id,
+            "_id": self.sid,
             "cid": self.cid,
             "user_id": self.user_uid,
             "prompt_id": self.prompt_id,
