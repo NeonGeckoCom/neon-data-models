@@ -98,13 +98,6 @@ class GetTtsRequest(BaseModel):
         default="en-us",
     )
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_inputs(cls, values):
-        if "message_text" in values:
-            values.setdefault("text", values.get("message_text"))
-        return values
-
 
 class GetTtsResponse(BaseModel):
     audio_data: str = Field(
@@ -311,7 +304,8 @@ class UserMessage(BaseModel):
             raise ValueError(f"user_id should be a nick + suffix, "
                              f"not nick ({self.user_id})")
         if self.username is None:
-            # TODO: Is "guest" fallback necessary?
+            if self.user_id is None:
+                raise ValueError("Either user_id or username must be defined")
             self.username = self.user_id.split('-')[0] or "guest"
         return self
 
