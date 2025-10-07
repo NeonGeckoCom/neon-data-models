@@ -505,8 +505,8 @@ class GetPromptData(BaseModel):
 class PromptData(BaseModel):
     class _PromptData(BaseModel):
         id: str = Field(alias="_id", description="Unique ID for the prompt")
-        is_completed: Literal["0", "1"] = Field(
-            description="'1' if a response to the prompt has been determined"
+        is_completed: bool = Field(
+            description="true if a response to the prompt has been determined"
         )
         proposed_responses: Dict[str, str] = Field(
             default={},
@@ -524,11 +524,19 @@ class PromptData(BaseModel):
             description="List of subminds that participated in this prompt",
         )
 
+        @model_validator(mode="before")
+        @classmethod
+        def normalize_completed(cls, values):
+            if "is_completed" in values and isinstance(values["is_completed"], str):
+                values["is_completed"] = values["is_completed"] == "1"
+            return values
+
         @model_serializer
         def alias_serialize(self):
+            # Alias to match existing MongoDB schema
             return {
                 "_id": self.id,
-                "is_completed": self.is_completed,
+                "is_completed": "1" if self.is_completed else "0",
                 "proposed_responses": self.proposed_responses,
                 "submind_opinions": self.submind_opinions,
                 "votes": self.votes,
