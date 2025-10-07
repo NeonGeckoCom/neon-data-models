@@ -36,7 +36,6 @@ from pydantic import (
     ConfigDict,
 )
 
-from neon_data_models.models.api.llm import LLMPersona
 from neon_data_models.enum import CcaiState
 from neon_data_models.models.base import BaseModel
 
@@ -46,6 +45,11 @@ class GetSttRequest(BaseModel):
     sid: str = Field(
         description="Shout ID associated with the request",
         alias="message_id"
+    )
+    user_uid: str = Field(
+        description="User UUID associated with the request",
+        alias="user_id",
+        deprecated=True
     )
     lang: str = Field(
         description="BCP-47 Language code associated with audio",
@@ -83,6 +87,11 @@ class GetTtsRequest(BaseModel):
     sid: str = Field(
         description="Shout ID associated with the request",
         alias="message_id"
+    )
+    user_uid: str = Field(
+        description="User UUID associated with the request",
+        alias="user_id",
+        deprecated=True
     )
     lang: str = Field(
         description="BCP-47 Language code associated with `text`",
