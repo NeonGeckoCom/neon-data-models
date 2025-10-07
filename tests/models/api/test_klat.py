@@ -291,7 +291,7 @@ class TestKlatSocketIO(TestCase):
         
         # Test to_db_query method
         db_query = test_object.to_db_query()
-        self.assertEqual(db_query["_id"], test_object.message_id)
+        self.assertEqual(db_query["_id"], test_object.sid)
         self.assertEqual(db_query["cid"], test_object.cid)
         self.assertEqual(db_query["message_text"], test_object.message_body)
         self.assertEqual(db_query["is_audio"], test_object.is_audio)
