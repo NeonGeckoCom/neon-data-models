@@ -195,7 +195,9 @@ class NewPromptMessage(BaseModel):
 
 class UserMessage(BaseModel):
     sid: str = Field(
-        description="Shout ID associated with the message"
+        description="Shout ID associated with the message",
+        default_factory=lambda: uuid.uuid4().hex[:10],
+        alias="messageID"
     )
     cid: str = Field(description="Conversation ID associated with the message")
     user_id: Optional[str] = Field(
@@ -260,11 +262,6 @@ class UserMessage(BaseModel):
         description="Unix timestamp (epoch seconds)",
         alias="timeCreated"
     )
-    message_id: str = Field(
-        description="UUID for this message",
-        alias="messageID",
-        default_factory=lambda: uuid.uuid4().hex[:10],
-        )  # TODO: This is probably `sid` with a different name
     bound_service: Optional[str] = Field(
         default=None,
         description="Service this message is targeting",
