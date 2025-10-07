@@ -27,13 +27,12 @@
 import base64
 from unittest import TestCase
 from datetime import datetime
-from time import time
 from pydantic import ValidationError
 
 from neon_data_models.enum import CcaiState
 
 
-class TestKlat(TestCase):
+class TestKlatSocketIO(TestCase):
     def test_get_stt_request(self):
         """Test GetSttRequest model creation and validation"""
         from neon_data_models.models.api.klat.socketio import GetSttRequest
