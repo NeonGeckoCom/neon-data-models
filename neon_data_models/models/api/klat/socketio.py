@@ -417,9 +417,6 @@ class CcaiPromptCompleted(UserMessage):
         default="",
         description="Winning response text; empty in the event of an error",
     )
-    request_id: Optional[str] = Field(
-        default=None, description="ID of the database transaction request"
-    )
     prompt_id: str = Field(
         description="Prompt ID this message is in response to",
     )
