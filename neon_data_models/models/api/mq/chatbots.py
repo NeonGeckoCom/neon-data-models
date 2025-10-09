@@ -26,7 +26,7 @@
 
 from typing import Any, Dict, Literal, Optional, List, Union
 from datetime import datetime, timezone
-from pydantic import Field, model_validator
+from pydantic import Field, model_validator, AliasChoices
 
 from neon_data_models.enum import SubmindStatus, CcaiState, CcaiControl
 from neon_data_models.types import BotType
@@ -64,24 +64,27 @@ class ChatbotsMqRequest(KlatContext, MQContext):
         default=None, description="Explicitly defined recipient of the shout")
     bound_service: Optional[str] = Field(
         default=None, description="Service bound to the conversation")
-    context: Optional[dict] = Field(
-            default=None, deprecated=True, description="Extra proctor context")
+    context: dict = Field(
+            default={}, deprecated=True, description="Extra proctor context")
     
     @classmethod
     def from_sio_message(cls, sio_message: dict) -> 'ChatbotsMqRequest':
+        # Parse incoming message `sid`, `cid`, and `title` from SIO Message
         klat_context = KlatContext(**sio_message)
-        mq_context = MQContext(**sio_message)
+        # This is the first MQ message; define new context
+        mq_context = MQContext()
         return ChatbotsMqRequest(
             **klat_context.model_dump(exclude_none=True),
             **mq_context.model_dump(exclude_none=True),
-            username=sio_message.get("userDisplayName") or \
-                sio_message.get("userID"),
-            message_text=sio_message["messageText"],
-            from_bot=sio_message.get("bot") == 1,
-            prompt_id = sio_message.get("promptID"),
-            prompt_state=sio_message.get("promptState"),
-            time_created=sio_message["timeCreated"],
-            recipient=sio_message.get("recipient"),
+            username=sio_message.get("username") or \
+                sio_message.get("userDisplayName"),
+            message_text=sio_message.get("message_body") or \
+                    sio_message.get("messageText"),
+            from_bot=sio_message.get("is_bot", sio_message.get("bot")) == 1,
+            prompt_id=sio_message.get("prompt_id") or sio_message.get("promptID"),
+            prompt_state=sio_message.get("prompt_state") or sio_message.get("promptState"),
+            time_created=sio_message.get("time_created") or sio_message.get("timeCreated"),
+            recipient=sio_message.get("recipient"),  # TODO: Determine where this is set
             bound_service=sio_message.get("bound_service"),
         )
 
@@ -110,13 +113,13 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
     user_id: str = Field(alias='userID', 
                          description="Unique UID of the sender")
     username: Optional[str] = Field(default=None,
-                                    alias="userDisplayName",
+                                    alias=AliasChoices("userDisplayName", "nick"),
                                     description="Username of the sender")
-    message_text: str = Field(alias="messageText",
+    message_text: str = Field(alias=AliasChoices("messageText",  "shout"),
                               description="Text content of the shout")
     sid: str = Field(default="", alias="messageID", description="Shout ID")
     replied_message: Optional[str] = Field(
-        default=None, alias="repliedMessage",
+        default=None, alias=AliasChoices("repliedMessage", "responded_shout"),
         description="ID of the shout being replied to")
     bot: Literal["0", "1"] = Field(default='0', alias='is_bot',
                                    description="1 if the shout is from a bot")
@@ -127,7 +130,7 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
         default=False, alias="isAnnouncement",
         description="True if the shout is an announcement")
     time_created: datetime = Field(
-        default= datetime.now(tz=timezone.utc), alias="timeCreated",
+        default= datetime.now(tz=timezone.utc), alias=AliasChoices("timeCreated", "time", "created_on"),
         description="Timestamp when the shout was created")
     source: str = Field(
         default="klat_observer",
@@ -149,7 +152,7 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
                           description="If true, this message will be ignored")
     to_discussion: bool = Field(default=False, deprecated=True)
     prompt_state: CcaiState = Field(
-        default=CcaiState.IDLE, deprecated=True, alias="promptState",
+        default=CcaiState.IDLE, deprecated=True, alias=AliasChoices("promptState", "conversation_state"),
         description="State of the CCAI conversation associated with the shout")
     
     @model_validator(mode='after')
@@ -162,29 +165,8 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
     @classmethod
     def validate_inputs(cls, values):
         if isinstance(values, dict):
-            # Some additional aliases for backwards-compat.
-            if "nick" in values:
-                values.setdefault("userID", values.get("nick"))
-
-            if "shout" in values:
-                values.setdefault("messageText", values.get("shout"))
-            
-            if "responded_shout" in values:
-                values.setdefault("repliedMessage",
-                                   values.get("responded_shout"))
-
-            if "time" in values:
-                values.setdefault("timeCreated", values.get("time"))
-
-            if "created_on" in values:
-                values.setdefault("timeCreated", values.get("created_on"))
-
             if "sid" in values and values["sid"] is None:
                 values.pop("sid")
-
-            if "conversation_state" in values:
-                values.setdefault("promptState",
-                                  values.get("conversation_state"))
 
         return values
 
@@ -197,7 +179,7 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
             by_alias = super().model_dump(by_alias=True, **kwargs)
 
         by_alias['isAnnouncement'] = '1' if self.is_announcement else '0'
-        by_alias['nick'] = self.user_id
+        by_alias['nick'] = self.username
         by_alias['responded_shout'] = self.replied_message
         by_alias['shout'] = self.message_text
         by_alias['time'] = self.time_created.timestamp()
@@ -218,16 +200,19 @@ class PromptCompletedContext(BaseModel):
         default=[], description="List of subminds participating in the prompt")
     proposed_responses: Dict[str, str] = Field(
         default={}, description="Dict of nick to proposal")
+    # TODO: Confirm this is `nick` and not `user_id`
     
     # In the future, there will be a list of these for multi-round discussion
+    submind_discussion_history: List[Dict[str, str]] = Field(
+        default=[], description="List of dict of discussion rounds (dict of nick to shout)")
     submind_opinions: Dict[str, str] = Field(
         default={}, description="Dict of nick to discussion")
 
     votes: Dict[str, str] = Field(default={},
                                   description="Dict of nick to vote")
     votes_per_submind: Dict[str, List[str]] = Field(
-        default={}, description="Dict of nick to list of received votes")
-    winner: str = Field(default="", description="Selected winner")
+        default={}, description="Dict of nick to list of received votes (nicks)")
+    winner: str = Field(default="", description="nick of selected winner")
 
     # Below are deprecated
     is_active: bool = Field(  # Seems to report active all the time
@@ -237,6 +222,15 @@ class PromptCompletedContext(BaseModel):
         default=CcaiState.PICK, deprecated=True,
         description="State of the CCAI conversation (always PICK)")
 
+    @model_validator(mode='before')
+    @classmethod
+    def validate_discussion_history(cls, values):
+        if "submind_discussion_history" not in values and \
+                "submind_opinions" in values:
+            values["submind_discussion_history"] = \
+                [values.get("submind_opinions")]
+
+        return values
 
 class ChatbotsMqSavePrompt(ChatbotsMqSubmindResponse):
     context: PromptCompletedContext = Field(
@@ -251,7 +245,7 @@ class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
     prompt_id: str = Field(
         description="ID of the CCAI prompt associated with the shout"
     )
-    user_id: Optional[str] = Field(default=None, alias="nick",
+    user_id: Optional[str] = Field(default=None, alias="userID",
                                    description="User ID of the proctor")
     prompt_text: str = Field(description="The new prompt being discussed")
     prompt_state: CcaiState = Field(
@@ -260,16 +254,10 @@ class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
     discussion_rounds: int = Field(
         default=2, 
         description="Number of discussion rounds per cycle for this prompt")
-    context: Optional[dict] = Field(default=None, deprecated=True,
+    context: dict = Field(default={}, deprecated=True,
+                          description="Conversation Context used by Klat Server",
                                     alias="conversation_context")
 
-    @model_validator(mode='before')
-    @classmethod
-    def validate_context(cls, values):
-        values.setdefault("message_text", values.get("shout", ""))
-        values.setdefault("user_id", values.get("nick"))
-        return values
-    
     def model_dump(self, **kwargs):
         return ChatbotsMqSubmindResponse.model_dump(self, **kwargs)
 
@@ -299,18 +287,18 @@ class ChatbotsMqResponse:
 
 class ChatbotsMqSubmindsState(MQContext):
     class SubmindState(BaseModel):
-        submind_id: str = Field(description="Connected submind's user_id")
+        submind_id: str = Field(description="Connected submind's ID (nickname + suffix)")
         status: SubmindStatus = Field(
             description="Subminds's status in a particular conversation")
 
     subminds_per_cid: Dict[str, List[SubmindState]] = Field(
         description="List of submind participants per conversation ID")
     connected_subminds: Dict[str, ConnectedSubmind] = Field(
-        description="Dict of submind `user_id` to `ConnectedSubmind` object")
+        description="Dict of `submind_id` to `ConnectedSubmind` object")
     cid_submind_bans: Dict[str, List[str]] = Field(
-        description="Dict of `cid` to list of banned submind `user_id`s")
+        description="Dict of `cid` to list of banned `submind_id`s")
     banned_subminds: List[str] = Field(
-        description="List of globally banned submind `user_id`s")
+        description="List of globally banned `submind_id`s")
 
     msg_type: Literal["subminds_state"] = Field(
         "subminds_state", description="Message type for SIO", deprecated=True)
@@ -320,7 +308,7 @@ class ChatbotsMqConfiguredPersonasRequest(MQContext):
     service_name: str = Field(
         description="Name of the service to get personas for")
     user_id: Optional[str] = Field(
-        default=None, description="Optional user_id making with the request.")
+        default=None, description="Optional user_id making the request.")
 
 
 class ChatbotsMqConfiguredPersonasResponse(MQContext):
@@ -387,7 +375,7 @@ class ChatbotsMqPromptsDataResponse(MQContext):
 
 
 class ChatbotsMqSubmindConnection(MQContext):
-    user_id: str = Field(description="User ID of the submind", alias="nick")
+    user_id: str = Field(description="User ID of the submind", alias="userID")
     time: datetime = Field(
         default= datetime.now(tz=timezone.utc),
         description="Timestamp when the submind last connected")
@@ -401,14 +389,14 @@ class ChatbotsMqSubmindConnection(MQContext):
     @classmethod
     def validate_context(cls, values):
         if "context" in values and isinstance(values["context"], dict):
-            user_id = values.get("user_id") or values.get("nick") or ""
+            user_id = values.get("user_id") or values.get("userID") or ""
             values["context"].setdefault("service_name",
                                           user_id.rsplit('-',1)[0])
         return values
 
 
 class ChatbotsMqSubmindDisconnection(MQContext):
-    user_id: str = Field(description="User ID of the submind", alias="nick")
+    user_id: str = Field(description="User ID of the submind", alias="userID")
 
 
 class ChatbotsMqSubmindInvitation(MQContext):
@@ -428,12 +416,12 @@ class ChatbotsMqUpdateParticipatingSubminds(MQContext):
 
 
 class ChatbotsMqSubmindConversationBan(MQContext):
-    user_id: str = Field(description="User ID of the submind", alias="nick")
+    user_id: str = Field(description="User ID of the submind", alias="userID")
     cid: str = Field(description="Conversation ID to (un)ban submind from")
 
 
 class ChatbotsMqSubmindGlobalBan(MQContext):
-    user_id: str = Field(description="User ID of the submind", alias="nick")
+    user_id: str = Field(description="User ID of the submind", alias="userID")
 
 
 class ChatbotsMqSubmindResponseError(MQContext):
