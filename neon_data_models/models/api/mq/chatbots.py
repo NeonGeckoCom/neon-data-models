@@ -226,7 +226,7 @@ class PromptCompletedContext(BaseModel):
         default={}, description="Dict of nick to proposal")
     
     # In the future, there will be a list of these for multi-round discussion
-    submind_discussion_history: List[Dict[str, str]] = Field(
+    submind_discussion_history: Dict[str, List[str]] = Field(
         default=[], description="List of dict of discussion rounds (dict of nick to shout)")
     submind_opinions: Dict[str, str] = Field(
         default={}, description="Dict of nick to discussion")
@@ -250,9 +250,9 @@ class PromptCompletedContext(BaseModel):
     def validate_discussion_history(cls, values):
         if "submind_discussion_history" not in values and \
                 "submind_opinions" in values:
-            values["submind_discussion_history"] = \
-                [values.get("submind_opinions")]
-
+            values["submind_discussion_history"] = {
+                    k: [v] for k, v in values["submind_opinions"].items()
+                }
         return values
 
 class ChatbotsMqSavePrompt(ChatbotsMqSubmindResponse):
@@ -265,6 +265,7 @@ class ChatbotsMqSavePrompt(ChatbotsMqSubmindResponse):
 
 
 class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
+    # TODO: Should this really extend `SubmindResponse`?
     prompt_id: str = Field(
         description="ID of the CCAI prompt associated with the shout"
     )
@@ -282,12 +283,10 @@ class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
                           description="Conversation Context used by Klat Server",
                                     alias="conversation_context")
 
-    @model_validator(mode='before')
-    @classmethod
-    def validate_message_text(cls, values):
-        # Ensure `message_text` is defined as a string for validation
-        values.setdefault("message_text", values.get("shout", ""))
-        return values
+    @model_validator(mode='after')
+    def set_username_from_user_id(self):
+        # Override method to allow empty username/user_id for new prompts
+        return self
 
     def model_dump(self, **kwargs):
         return ChatbotsMqSubmindResponse.model_dump(self, **kwargs)
