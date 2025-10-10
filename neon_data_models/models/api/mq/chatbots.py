@@ -199,7 +199,7 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
 
         # time_created: AliasChoices("timeCreated", "time", "created_on")
         if self.time_created:
-            by_alias['timeCreated'] = self.time_created
+            by_alias['timeCreated'] = self.time_created.timestamp()
             by_alias['time'] = self.time_created.timestamp()
             by_alias['created_on'] = self.time_created.timestamp()
 
