@@ -159,6 +159,8 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
     def set_username_from_user_id(self):
         if self.username is None and self.user_id:
             self.username = self.user_id.rsplit('-', 1)[0]
+        if self.username == self.user_id:
+            raise ValueError(f"username cannot be the same as user_id: {self.username}")
         return self
 
     @model_validator(mode='before')
