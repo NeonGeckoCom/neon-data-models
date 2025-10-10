@@ -580,7 +580,7 @@ class TestNeonMQ(TestCase):
             "requested_skill": "stt",
             "message_body": "base64encodedstring",
             "client": "test_client",
-            "nick": "test_user",
+            "user_id": "test_user",
             "cid": "test_session",
             "sid": "test_shout_id",
             "timeCreated": 123456789,
@@ -610,7 +610,7 @@ class TestNeonMQ(TestCase):
             "requested_skill": "recognizer",
             "messageText": "How are you?",
             "client": "test_client",
-            "nick": "test_user",
+            "username": "test_user",
             "cid": "test_session",
             "sid": "test_shout_id",
             "timeCreated": 123456789,
@@ -1230,7 +1230,7 @@ class TestChatbotsMQ(TestCase):
         self.assertEqual(new_prompt.message_text, valid_kwargs["messageText"])
         self.assertEqual(new_prompt.prompt_id, "prompt123")
         self.assertEqual(new_prompt.prompt_text, "Test prompt text")
-        self.assertIsNone(new_prompt.context)
+        self.assertEqual(new_prompt.context, {})
         
         # Test with conversation_context alias
         context_kwargs = {
@@ -1663,7 +1663,7 @@ class TestChatbotsMQ(TestCase):
         
         # Test alternate field names (validate_inputs validator)
         alternate_kwargs = {
-            "nick": "submind2",
+            "user_id": "submind2",
             "shout": "Message using alternate field names",
             "responded_shout": "parent_message_id",
             "time": current_time.timestamp(),
@@ -1783,7 +1783,7 @@ class TestChatbotsMQ(TestCase):
         }
 
         alt_new_prompt_message = {
-            "nick": "proctor-ac18f03d0937490080c798d3b242ecd0",
+            "user_id": "proctor-ac18f03d0937490080c798d3b242ecd0",
             "bot_type": "proctor",
             "service_name": "proctor",
             "cid": "35d5dff220",
@@ -1839,7 +1839,7 @@ class TestChatbotsMQ(TestCase):
             "no_save": False
         }
         alt_save_prompt_message = {
-            "nick": "proctor-ac18f03d0937490080c798d3b242ecd0",
+            "user_id": "proctor-ac18f03d0937490080c798d3b242ecd0",
             "bot_type": "proctor",
             "service_name": "proctor",
             "cid": "35d5dff220",
@@ -1873,7 +1873,7 @@ class TestChatbotsMQ(TestCase):
                     "bound_service": "",
                     "bot": "0",
                     "messageText": "Why is testing important?",
-                    "nick": "ca45d1ea45134523af7f"
+                    "user_uid": "ca45d1ea45134523af7f"
                 },
                 "is_active": True,
                 "prompt_text": "Why is testing important?",
@@ -1946,7 +1946,7 @@ class TestChatbotsMQ(TestCase):
         # Test basic initialization
         current_time = datetime.now(tz=timezone.utc)
         valid_kwargs = {
-            "nick": "submind1",
+            "userID": "submind1",
             "time": current_time,
             "message_id": "test_message_id"
         }
@@ -1994,7 +1994,7 @@ class TestChatbotsMQ(TestCase):
         
         # Test basic initialization
         valid_kwargs = {
-            "nick": "submind1",
+            "userID": "submind1",
             "message_id": "test_message_id"
         }
         
@@ -2077,7 +2077,7 @@ class TestChatbotsMQ(TestCase):
         
         # Test basic initialization
         valid_kwargs = {
-            "nick": "submind1",
+            "user_id": "submind1",
             "cid": "conversation123",
             "message_id": "test_message_id"
         }
@@ -2110,7 +2110,7 @@ class TestChatbotsMQ(TestCase):
         
         # Test basic initialization
         valid_kwargs = {
-            "nick": "submind1",
+            "user_id": "submind1",
             "message_id": "test_message_id"
         }
         
@@ -2186,7 +2186,7 @@ class TestChatbotsMQ(TestCase):
             "userID": "test_user",
             "shout": "Using aliased shout field",
             "message_id": "test_message_id",
-            "nick": "nick_value"  # This should be used for user_id too
+            "nick": "nick_value"  # This should not be used
         }
         
         result = ChatbotsMqResponse(**mixed_fields)
