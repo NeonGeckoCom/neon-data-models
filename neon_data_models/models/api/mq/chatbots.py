@@ -200,7 +200,6 @@ class PromptCompletedContext(BaseModel):
         default=[], description="List of subminds participating in the prompt")
     proposed_responses: Dict[str, str] = Field(
         default={}, description="Dict of nick to proposal")
-    # TODO: Confirm this is `nick` and not `user_id`
     
     # In the future, there will be a list of these for multi-round discussion
     submind_discussion_history: List[Dict[str, str]] = Field(
@@ -246,6 +245,7 @@ class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
         description="ID of the CCAI prompt associated with the shout"
     )
     user_id: Optional[str] = Field(default=None, alias="userID",
+                         validation_alias="userID",
                                    description="User ID of the proctor")
     prompt_text: str = Field(description="The new prompt being discussed")
     prompt_state: CcaiState = Field(
@@ -375,7 +375,9 @@ class ChatbotsMqPromptsDataResponse(MQContext):
 
 
 class ChatbotsMqSubmindConnection(MQContext):
-    user_id: str = Field(description="User ID of the submind", alias="userID")
+    user_id: str = Field(description="User ID of the submind", 
+                         validation_alias="userID",
+                         alias="userID")
     time: datetime = Field(
         default= datetime.now(tz=timezone.utc),
         description="Timestamp when the submind last connected")
@@ -396,7 +398,9 @@ class ChatbotsMqSubmindConnection(MQContext):
 
 
 class ChatbotsMqSubmindDisconnection(MQContext):
-    user_id: str = Field(description="User ID of the submind", alias="userID")
+    user_id: str = Field(description="User ID of the submind",
+                         validation_alias="userID",
+                         alias="userID")
 
 
 class ChatbotsMqSubmindInvitation(MQContext):
@@ -416,12 +420,16 @@ class ChatbotsMqUpdateParticipatingSubminds(MQContext):
 
 
 class ChatbotsMqSubmindConversationBan(MQContext):
-    user_id: str = Field(description="User ID of the submind", alias="userID")
+    user_id: str = Field(description="User ID of the submind", 
+                         validation_alias="userID",
+                         alias="userID")
     cid: str = Field(description="Conversation ID to (un)ban submind from")
 
 
 class ChatbotsMqSubmindGlobalBan(MQContext):
-    user_id: str = Field(description="User ID of the submind", alias="userID")
+    user_id: str = Field(description="User ID of the submind", 
+                         validation_alias="userID",
+                         alias="userID")
 
 
 class ChatbotsMqSubmindResponseError(MQContext):
