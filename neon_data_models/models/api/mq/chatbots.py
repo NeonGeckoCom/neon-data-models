@@ -269,6 +269,7 @@ class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
     prompt_id: str = Field(
         description="ID of the CCAI prompt associated with the shout"
     )
+    message_text: None = None
     user_id: Optional[str] = Field(default=None, alias="userID",
                          validation_alias="userID",
                                    description="User ID of the proctor")
