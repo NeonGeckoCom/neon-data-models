@@ -995,7 +995,7 @@ class TestChatbotsMQ(TestCase):
         
         # Test userID fallback
         sio_message = {
-            "userID": "user_id",
+            "username": "user_id",
             "cid": "test_conversation",
             "messageText": "Hello from SIO",
             "timeCreated": current_time,
@@ -1681,7 +1681,7 @@ class TestChatbotsMQ(TestCase):
         self.assertEqual(serialized["userID"], "submind1")
         self.assertEqual(serialized["messageText"], "Full test response")
         self.assertTrue(serialized["isAnnouncement"])
-        self.assertEqual(serialized["nick"], "submind1")  # Check backwards compatibility field
+        self.assertEqual(serialized["nick"], "Test Submind")  # Check backwards compatibility field
         self.assertEqual(serialized["shout"], "Full test response")  # Check backwards compatibility field
         
 
@@ -1737,7 +1737,6 @@ class TestChatbotsMQ(TestCase):
     def test_chatbots_mq_response_type_adapter(self):
         from neon_data_models.models.api.mq.chatbots import ChatbotsMqResponse
         from neon_data_models.models.api.mq.chatbots import ChatbotsMqSubmindResponse, ChatbotsMqSavePrompt, ChatbotsMqNewPrompt
-        from neon_data_models.enum import CcaiControl
         from datetime import datetime, timezone
         
         current_time = datetime.now(tz=timezone.utc)
@@ -1808,7 +1807,7 @@ class TestChatbotsMQ(TestCase):
         
         alt_response = ChatbotsMqResponse(**alt_new_prompt_message)
         self.assertIsInstance(alt_response, ChatbotsMqNewPrompt)
-        self.assertEqual(alt_response.user_id, alt_new_prompt_message['nick'])
+        self.assertEqual(alt_response.user_id, alt_new_prompt_message['user_id'])
         
 
         # Test save prompt message

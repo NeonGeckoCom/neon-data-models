@@ -178,14 +178,36 @@ class ChatbotsMqSubmindResponse(KlatContext, MQContext):
         if 'by_alias' not in kwargs:
             by_alias = super().model_dump(by_alias=True, **kwargs)
 
-        by_alias['isAnnouncement'] = '1' if self.is_announcement else '0'
+        # Add all aliases for fields using AliasChoices
+        # username: AliasChoices("userDisplayName", "nick")
+        by_alias['userDisplayName'] = self.username
         by_alias['nick'] = self.username
-        by_alias['responded_shout'] = self.replied_message
+
+        # message_text: AliasChoices("messageText",  "shout")
+        by_alias['messageText'] = self.message_text
         by_alias['shout'] = self.message_text
-        by_alias['time'] = self.time_created.timestamp()
-        by_alias['promptState'] = self.prompt_state.value
-        by_alias['created_on'] = self.time_created.timestamp()
-        
+
+        # replied_message: AliasChoices("repliedMessage", "responded_shout")
+        by_alias['repliedMessage'] = self.replied_message
+        by_alias['responded_shout'] = self.replied_message
+
+        # prompt_id: alias="promptID"
+        by_alias['promptID'] = self.prompt_id
+
+        # is_announcement: alias="isAnnouncement"
+        by_alias['isAnnouncement'] = '1' if self.is_announcement else '0'
+
+        # time_created: AliasChoices("timeCreated", "time", "created_on")
+        if self.time_created:
+            by_alias['timeCreated'] = self.time_created
+            by_alias['time'] = self.time_created.timestamp()
+            by_alias['created_on'] = self.time_created.timestamp()
+
+        # prompt_state: AliasChoices("promptState", "conversation_state")
+        if self.prompt_state:
+            by_alias['promptState'] = self.prompt_state.value
+            by_alias['conversation_state'] = self.prompt_state.value
+
         return {**super().model_dump(**kwargs), **by_alias}
 
 
@@ -257,6 +279,13 @@ class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
     context: dict = Field(default={}, deprecated=True,
                           description="Conversation Context used by Klat Server",
                                     alias="conversation_context")
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_message_text(cls, values):
+        # Ensure `message_text` is defined as a string for validation
+        values.setdefault("message_text", values.get("shout", ""))
+        return values
 
     def model_dump(self, **kwargs):
         return ChatbotsMqSubmindResponse.model_dump(self, **kwargs)
