@@ -208,7 +208,7 @@ class UserMessage(BaseModel):
     username: Optional[str] = Field(
         description="Username of the sender",
         default=None,
-        alias="userDisplayName"
+        alias="userDisplayName" # also, username
     )
     prompt_id: Optional[str] = Field(
         default=None,
@@ -288,7 +288,9 @@ class UserMessage(BaseModel):
             values["is_announcement"] = values.get("isAnnouncement") == 1
         if values.get("isAudio") and "is_audio" not in values:
             values["is_audio"] = values.get("isAudio") == 1
-        if values.get("userDisplayName") and values.get("nick") and values['nick'].startswith(values['userDisplayName']):
+        if values.get("userDisplayName") and values.get("nick") and \
+                values['nick'].startswith(values['userDisplayName']) and \
+                values['nick'] != values['userDisplayName']:
             # Patch old behavior and ensure `user_id` is nick + suffix
             values['userID'] = values.pop('nick')
         return values
