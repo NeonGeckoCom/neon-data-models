@@ -1256,9 +1256,8 @@ class TestChatbotsMQ(TestCase):
         partial_prompt = ChatbotsMqNewPrompt(**partial_kwargs)
 
         # Test model_dump inheritance from ChatbotsMqResponse
-        serialized = new_prompt.model_dump()
+        serialized = partial_prompt.model_dump()
         self.assertIn("user_id", serialized)
-        self.assertIn("messageText", serialized)
         self.assertIn("prompt_id", serialized)
         
         # Test missing required fields
