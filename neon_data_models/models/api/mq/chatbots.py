@@ -102,7 +102,7 @@ class ChatbotsMqRequest(KlatContext, MQContext):
             or sio_message.get("timeCreated"),
             recipient=sio_message.get(
                 "recipient"
-            ),  # TODO: Determine where this is set
+            ),
             bound_service=sio_message.get("bound_service"),
         )
 

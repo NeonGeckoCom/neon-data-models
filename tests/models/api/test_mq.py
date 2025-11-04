@@ -580,7 +580,7 @@ class TestNeonMQ(TestCase):
             "requested_skill": "stt",
             "message_body": "base64encodedstring",
             "client": "test_client",
-            "user_id": "test_user",
+            "username": "test_user",
             "cid": "test_session",
             "sid": "test_shout_id",
             "timeCreated": 123456789,

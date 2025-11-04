@@ -208,7 +208,7 @@ class UserMessage(BaseModel):
     username: Optional[str] = Field(
         description="Username of the sender",
         default=None,
-        alias="userDisplayName" # also, username
+        alias="userDisplayName"
     )
     prompt_id: Optional[str] = Field(
         default=None,
