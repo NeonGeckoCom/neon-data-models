@@ -336,14 +336,15 @@ class ChatbotsMqSavePrompt(ChatbotsMqSubmindResponse):
         return ChatbotsMqSubmindResponse.model_dump(self, **kwargs)
 
 
-class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
-    # TODO: Should this really extend `SubmindResponse`?
+class ChatbotsMqNewPrompt(KlatContext, MQContext):
     prompt_id: str = Field(
         description="ID of the CCAI prompt associated with the shout"
     )
-    message_text: None = Field(
-        default=None,
-        description="`message_text` is not used in these messages",
+    prompt_text: str = Field(description="The new prompt being discussed")
+    prompt_state: CcaiState = Field(
+        default=CcaiState.IDLE,
+        deprecated=True,
+        description="Implemented for backwards-compat. New Prompt always IDLE",
     )
     user_id: Optional[str] = Field(
         default=None,
@@ -351,11 +352,25 @@ class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
         validation_alias="userID",
         description="User ID of the proctor",
     )
-    prompt_text: str = Field(description="The new prompt being discussed")
-    prompt_state: CcaiState = Field(
-        default=CcaiState.IDLE,
+    sid: str = Field(default="", alias="messageID", description="Shout ID")
+    username: Optional[str] = Field(
+        default=None,
+        alias="nick",
+        description="Username of the sender",
+    )
+    time_created: datetime = Field(
+        default=datetime.now(tz=timezone.utc),
+        alias=AliasChoices("timeCreated", "time", "created_on"),
+        description="Timestamp when the shout was created",
+    )
+    source: str = Field(
+        default="klat_observer",
+        description="Name of the service originating the shout",
+    )
+    bot_type: Optional[BotType] = Field(
+        default=None,
         deprecated=True,
-        description="Implemented for backwards-compat. New Prompt always IDLE",
+        description="Type of submind sending the shout",
     )
     discussion_rounds: int = Field(
         default=2,
@@ -367,21 +382,6 @@ class ChatbotsMqNewPrompt(ChatbotsMqSubmindResponse):
         description="Conversation Context used by Klat Server",
         alias="conversation_context",
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def clean_message_text(cls, values):
-        # Ensure `message_text` is always `None`
-        values["message_text"] = None
-        return values
-
-    @model_validator(mode="after")
-    def set_username_from_user_id(self):
-        # Override method to allow empty username/user_id for new prompts
-        return self
-
-    def model_dump(self, **kwargs):
-        return ChatbotsMqSubmindResponse.model_dump(self, **kwargs)
 
 
 class ChatbotsMqResponse:

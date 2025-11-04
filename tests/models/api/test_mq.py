@@ -1195,7 +1195,6 @@ class TestChatbotsMQ(TestCase):
         # Test model_dump inheritance from ChatbotsMqResponse
         serialized = save_prompt.model_dump()
         self.assertIn("userID", serialized)
-        self.assertIn("messageText", serialized)
         self.assertIn("prompt_id", serialized)
         self.assertIn("context", serialized)
         
@@ -1227,7 +1226,6 @@ class TestChatbotsMQ(TestCase):
         new_prompt = ChatbotsMqNewPrompt(**valid_kwargs)
         self.assertIsInstance(new_prompt, ChatbotsMqNewPrompt)
         self.assertEqual(new_prompt.user_id, "user123")
-        self.assertIsNone(new_prompt.message_text)
         self.assertEqual(new_prompt.prompt_id, "prompt123")
         self.assertEqual(new_prompt.prompt_text, "Test prompt text")
         self.assertEqual(new_prompt.context, {})
@@ -1256,7 +1254,6 @@ class TestChatbotsMQ(TestCase):
             "conversation_state": 0
         }
         partial_prompt = ChatbotsMqNewPrompt(**partial_kwargs)
-        self.assertIsNone(partial_prompt.message_text)
 
         # Test model_dump inheritance from ChatbotsMqResponse
         serialized = new_prompt.model_dump()
