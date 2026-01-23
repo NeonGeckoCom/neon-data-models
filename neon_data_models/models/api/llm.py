@@ -201,7 +201,7 @@ class LLMRequest(BaseModel):
 
 class LLMResponse(BaseModel):
     response: str = Field(description="LLM Response to the input query")
-    history: List[Tuple[Literal["user", "llm"], str]] = Field(
+    history: List[Tuple[Literal["user", "llm", "information", "instruction"], str]] = Field(
         description="List of (role, content) tuples in chronological order "
                     "(`response` is in the last list element)")
     finish_reason: Literal["length", "stop"] = Field(
