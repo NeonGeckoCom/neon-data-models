@@ -80,7 +80,7 @@ class LLMPersona(LLMPersonaIdentity):
 class LLMRequest(BaseModel):
     query: str = Field(description="Incoming user prompt")
     # TODO: History may support more options in the future
-    history: List[Tuple[Literal["user", "llm"], str]] = Field(
+    history: List[Tuple[Literal["user", "llm", "information", "instruction"], str]] = Field(
         description="Formatted chat history (excluding system prompt). Note "
                     "that the roles used here will differ from those used in "
                     "OpenAI-compatible requests.")
