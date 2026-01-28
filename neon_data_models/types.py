@@ -29,4 +29,5 @@ from typing import Literal
 
 Gender = Literal["male", "female"]
 BotType = Literal["submind", "facilitator", "proctor", "observer"]
+LlmMessageRole = Literal["user", "llm", "information", "instruction", "assistant", "tool"]
 # TODO: consider deprecating special facilitator types in `BotType`

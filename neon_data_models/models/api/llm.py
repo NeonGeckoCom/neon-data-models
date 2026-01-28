@@ -27,6 +27,7 @@ from typing import List, Tuple, Optional, Literal
 from pydantic import Field, model_validator, computed_field
 
 from neon_data_models.models.base import BaseModel
+from neon_data_models.types import LlmMessageRole
 
 
 _DEFAULT_MQ_TO_ROLE = {"user": "user", "llm": "assistant"}
@@ -80,7 +81,7 @@ class LLMPersona(LLMPersonaIdentity):
 class LLMRequest(BaseModel):
     query: str = Field(description="Incoming user prompt")
     # TODO: History may support more options in the future
-    history: List[Tuple[Literal["user", "llm"], str]] = Field(
+    history: List[Tuple[LlmMessageRole, str]] = Field(
         description="Formatted chat history (excluding system prompt). Note "
                     "that the roles used here will differ from those used in "
                     "OpenAI-compatible requests.")
@@ -201,7 +202,7 @@ class LLMRequest(BaseModel):
 
 class LLMResponse(BaseModel):
     response: str = Field(description="LLM Response to the input query")
-    history: List[Tuple[Literal["user", "llm"], str]] = Field(
+    history: List[Tuple[LlmMessageRole, str]] = Field(
         description="List of (role, content) tuples in chronological order "
                     "(`response` is in the last list element)")
     finish_reason: Literal["length", "stop"] = Field(
