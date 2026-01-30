@@ -1,6 +1,6 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2025 Neongecko.com Inc.
+# Copyright 2008-2026 Neongecko.com Inc.
 # BSD-3
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -29,5 +29,6 @@ from typing import Literal
 
 Gender = Literal["male", "female"]
 BotType = Literal["submind", "facilitator", "proctor", "observer"]
-LlmMessageRole = Literal["user", "llm", "information", "instruction", "assistant", "tool"]
 # TODO: consider deprecating special facilitator types in `BotType`
+LlmMessageRole = Literal["user", "llm", "information", "instruction", "assistant", "tool"]
+# TODO: consider deprecating "llm" which always maps to "assistant" in actual requests
