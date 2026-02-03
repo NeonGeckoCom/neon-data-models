@@ -1,6 +1,6 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2024 Neongecko.com Inc.
+# Copyright 2008-2026 Neongecko.com Inc.
 # BSD-3
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -25,23 +25,25 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from typing import Optional, List, Union
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from neon_data_models.models.base import BaseModel
-from neon_data_models.models.base.contexts import (SessionContext, KlatContext,
+from neon_data_models.models.base.contexts import (GradioContext, 
+                                                   SessionContext, KlatContext,
                                                    TimingContext, MQContext)
 from neon_data_models.models.client.node import NodeData
-from neon_data_models.models.user.database import NeonUserConfig
+from neon_data_models.models.user.neon_profile import UserProfile
 
 
 class MessageContext(BaseModel):
     model_config = ConfigDict(extra="allow")
-    session: Optional[SessionContext] = Field(description="Session Data",
-                                              default=None)
+    session: SessionContext = Field(description="Session Data",
+                                              default=SessionContext())
     node_data: Optional[NodeData] = Field(description="Node Data", default=None)
-    timing: Optional[TimingContext] = Field(
-        description="User Interaction Timing Information", default=None)
-    user_profiles: Optional[List[NeonUserConfig]] = (
+    timing: TimingContext = Field(
+        description="User Interaction Timing Information", 
+        default=TimingContext())
+    user_profiles: Optional[List[UserProfile]] = (
         Field(description="List of relevant user profiles", default=None))
     klat_data: Optional[KlatContext] = Field(
         description="Klat context for Klat-generated messages", default=None)
@@ -55,11 +57,44 @@ class MessageContext(BaseModel):
     client_name: str = "unknown"
     client: str = "unknown"
     source: Union[str, List[str]] = "unknown"
-    destination: List[str] = ["skills"]
+    destination: Union[str, List[str]] = Field(
+        default=["skills"],
+        description="List of destination modules expected to handle the message"
+        )
     neon_should_respond: bool = True
+    gradio: Optional[GradioContext] = Field(
+        default=None,
+        description="Context for messages originating from a Gradio interface")
+    
+    @field_validator('destination')
+    def validate_destination(cls, v):
+        if isinstance(v, str):
+            return [v]
+        return v
+    
+    @model_validator(mode='before')
+    def validate_session_value(cls, data):
+        if isinstance(data, dict) and data.get('session', {}) is None:
+            data.pop('session')
+        return data
 
 
 class BaseMessage(BaseModel):
     msg_type: str
     data: dict
     context: MessageContext
+
+    def as_messagebus_message(self) -> "Message": # type: ignore
+        """
+        Get a `Message` representation of this object.
+        """
+        try:
+            from ovos_bus_client.message import Message
+            if hasattr(self.data, 'model_dump'):
+                data = self.data.model_dump()
+            else:
+                data = self.data
+            return Message(self.msg_type, data, self.context.model_dump())
+        except ImportError:
+            raise RuntimeError("pip install ovos-bus-client to enable Message "
+                               "deserialization.")

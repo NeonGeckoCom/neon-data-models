@@ -1,0 +1,1110 @@
+# NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
+# All trademark and other rights reserved by their respective owners
+# Copyright 2008-2026 Neongecko.com Inc.
+# BSD-3
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from this
+#    software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+# CONTRIBUTORS  BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS;  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+from unittest import TestCase
+from pydantic import ValidationError
+
+
+class TestMessagebusModels(TestCase):
+    def test_get_tts_data(self):
+        from neon_data_models.models.api.messagebus import GetTtsData
+
+        # Test valid data
+        valid_data = {"text": "Hello world", "lang": "en-us"}
+        tts_data = GetTtsData(**valid_data)
+        self.assertIsInstance(tts_data, GetTtsData)
+        self.assertEqual(tts_data.text, "Hello world")
+        self.assertEqual(tts_data.lang, "en-us")
+
+        # Test with utterance instead of text (backward compatibility)
+        compat_data = {"utterance": "Hello world"}
+        tts_data = GetTtsData(**compat_data)
+        self.assertEqual(tts_data.text, "Hello world")
+        self.assertEqual(tts_data.lang, "en-us")  # Default value
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            GetTtsData()
+
+    def test_tts_response_data(self):
+        from neon_data_models.models.api.messagebus import TtsResponse, TtsReponseData
+        from neon_data_models.types import Gender
+
+        # Test valid response data
+        valid_response = {
+            "sentence": "Hello world",
+            "translated": False,
+            "phonemes": "HH AH L OW W ER L D",
+            "genders": ["female", "male"],
+            "audio": {"female": "base64audio1", "male": "base64audio2"}
+        }
+        tts_response = TtsResponse(**valid_response)
+        self.assertIsInstance(tts_response, TtsResponse)
+        self.assertEqual(tts_response.sentence, "Hello world")
+        self.assertEqual(tts_response.translated, False)
+        self.assertEqual(tts_response.phonemes, "HH AH L OW W ER L D")
+        self.assertEqual(tts_response.genders, ["female", "male"])
+        self.assertEqual(tts_response.audio["female"], "base64audio1")
+        self.assertEqual(tts_response.audio["male"], "base64audio2")
+        
+        # Test default values for male and female fields
+        self.assertIsNone(tts_response.male)
+        self.assertIsNone(tts_response.female)
+
+        # Test with explicit male and female fields
+        valid_response_with_gender_paths = {
+            "sentence": "Hello world",
+            "translated": False,
+            "genders": ["female", "male"],
+            "audio": {"female": "base64audio1", "male": "base64audio2"},
+            "male": "/path/to/male.wav",
+            "female": "/path/to/female.wav"
+        }
+        tts_response_with_gender_paths = TtsResponse(**valid_response_with_gender_paths)
+        self.assertEqual(tts_response_with_gender_paths.male, "/path/to/male.wav")
+        self.assertEqual(tts_response_with_gender_paths.female, "/path/to/female.wav")
+        
+        # Test with different content in audio dict vs direct fields
+        mixed_response = {
+            "sentence": "Hello world",
+            "translated": False,
+            "genders": ["female", "male"],
+            "audio": {"female": "base64audio1", "male": "base64audio2"},
+            "male": "/path/to/different_male.wav",
+            "female": "/path/to/different_female.wav"
+        }
+        mixed_tts_response = TtsResponse(**mixed_response)
+        self.assertEqual(mixed_tts_response.audio["male"], "base64audio2")
+        self.assertEqual(mixed_tts_response.male, "/path/to/different_male.wav")
+        self.assertEqual(mixed_tts_response.audio["female"], "base64audio1")
+        self.assertEqual(mixed_tts_response.female, "/path/to/different_female.wav")
+
+        # Test valid response data without phonemes
+        valid_response_no_phonemes = {
+            "sentence": "Hello world",
+            "translated": False,
+            "genders": ["female", "male"],
+            "audio": {"female": "base64audio1", "male": "base64audio2"}
+        }
+        tts_response_no_phonemes = TtsResponse(**valid_response_no_phonemes)
+        self.assertIsInstance(tts_response_no_phonemes, TtsResponse)
+        self.assertEqual(tts_response_no_phonemes.sentence, "Hello world")
+        self.assertEqual(tts_response_no_phonemes.translated, False)
+        self.assertIsNone(tts_response_no_phonemes.phonemes)
+        self.assertEqual(tts_response_no_phonemes.genders, ["female", "male"])
+        self.assertEqual(tts_response_no_phonemes.audio["female"], "base64audio1")
+        self.assertEqual(tts_response_no_phonemes.audio["male"], "base64audio2")
+
+        # Test valid responses data
+        valid_responses_data = {
+            "responses": {
+                "en-us": tts_response
+            }
+        }
+        tts_responses = TtsReponseData(**valid_responses_data)
+        self.assertIsInstance(tts_responses, TtsReponseData)
+        self.assertEqual(tts_responses.responses["en-us"].sentence, "Hello world")
+        self.assertEqual(tts_responses.responses["en-us"].genders, ["female", "male"])
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            TtsResponse(sentence="Hello", phonemes="HH AH L OW", translated=False)  # Missing genders and audio
+        
+        with self.assertRaises(ValidationError):
+            TtsResponse(sentence="Hello", phonemes="HH AH L OW", translated=False, genders=["female"])  # Missing audio
+        
+        with self.assertRaises(ValidationError):
+            TtsReponseData()  # Missing responses
+
+    def test_get_stt_data(self):
+        from neon_data_models.models.api.messagebus import GetSttData
+
+        # Test valid data
+        valid_data = {"audio_data": "base64encodedstring", "lang": "en-us"}
+        stt_data = GetSttData(**valid_data)
+        self.assertIsInstance(stt_data, GetSttData)
+        self.assertEqual(stt_data.audio_data, "base64encodedstring")
+        self.assertEqual(stt_data.lang, "en-us")
+
+        # Test with message_body instead of audio_data (backward compatibility)
+        compat_data = {"message_body": "base64encodedstring"}
+        stt_data = GetSttData(**compat_data)
+        self.assertEqual(stt_data.audio_data, "base64encodedstring")
+        self.assertEqual(stt_data.lang, "en-us")  # Default value
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            GetSttData()
+
+    def test_stt_response_data(self):
+        from neon_data_models.models.api.messagebus import SttReponseData
+
+        # Test valid data
+        valid_data = {
+            "transcripts": ["Hello world", "Hello word"],
+            "parser_data": {"confidence": 0.95}
+        }
+        stt_response_data = SttReponseData(**valid_data)
+        self.assertIsInstance(stt_response_data, SttReponseData)
+        self.assertEqual(stt_response_data.transcripts[0], "Hello world")
+        self.assertEqual(stt_response_data.parser_data["confidence"], 0.95)
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            SttReponseData(transcripts=["Hello world"])  # Missing parser_data
+        
+        with self.assertRaises(ValidationError):
+            SttReponseData(parser_data={"confidence": 0.95})  # Missing transcripts
+
+    def test_get_response_data(self):
+        from neon_data_models.models.api.messagebus import GetResponseData
+
+        # Test valid data
+        valid_data = {"utterances": ["How are you?"], "lang": "en-us"}
+        response_data = GetResponseData(**valid_data)
+        self.assertIsInstance(response_data, GetResponseData)
+        self.assertEqual(response_data.utterances, ["How are you?"])
+        self.assertEqual(response_data.lang, "en-us")
+
+        # Test with messageText instead of utterances (backward compatibility)
+        compat_data = {"messageText": "How are you?"}
+        response_data = GetResponseData(**compat_data)
+        self.assertEqual(response_data.utterances, ["How are you?"])
+        self.assertEqual(response_data.lang, "en-us")  # Default value
+
+        # Test with empty utterances
+        empty_data = {"utterances": []}
+        response_data = GetResponseData(**empty_data)
+        self.assertEqual(response_data.utterances, [])
+
+    def test_neon_get_tts(self):
+        from neon_data_models.models.api.messagebus import NeonGetTts, GetTtsData
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid message
+        message_id = "test_mid"
+        data = GetTtsData(text="Hello world")
+        valid_message = NeonGetTts(data=data, context={})
+        self.assertIsInstance(valid_message, NeonGetTts)
+        self.assertIsInstance(valid_message, BaseMessage)
+        self.assertEqual(valid_message.data.text, "Hello world")
+        self.assertEqual(valid_message.msg_type, "neon.get_tts")
+        
+        # Test ensure_audio_destination validator
+        empty_dest_context = {"destination": []}
+        message_empty_dest = NeonGetTts(data=data, context=empty_dest_context)
+        self.assertIn("audio", message_empty_dest.context.destination)
+        
+        other_dest_context = {"destination": ["skills", "audio"]}
+        message_other_dest = NeonGetTts(data=data, context=other_dest_context)
+        self.assertIn("audio", message_other_dest.context.destination)
+        self.assertIn("skills", message_other_dest.context.destination)
+        
+        audio_dest_context = {"destination": ["audio"]}
+        message_audio_dest = NeonGetTts(data=data, context=audio_dest_context)
+        self.assertEqual(message_audio_dest.context.destination, ["audio"])
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            NeonGetTts(message_id=message_id, context={})  # Missing data
+
+    def test_neon_get_stt(self):
+        from neon_data_models.models.api.messagebus import NeonGetStt, GetSttData
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid message
+        message_id = "test_mid"
+        data = GetSttData(audio_data="base64encodedstring")
+        valid_message = NeonGetStt(data=data, context={})
+        self.assertIsInstance(valid_message, NeonGetStt)
+        self.assertIsInstance(valid_message, BaseMessage)
+        self.assertEqual(valid_message.data.audio_data, "base64encodedstring")
+        self.assertEqual(valid_message.msg_type, "neon.get_stt")
+        
+        # Test ensure_audio_destination validator
+        empty_dest_context = {"destination": []}
+        message_empty_dest = NeonGetStt(data=data, context=empty_dest_context)
+        self.assertIn("audio", message_empty_dest.context.destination)
+        
+        other_dest_context = {"destination": ["skills", "audio"]}
+        message_other_dest = NeonGetStt(data=data, context=other_dest_context)
+        self.assertIn("audio", message_other_dest.context.destination)
+        self.assertIn("skills", message_other_dest.context.destination)
+        
+        audio_dest_context = {"destination": ["audio"]}
+        message_audio_dest = NeonGetStt(data=data, context=audio_dest_context)
+        self.assertEqual(message_audio_dest.context.destination, ["audio"])
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            NeonGetStt(message_id=message_id, context={})  # Missing data
+
+    def test_neon_get_response(self):
+        from neon_data_models.models.api.messagebus import NeonTextInput, GetResponseData
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid message
+        message_id = "test_mid"
+        data = GetResponseData(utterances=["How are you?"])
+        valid_message = NeonTextInput(data=data, context={})
+        self.assertIsInstance(valid_message, NeonTextInput)
+        self.assertIsInstance(valid_message, BaseMessage)
+        self.assertEqual(valid_message.data.utterances, ["How are you?"])
+        self.assertEqual(valid_message.msg_type, "recognizer_loop:utterance")
+        
+        # Test ensure_skills_destination validator
+        empty_dest_context = {"destination": []}
+        message_empty_dest = NeonTextInput(data=data, context=empty_dest_context)
+        self.assertIn("skills", message_empty_dest.context.destination)
+        
+        other_dest_context = {"destination": ["audio"]}
+        message_other_dest = NeonTextInput(data=data, context=other_dest_context)
+        self.assertIn("skills", message_other_dest.context.destination)
+        self.assertIn("audio", message_other_dest.context.destination)
+        
+        skills_dest_context = {"destination": ["skills"]}
+        message_skills_dest = NeonTextInput(data=data, context=skills_dest_context)
+        self.assertEqual(message_skills_dest.context.destination, ["skills"])
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            NeonTextInput(message_id=message_id, context={})  # Missing data
+
+    def test_neon_stt_response(self):
+        from neon_data_models.models.api.messagebus import NeonSttResponse, SttReponseData
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid message
+        message_id = "test_mid"
+        data = SttReponseData(transcripts=["Hello world"], parser_data={"confidence": 0.95})
+        valid_message = NeonSttResponse(data=data, context={})
+        self.assertIsInstance(valid_message, NeonSttResponse)
+        self.assertIsInstance(valid_message, BaseMessage)
+        self.assertEqual(valid_message.data.transcripts[0], "Hello world")
+        self.assertEqual(valid_message.msg_type, "neon.get_stt.response")
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            NeonSttResponse(message_id=message_id, context={})  # Missing data
+
+    def test_neon_tts_response(self):
+        from neon_data_models.models.api.messagebus import NeonTtsResponse, TtsReponseData, TtsResponse
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid message
+        message_id = "test_mid"
+        response = TtsResponse(
+            sentence="Hello world", 
+            translated=False, 
+            phonemes="HH EH L OW",
+            genders=["female", "male"],
+            audio={"female": "base64audio1", "male": "base64audio2"}
+        )
+        data = TtsReponseData(responses={"en-us": response})
+        valid_message = NeonTtsResponse(data=data, context={})
+        self.assertIsInstance(valid_message, NeonTtsResponse)
+        self.assertIsInstance(valid_message, BaseMessage)
+        self.assertEqual(valid_message.data.responses["en-us"].sentence, "Hello world")
+        self.assertEqual(valid_message.data.responses["en-us"].genders, ["female", "male"])
+        self.assertEqual(valid_message.data.responses["en-us"].audio["female"], "base64audio1")
+        self.assertEqual(valid_message.msg_type, "neon.get_tts.response")
+
+        # Test alternate msg_type
+        alt_message = NeonTtsResponse(data=data, message_id=message_id, context={}, 
+                                    msg_type="klat.response")
+        self.assertEqual(alt_message.msg_type, "klat.response")
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            NeonTtsResponse(message_id=message_id, context={})  # Missing data
+
+    def test_neon_audio_input(self):
+        from neon_data_models.models.api.messagebus import NeonAudioInput, GetSttData
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid message
+        message_id = "test_mid"
+        data = GetSttData(audio_data="base64encodedstring")
+        valid_message = NeonAudioInput(data=data, context={})
+        self.assertIsInstance(valid_message, NeonAudioInput)
+        self.assertIsInstance(valid_message, BaseMessage)
+        self.assertEqual(valid_message.data.audio_data, "base64encodedstring")
+        self.assertEqual(valid_message.data.lang, "en-us")  # Default value
+        self.assertEqual(valid_message.msg_type, "neon.audio_input")
+        
+        # Test ensure_audio_destination validator
+        empty_dest_context = {"destination": []}
+        message_empty_dest = NeonAudioInput(data=data, context=empty_dest_context)
+        self.assertIn("audio", message_empty_dest.context.destination)
+        
+        other_dest_context = {"destination": ["skills", "audio"]}
+        message_other_dest = NeonAudioInput(data=data, context=other_dest_context)
+        self.assertIn("audio", message_other_dest.context.destination)
+        self.assertIn("skills", message_other_dest.context.destination)
+        
+        audio_dest_context = {"destination": ["audio"]}
+        message_audio_dest = NeonAudioInput(data=data, context=audio_dest_context)
+        self.assertEqual(message_audio_dest.context.destination, ["audio"])
+
+        # Test with message_body instead of audio_data (backward compatibility)
+        compat_data = GetSttData(message_body="different_base64string")
+        compat_message = NeonAudioInput(data=compat_data, context={})
+        self.assertEqual(compat_message.data.audio_data, "different_base64string")
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            NeonAudioInput(message_id=message_id, context={})  # Missing data
+
+    def test_neon_languages_data(self):
+        from neon_data_models.models.api.messagebus import NeonLanguagesData
+
+        # Test valid data
+        valid_data = {
+            "stt": ["en-us", "es-es", "fr-fr"],
+            "tts": ["en-us", "es-es"],
+            "skills": ["en-us"]
+        }
+        languages_data = NeonLanguagesData(**valid_data)
+        self.assertIsInstance(languages_data, NeonLanguagesData)
+        self.assertEqual(languages_data.stt, ["en-us", "es-es", "fr-fr"])
+        self.assertEqual(languages_data.tts, ["en-us", "es-es"])
+        self.assertEqual(languages_data.skills, ["en-us"])
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            NeonLanguagesData(stt=["en-us"], tts=["en-us"])  # Missing skills
+
+        with self.assertRaises(ValidationError):
+            NeonLanguagesData(stt=["en-us"], skills=["en-us"])  # Missing tts
+
+        with self.assertRaises(ValidationError):
+            NeonLanguagesData(tts=["en-us"], skills=["en-us"])  # Missing stt
+
+    def test_neon_get_languages(self):
+        from neon_data_models.models.api.messagebus import NeonGetLanguages
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid message
+        valid_message = NeonGetLanguages(data={}, context={})
+        self.assertIsInstance(valid_message, NeonGetLanguages)
+        self.assertIsInstance(valid_message, BaseMessage)
+        self.assertEqual(valid_message.msg_type, "neon.languages.get")
+
+        # Test with invalid msg_type
+        with self.assertRaises(ValidationError):
+            message_with_id = NeonGetLanguages(msg_type="test_mid",
+                                               data={}, context={})
+
+    def test_neon_languages_response(self):
+        from neon_data_models.models.api.messagebus import NeonLanguagesResponse, NeonLanguagesData
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid message
+        languages_data = NeonLanguagesData(
+            stt=["en-us", "es-es"],
+            tts=["en-us", "fr-fr"],
+            skills=["en-us"]
+        )
+        valid_message = NeonLanguagesResponse(data=languages_data, context={})
+        self.assertIsInstance(valid_message, NeonLanguagesResponse)
+        self.assertIsInstance(valid_message, BaseMessage)
+        self.assertEqual(valid_message.msg_type, "neon.languages.get.response")
+        self.assertEqual(valid_message.data.stt, ["en-us", "es-es"])
+        self.assertEqual(valid_message.data.tts, ["en-us", "fr-fr"])
+        self.assertEqual(valid_message.data.skills, ["en-us"])
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            NeonLanguagesResponse(context={})  # Missing data
+
+    def test_tts_speaker(self):
+        from neon_data_models.models.api.messagebus import TtsSpeaker
+        
+        # Test valid data
+        valid_data = {"name": "Neon", "language": "en-us", "gender": "female", "voice": "cmu-slt"}
+        speaker = TtsSpeaker(**valid_data)
+        self.assertIsInstance(speaker, TtsSpeaker)
+        self.assertEqual(speaker.name, "Neon")
+        self.assertEqual(speaker.language, "en-us")
+        self.assertEqual(speaker.gender, "female")
+        self.assertEqual(speaker.voice, "cmu-slt")
+        
+        # Test default values
+        minimal_data = {"name": "Test"}
+        speaker = TtsSpeaker(**minimal_data)
+        self.assertEqual(speaker.language, "en-us")
+        self.assertEqual(speaker.gender, "female")
+        self.assertIsNone(speaker.voice)
+        
+        # Test deprecated speaker field
+        deprecated_data = {"speaker": "Deprecated"}
+        speaker = TtsSpeaker(**deprecated_data)
+        self.assertEqual(speaker.name, "Deprecated")
+        self.assertEqual(speaker.speaker, "Deprecated")
+        
+        # Test mixed name and speaker fields (name should take precedence)
+        mixed_data = {"name": "Primary", "speaker": "Secondary"}
+        speaker = TtsSpeaker(**mixed_data)
+        self.assertEqual(speaker.name, "Primary")
+        self.assertEqual(speaker.speaker, "Secondary")
+        
+        # Test invalid gender
+        with self.assertRaises(ValidationError):
+            TtsSpeaker(name="Test", gender="invalid_gender")
+    
+    def test_get_tts_data_validation_edge_cases(self):
+        from neon_data_models.models.api.messagebus import GetTtsData
+        
+        # Test empty text
+        empty_text = {"text": ""}
+        tts_data = GetTtsData(**empty_text)
+        self.assertEqual(tts_data.text, "")
+        
+        # Test with both text and utterance (text should take precedence)
+        dual_fields = {"text": "Primary text", "utterance": "Secondary text"}
+        tts_data = GetTtsData(**dual_fields)
+        self.assertEqual(tts_data.text, "Primary text")
+        
+        # Test with custom language
+        custom_lang = {"text": "Hello", "lang": "fr-fr"}
+        tts_data = GetTtsData(**custom_lang)
+        self.assertEqual(tts_data.lang, "fr-fr")
+        
+        # Test with invalid language format (should accept but not validate format)
+        invalid_lang = {"text": "Hello", "lang": "invalid_lang"}
+        tts_data = GetTtsData(**invalid_lang)
+        self.assertEqual(tts_data.lang, "invalid_lang")
+    
+    def test_get_stt_data_validation_edge_cases(self):
+        from neon_data_models.models.api.messagebus import GetSttData
+        
+        # Test empty audio data
+        empty_audio = {"audio_data": ""}
+        stt_data = GetSttData(**empty_audio)
+        self.assertEqual(stt_data.audio_data, "")
+        
+        # Test with both audio_data and message_body (audio_data should take precedence)
+        dual_fields = {"audio_data": "Primary audio", "message_body": "Secondary audio"}
+        stt_data = GetSttData(**dual_fields)
+        self.assertEqual(stt_data.audio_data, "Primary audio")
+        
+        # Test with custom language
+        custom_lang = {"audio_data": "data", "lang": "de-de"}
+        stt_data = GetSttData(**custom_lang)
+        self.assertEqual(stt_data.lang, "de-de")
+    
+    def test_tts_response_edge_cases(self):
+        from neon_data_models.models.api.messagebus import TtsResponse
+        
+        # Test with minimum valid data
+        min_valid_data = {
+            "sentence": "Test",
+            "translated": True,
+            "genders": ["female"],
+            "audio": {"female": "audio_data"}
+        }
+        response = TtsResponse(**min_valid_data)
+        self.assertEqual(response.sentence, "Test")
+        self.assertTrue(response.translated)
+        self.assertEqual(response.genders, ["female"])
+        self.assertEqual(response.audio["female"], "audio_data")
+        
+        # Test with invalid gender in genders field
+        with self.assertRaises(ValidationError):
+            TtsResponse(
+                sentence="Test",
+                translated=False,
+                genders=["invalid_gender"],
+                audio={"female": "audio_data"}
+            )
+        
+        # Test with mismatch between genders and audio keys
+        with self.assertRaises(ValidationError):
+            TtsResponse(
+                sentence="Test",
+                translated=False,
+                genders=["male"],
+                audio={"female": "audio_data"}
+            )
+    
+    def test_tts_response_multi_language(self):
+        from neon_data_models.models.api.messagebus import TtsReponseData, TtsResponse, TtsSpeaker
+        
+        # Create multiple language responses
+        en_response = TtsResponse(
+            sentence="Hello world",
+            translated=False,
+            genders=["female", "male"],
+            audio={"female": "en_audio_female", "male": "en_audio_male"}
+        )
+        
+        es_response = TtsResponse(
+            sentence="Hola mundo",
+            translated=True,
+            genders=["female"],
+            audio={"female": "es_audio_female"}
+        )
+        
+        fr_response = TtsResponse(
+            sentence="Bonjour le monde",
+            translated=True,
+            genders=["male"],
+            audio={"male": "fr_audio_male"}
+        )
+        
+        # Test with multiple language responses
+        multi_lang_data = {
+            "responses": {
+                "en-us": en_response,
+                "es-es": es_response,
+                "fr-fr": fr_response
+            },
+            "speaker": {
+                "name": "MultiLang",
+                "language": "en-us",
+                "gender": "female"
+            }
+        }
+        
+        tts_response_data = TtsReponseData(**multi_lang_data)
+        self.assertEqual(len(tts_response_data.responses), 3)
+        self.assertEqual(tts_response_data.responses["en-us"].sentence, "Hello world")
+        self.assertEqual(tts_response_data.responses["es-es"].sentence, "Hola mundo")
+        self.assertEqual(tts_response_data.responses["fr-fr"].sentence, "Bonjour le monde")
+        self.assertEqual(tts_response_data.speaker.name, "MultiLang")
+        
+        # Verify each language's specific properties
+        self.assertFalse(tts_response_data.responses["en-us"].translated)
+        self.assertTrue(tts_response_data.responses["es-es"].translated)
+        self.assertEqual(tts_response_data.responses["en-us"].genders, ["female", "male"])
+        self.assertEqual(tts_response_data.responses["es-es"].genders, ["female"])
+        self.assertEqual(tts_response_data.responses["fr-fr"].genders, ["male"])
+    
+    def test_get_response_data_validation_edge_cases(self):
+        from neon_data_models.models.api.messagebus import GetResponseData
+        
+        # Test with a single string in messageText
+        text_string = {"messageText": "Single message"}
+        response_data = GetResponseData(**text_string)
+        self.assertEqual(response_data.utterances, ["Single message"])
+        
+        # Test with both utterances and messageText (utterances should take precedence)
+        dual_fields = {
+            "utterances": ["Primary utterance"],
+            "messageText": "Secondary utterance"
+        }
+        response_data = GetResponseData(**dual_fields)
+        self.assertEqual(response_data.utterances, ["Primary utterance"])
+        
+        # Test with multiple utterances
+        multi_utterance = {
+            "utterances": ["First utterance", "Second utterance", "Third utterance"]
+        }
+        response_data = GetResponseData(**multi_utterance)
+        self.assertEqual(len(response_data.utterances), 3)
+        self.assertEqual(response_data.utterances[1], "Second utterance")
+        
+        # Test with Unicode characters
+        unicode_text = {"utterances": ["こんにちは", "你好", "مرحبا"]}
+        response_data = GetResponseData(**unicode_text)
+        self.assertEqual(response_data.utterances[0], "こんにちは")
+    
+    def test_serialization_deserialization(self):
+        from neon_data_models.models.api.messagebus import (
+            GetTtsData, NeonGetTts, TtsResponse, TtsReponseData, NeonTtsResponse
+        )
+        import json
+        
+        # Test serialization and deserialization of GetTtsData
+        tts_data = GetTtsData(text="Serialize me", lang="en-us")
+        serialized = json.loads(tts_data.model_dump_json())
+        self.assertEqual(serialized["text"], "Serialize me")
+        self.assertEqual(serialized["lang"], "en-us")
+        
+        deserialized = GetTtsData.model_validate(serialized)
+        self.assertEqual(deserialized.text, "Serialize me")
+        self.assertEqual(deserialized.lang, "en-us")
+        
+        # Test serialization and deserialization of complete message
+        response = TtsResponse(
+            sentence="Test response",
+            translated=False,
+            phonemes="T EH S T",
+            genders=["female"],
+            audio={"female": "test_audio_data"}
+        )
+        
+        response_data = TtsReponseData(responses={"en-us": response})
+        message = NeonTtsResponse(data=response_data, context={"source": "test"})
+        
+        serialized_message = json.loads(message.model_dump_json())
+        self.assertEqual(serialized_message["msg_type"], "neon.get_tts.response")
+        self.assertEqual(serialized_message["data"]["responses"]["en-us"]["sentence"], "Test response")
+        
+        deserialized_message = NeonTtsResponse.model_validate(serialized_message)
+        self.assertEqual(deserialized_message.msg_type, "neon.get_tts.response")
+        self.assertEqual(deserialized_message.data.responses["en-us"].sentence, "Test response")
+        self.assertEqual(deserialized_message.data.responses["en-us"].audio["female"], "test_audio_data")
+    
+    def test_stt_response_data_edge_cases(self):
+        from neon_data_models.models.api.messagebus import SttReponseData
+        
+        # Test with multiple transcripts
+        multi_transcript = {
+            "transcripts": ["First guess", "Second guess", "Third guess"],
+            "parser_data": {"confidence": 0.8, "source": "test_engine"}
+        }
+        stt_response = SttReponseData(**multi_transcript)
+        self.assertEqual(len(stt_response.transcripts), 3)
+        self.assertEqual(stt_response.parser_data["confidence"], 0.8)
+        
+        # Test with complex parser data
+        complex_parser_data = {
+            "transcripts": ["Hello"],
+            "parser_data": {
+                "confidence": 0.95,
+                "engine": "test_engine",
+                "metadata": {
+                    "duration": 2.5,
+                    "sample_rate": 16000,
+                    "format": "wav",
+                    "channels": 1
+                },
+                "alternatives": [
+                    {"text": "Hello", "confidence": 0.95},
+                    {"text": "Hell no", "confidence": 0.05}
+                ]
+            }
+        }
+        stt_response = SttReponseData(**complex_parser_data)
+        self.assertEqual(stt_response.parser_data["metadata"]["sample_rate"], 16000)
+        self.assertEqual(stt_response.parser_data["alternatives"][0]["confidence"], 0.95)
+        
+        # Test with empty transcripts list (should fail)
+        with self.assertRaises(ValidationError):
+            SttReponseData(
+                transcripts=[],
+                parser_data={"confidence": 0.9}
+            )
+        
+        # Test with empty parser data (should succeed as {}is valid)
+        valid_empty_parser = {
+            "transcripts": ["Hello"],
+            "parser_data": {}
+        }
+        stt_response = SttReponseData(**valid_empty_parser)
+        self.assertEqual(len(stt_response.parser_data), 0)
+
+    def test_neon_get_skills_api(self):
+        from neon_data_models.models.api.messagebus import NeonGetSkillsApi
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid message
+        valid_message = NeonGetSkillsApi(data={}, context={})
+        self.assertIsInstance(valid_message, NeonGetSkillsApi)
+        self.assertIsInstance(valid_message, BaseMessage)
+        self.assertEqual(valid_message.msg_type, "neon.skill_api.get")
+        self.assertEqual(valid_message.data, {})
+
+        # Test with custom context
+        context_data = {"source": "test_client", "destination": ["skills"]}
+        message_with_context = NeonGetSkillsApi(data={}, context=context_data)
+        self.assertEqual(message_with_context.context.source, "test_client")
+        self.assertEqual(message_with_context.context.destination, ["skills"])
+
+        # Test with invalid msg_type (should fail due to Literal constraint)
+        with self.assertRaises(ValidationError):
+            NeonGetSkillsApi(data={}, context={}, msg_type="invalid.type")
+
+    def test_neon_skill_api_data(self):
+        from neon_data_models.models.api.messagebus import NeonSkillApiData
+
+        # Test valid data with all fields
+        valid_data = {
+            "help": "Get the current timestamp in seconds since epoch.",
+            "request_schema": {
+                "properties": {
+                    "location": {
+                        "anyOf": [{"type": "string"}, {"type": "null"}],
+                        "default": None,
+                        "title": "Location",
+                    }
+                },
+                "title": "_CurrentTimeRequest",
+                "type": "object",
+            },
+            "response_schema": {
+                "properties": {
+                    "current_timestamp": {
+                        "title": "Current Timestamp",
+                        "type": "number",
+                    }
+                },
+                "required": ["current_timestamp"],
+                "title": "_CurrentTimeResponse",
+                "type": "object",
+            },
+            "signature": "(request: skill_date_time._CurrentTimeRequest) -> skill_date_time._CurrentTimeResponse",
+            "type": "skill-date_time.neongeckocom.get_current_time",
+        }
+        skill_api_data = NeonSkillApiData(**valid_data)
+        self.assertIsInstance(skill_api_data, NeonSkillApiData)
+        self.assertEqual(skill_api_data.help, "Get the current timestamp in seconds since epoch.")
+        self.assertEqual(skill_api_data.msg_type, "skill-date_time.neongeckocom.get_current_time")
+        self.assertIsInstance(skill_api_data.request_schema, dict)
+        self.assertIsInstance(skill_api_data.response_schema, dict)
+        self.assertIsNotNone(skill_api_data.signature)
+
+        # Test valid data with minimal fields (only required fields)
+        minimal_data = {
+            "help": "Simple API method",
+            "type": "test.skill.method"
+        }
+        minimal_skill_api = NeonSkillApiData(**minimal_data)
+        self.assertEqual(minimal_skill_api.help, "Simple API method")
+        self.assertEqual(minimal_skill_api.msg_type, "test.skill.method")
+        self.assertIsNone(minimal_skill_api.request_schema)
+        self.assertIsNone(minimal_skill_api.response_schema)
+        self.assertIsNone(minimal_skill_api.signature)
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            NeonSkillApiData(help="Missing type field")
+        
+        with self.assertRaises(ValidationError):
+            NeonSkillApiData(type="missing.help.field")
+
+    def test_neon_skills_api_response(self):
+        from neon_data_models.models.api.messagebus import NeonSkillsApiResponse, NeonSkillApiData
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid response with multiple skills
+        skill1_data = NeonSkillApiData(
+            help="Get current time",
+            msg_type="skill-date_time.neongeckocom.get_current_time",
+            request_schema={"type": "object"},
+            response_schema={"type": "object"}
+        )
+        skill2_data = NeonSkillApiData(
+            help="Get weather info",
+            msg_type="skill-weather.neongeckocom.get_weather"
+        )
+        
+        response_data = {
+            "skill-date_time.neongeckocom": {
+                "get_current_time": skill1_data
+            },
+            "skill-weather.neongeckocom": {
+                "get_weather": skill2_data
+            }
+        }
+        
+        valid_response = NeonSkillsApiResponse(data=response_data, context={})
+        self.assertIsInstance(valid_response, NeonSkillsApiResponse)
+        self.assertIsInstance(valid_response, BaseMessage)
+        self.assertEqual(valid_response.msg_type, "neon.skill_api.get.response")
+        self.assertEqual(len(valid_response.data), 2)
+        self.assertIn("skill-date_time.neongeckocom", valid_response.data)
+        self.assertIn("skill-weather.neongeckocom", valid_response.data)
+        self.assertEqual(
+            valid_response.data["skill-date_time.neongeckocom"]["get_current_time"].help,
+            "Get current time"
+        )
+
+        # Test empty response
+        empty_response = NeonSkillsApiResponse(data={}, context={})
+        self.assertEqual(len(empty_response.data), 0)
+
+        # Test response with complex nested structure
+        complex_skill_data = {
+            "skill-complex.test": {
+                "method1": NeonSkillApiData(help="Method 1", msg_type="test.method1"),
+                "method2": NeonSkillApiData(help="Method 2", msg_type="test.method2"),
+                "method3": NeonSkillApiData(help="Method 3", msg_type="test.method3")
+            }
+        }
+        complex_response = NeonSkillsApiResponse(data=complex_skill_data, context={})
+        self.assertEqual(len(complex_response.data["skill-complex.test"]), 3)
+        self.assertIn("method2", complex_response.data["skill-complex.test"])
+
+        # Test missing required fields
+        with self.assertRaises(ValidationError):
+            NeonSkillsApiResponse(context={})
+    
+    def test_skill_api_request_data(self):
+        from neon_data_models.models.api.messagebus import SkillApiRequestData
+
+        # Test valid data with no args/kwargs
+        valid_request = SkillApiRequestData()
+        self.assertIsInstance(valid_request, SkillApiRequestData)
+        self.assertEqual(valid_request.args, [])
+        self.assertEqual(valid_request.kwargs, {})
+
+        # Test valid data with args and kwargs
+        valid_request_with_data = SkillApiRequestData(
+            args=["arg1", "arg2", 123],
+            kwargs={"location": "Seattle", "timezone": "UTC", "verbose": True}
+        )
+        self.assertEqual(valid_request_with_data.args, ["arg1", "arg2", 123])
+        self.assertEqual(
+            valid_request_with_data.kwargs,
+            {"location": "Seattle", "timezone": "UTC", "verbose": True}
+        )
+
+        # Test with complex args and kwargs
+        complex_request = SkillApiRequestData(
+            args=[
+                {"nested": "dict"},
+                ["list", "of", "items"],
+                42,
+                True,
+                None
+            ],
+            kwargs={
+                "nested_dict": {"key": "value", "number": 123},
+                "nested_list": [1, 2, 3],
+                "boolean": False,
+                "null_value": None
+            }
+        )
+        self.assertIsInstance(complex_request.args[0], dict)
+        self.assertIsInstance(complex_request.args[1], list)
+        self.assertEqual(complex_request.kwargs["nested_dict"]["number"], 123)
+
+        # Test with empty lists/dicts
+        empty_request = SkillApiRequestData(args=[], kwargs={})
+        self.assertEqual(len(empty_request.args), 0)
+        self.assertEqual(len(empty_request.kwargs), 0)
+
+    def test_skill_api_response_data(self):
+        from neon_data_models.models.api.messagebus import SkillApiResponseData
+
+        # Test valid response with result
+        valid_response_with_result = SkillApiResponseData(
+            result="API Response matching advertised schema",
+            error=None
+        )
+        self.assertEqual(
+            valid_response_with_result.result,
+            "API Response matching advertised schema"
+        )
+        self.assertIsNone(valid_response_with_result.error)
+
+        # Test valid response with error
+        valid_response_with_error = SkillApiResponseData(
+            result=None,
+            error="API Method error message"
+        )
+        self.assertIsNone(valid_response_with_error.result)
+        self.assertEqual(valid_response_with_error.error, "API Method error message")
+
+        # Test valid response with complex result
+        complex_result = {
+            "timestamp": 1640995200.0,
+            "timezone": "UTC",
+            "formatted_time": "2022-01-01 00:00:00",
+            "metadata": {
+                "source": "system_clock",
+                "accuracy": "high"
+            }
+        }
+        valid_response_complex = SkillApiResponseData(result=complex_result)
+        self.assertEqual(valid_response_complex.result, complex_result)
+        self.assertIsNone(valid_response_complex.error)
+
+        # Test valid response with list result
+        list_result = ["item1", "item2", "item3"]
+        valid_response_list = SkillApiResponseData(result=list_result)
+        self.assertEqual(valid_response_list.result, list_result)
+
+        # Test response with both result and error (should be allowed)
+        both_fields_response = SkillApiResponseData(
+            result="some result",
+            error="some error"
+        )
+        self.assertEqual(both_fields_response.result, "some result")
+        self.assertEqual(both_fields_response.error, "some error")
+
+        # Test default values (both None)
+        default_response = SkillApiResponseData()
+        self.assertIsNone(default_response.result)
+        self.assertIsNone(default_response.error)
+
+        # Test with various data types as result
+        int_result = SkillApiResponseData(result=42)
+        float_result = SkillApiResponseData(result=3.14159)
+        bool_result = SkillApiResponseData(result=True)
+        
+        self.assertEqual(int_result.result, 42)
+        self.assertEqual(float_result.result, 3.14159)
+        self.assertTrue(bool_result.result)
+    
+    def test_neon_call_skill_api(self):
+        from neon_data_models.models.api.messagebus import NeonCallSkillApi, SkillApiRequestData
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid message with specific msg_type
+        request_data = SkillApiRequestData(
+            args=["test_location"],
+            kwargs={"format": "iso"}
+        )
+        valid_message = NeonCallSkillApi(
+            msg_type="skill-date_time.neongeckocom.get_current_time",
+            data=request_data,
+            context={}
+        )
+        self.assertIsInstance(valid_message, NeonCallSkillApi)
+        self.assertIsInstance(valid_message, BaseMessage)
+        self.assertEqual(valid_message.msg_type, "skill-date_time.neongeckocom.get_current_time")
+        self.assertEqual(valid_message.data.args, ["test_location"])
+        self.assertEqual(valid_message.data.kwargs, {"format": "iso"})
+
+        # Test with default data
+        message_with_default = NeonCallSkillApi(
+            msg_type="test.skill.method",
+            context={}
+        )
+        self.assertEqual(message_with_default.data.args, [])
+        self.assertEqual(message_with_default.data.kwargs, {})
+
+        # Test with empty request data
+        empty_request = SkillApiRequestData()
+        message_empty = NeonCallSkillApi(
+            msg_type="test.skill.empty",
+            data=empty_request,
+            context={}
+        )
+        self.assertEqual(message_empty.data.args, [])
+        self.assertEqual(message_empty.data.kwargs, {})
+
+        # Test with complex arguments
+        complex_args = [
+            {"nested": "object"},
+            [1, 2, 3],
+            "simple_string",
+            42,
+            True
+        ]
+        complex_kwargs = {
+            "config": {"setting": "value"},
+            "options": ["opt1", "opt2"],
+            "enabled": True
+        }
+        complex_request = SkillApiRequestData(args=complex_args, kwargs=complex_kwargs)
+        complex_message = NeonCallSkillApi(
+            msg_type="skill.complex.method",
+            data=complex_request,
+            context={"source": "test"}
+        )
+        self.assertEqual(complex_message.data.args[0]["nested"], "object")
+        self.assertEqual(complex_message.data.kwargs["config"]["setting"], "value")
+
+        # Test missing required msg_type
+        with self.assertRaises(ValidationError):
+            NeonCallSkillApi(data=request_data, context={})
+    
+    def test_neon_call_skill_api_response(self):
+        from neon_data_models.models.api.messagebus import NeonCallSkillApiResponse, SkillApiResponseData
+        from neon_data_models.models.base.messagebus import BaseMessage
+
+        # Test valid response with successful result
+        response_data = SkillApiResponseData(
+            result={
+                "current_timestamp": 1640995200.0,
+                "formatted_time": "2022-01-01 00:00:00 UTC"
+            },
+            error=None
+        )
+        valid_response = NeonCallSkillApiResponse(
+            msg_type="skill-date_time.neongeckocom.get_current_time.response",
+            data=response_data,
+            context={}
+        )
+        self.assertIsInstance(valid_response, NeonCallSkillApiResponse)
+        self.assertIsInstance(valid_response, BaseMessage)
+        self.assertEqual(valid_response.msg_type, "skill-date_time.neongeckocom.get_current_time.response")
+        self.assertEqual(valid_response.data.result["current_timestamp"], 1640995200.0)
+        self.assertIsNone(valid_response.data.error)
+
+        # Test response with error
+        error_response_data = SkillApiResponseData(
+            result=None,
+            error="Failed to get current time: Network error"
+        )
+        error_response = NeonCallSkillApiResponse(
+            msg_type="skill-date_time.neongeckocom.get_current_time.response",
+            data=error_response_data,
+            context={}
+        )
+        self.assertIsNone(error_response.data.result)
+        self.assertEqual(error_response.data.error, "Failed to get current time: Network error")
+
+        # Test with simple result types
+        string_response = NeonCallSkillApiResponse(
+            msg_type="test.skill.string.response",
+            data=SkillApiResponseData(result="Simple string result"),
+            context={}
+        )
+        self.assertEqual(string_response.data.result, "Simple string result")
+
+        number_response = NeonCallSkillApiResponse(
+            msg_type="test.skill.number.response",
+            data=SkillApiResponseData(result=42),
+            context={}
+        )
+        self.assertEqual(number_response.data.result, 42)
+
+        list_response = NeonCallSkillApiResponse(
+            msg_type="test.skill.list.response",
+            data=SkillApiResponseData(result=["item1", "item2", "item3"]),
+            context={}
+        )
+        self.assertEqual(len(list_response.data.result), 3)
+        self.assertEqual(list_response.data.result[1], "item2")
+
+        # Test with both result and error (edge case)
+        mixed_response = NeonCallSkillApiResponse(
+            msg_type="test.skill.mixed.response",
+            data=SkillApiResponseData(
+                result="Partial result",
+                error="Warning: incomplete data"
+            ),
+            context={}
+        )
+        self.assertEqual(mixed_response.data.result, "Partial result")
+        self.assertEqual(mixed_response.data.error, "Warning: incomplete data")
+
+        # Test missing required msg_type
+        with self.assertRaises(ValidationError):
+            NeonCallSkillApiResponse(data=response_data, context={})
+
+        # Test missing required data
+        with self.assertRaises(ValidationError):
+            NeonCallSkillApiResponse(
+                msg_type="test.response",
+                context={}
+            )
+    

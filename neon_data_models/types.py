@@ -23,3 +23,12 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+from typing import Literal
+
+
+Gender = Literal["male", "female"]
+BotType = Literal["submind", "facilitator", "proctor", "observer"]
+# TODO: consider deprecating special facilitator types in `BotType`
+LlmMessageRole = Literal["user", "llm", "information", "instruction", "assistant", "tool"]
+# TODO: consider deprecating "llm" which always maps to "assistant" in actual requests

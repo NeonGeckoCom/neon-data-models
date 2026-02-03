@@ -1,6 +1,6 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2024 Neongecko.com Inc.
+# Copyright 2008-2026 Neongecko.com Inc.
 # BSD-3
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -31,6 +31,11 @@ from typing import List, Literal, Optional, Annotated, Dict
 from neon_data_models.enum import UserData, AlertType, Weekdays
 from neon_data_models.models.base import BaseModel
 from neon_data_models.models.base.messagebus import BaseMessage, MessageContext
+
+
+"""
+This module contains models for interacting via the Node socket (WS).
+"""
 
 
 class AudioInputData(BaseModel):

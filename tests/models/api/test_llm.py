@@ -1,6 +1,6 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2024 Neongecko.com Inc.
+# Copyright 2008-2026 Neongecko.com Inc.
 # BSD-3
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -37,6 +37,11 @@ class TestLLM(TestCase):
         self.assertEqual(legacy_mq_persona.system_prompt,
                          legacy_mq_persona.description)
 
+        # By alias
+        alias_mq_persona = LLMPersona(persona_name="my persona",
+                                      description="You are a helpful chatbot.")
+        self.assertEqual(alias_mq_persona, legacy_mq_persona)
+
         # Valid system prompt
         legacy_bf_persona = LLMPersona(name="neon",
                                        system_prompt="You are NeonLLM.")
@@ -55,7 +60,7 @@ class TestLLM(TestCase):
 
         # Under-defined persona
         with self.assertRaises(ValidationError):
-            LLMPersona(name="underdefined persona")
+            LLMPersona(description="underdefined persona")
 
         # Valid vanilla persona
         vanilla = LLMPersona(name="vanilla")
@@ -86,7 +91,9 @@ class TestLLM(TestCase):
         self.assertFalse(valid_request.beam_search)
         self.assertEqual(len(valid_request.history), len(test_history))
         self.assertEqual(len(valid_request.to_completion_kwargs()['messages']),
-                         2 * valid_request.max_history + 1)
+                         2 * valid_request.max_history + 2)
+        self.assertEqual(valid_request.to_completion_kwargs()['messages'][-1]['content'],
+                         test_query)
 
         # Valid explicit streaming
         streaming_request = LLMRequest(query=test_query, history=test_history,

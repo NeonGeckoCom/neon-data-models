@@ -1,6 +1,6 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2024 Neongecko.com Inc.
+# Copyright 2008-2026 Neongecko.com Inc.
 # BSD-3
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -27,6 +27,7 @@ from typing import List, Tuple, Optional, Literal
 from pydantic import Field, model_validator, computed_field
 
 from neon_data_models.models.base import BaseModel
+from neon_data_models.types import LlmMessageRole
 
 
 _DEFAULT_MQ_TO_ROLE = {"user": "user", "llm": "assistant"}
@@ -36,7 +37,8 @@ class LLMPersonaIdentity(BaseModel):
     """
     Defines metadata for a unique persona.
     """
-    name: str = Field(description="Unique name for this persona")
+    name: str = Field(alias="persona_name", 
+                      description="Unique name for this persona")
     user_id: Optional[str] = Field(
         None, description="`user_id` of the user who created this persona.")
 
@@ -56,7 +58,7 @@ class LLMPersona(LLMPersonaIdentity):
     """
     description: Optional[str] = Field(
         None, description="Human-readable description of this persona")
-    system_prompt: str = Field(
+    system_prompt: Optional[str] = Field(
         None, description="System prompt associated with this persona. "
                           "If None, `description` will be used.")
     enabled: bool = Field(
@@ -70,7 +72,7 @@ class LLMPersona(LLMPersonaIdentity):
             self.system_prompt = None
             return self
 
-        assert any((self.description, self.system_prompt))
+        assert any(x is not None for x in (self.description, self.system_prompt))
         if self.system_prompt is None:
             self.system_prompt = self.description
         return self
@@ -79,13 +81,13 @@ class LLMPersona(LLMPersonaIdentity):
 class LLMRequest(BaseModel):
     query: str = Field(description="Incoming user prompt")
     # TODO: History may support more options in the future
-    history: List[Tuple[Literal["user", "llm"], str]] = Field(
+    history: List[Tuple[LlmMessageRole, str]] = Field(
         description="Formatted chat history (excluding system prompt). Note "
                     "that the roles used here will differ from those used in "
                     "OpenAI-compatible requests.")
     persona: LLMPersona = Field(
         description="Requested persona to respond to this message")
-    model: str = Field(description="Model to request")
+    model: str = Field(description="Model to request (<name>@<revision>)")
     max_tokens: int = Field(
         default=512, ge=64, le=2048,
         description="Maximum number of tokens to include in the response")
@@ -109,7 +111,8 @@ class LLMRequest(BaseModel):
                                   "Mutually exclusive with `stream`.")
     max_history: int = Field(
         default=2, description="Maximum number of user/assistant "
-                               "message pairs to include in history context.")
+                               "message pairs to include in history context. "
+                               "Excludes system prompt and incoming query.")
 
     @model_validator(mode='before')
     @classmethod
@@ -119,6 +122,9 @@ class LLMRequest(BaseModel):
         for idx, itm in enumerate(values.get('history', [])):
             if itm[0] == "assistant":
                 values['history'][idx] = ("llm", itm[1])
+        # OpenAI `extra_body` may be included in input; parse those inputs
+        if values.get('use_beam_search') is not None:
+            values['beam_search'] = values['use_beam_search']
         return values
 
     @model_validator(mode='after')
@@ -159,7 +165,7 @@ class LLMRequest(BaseModel):
 
         # If beam search is enabled, temperature must be set to 0.0
         if self.beam_search:
-            assert self.temperature == 0.0
+            assert self.temperature == 0.0, "Beam search requires temperature 0"
         return self
 
     @property
@@ -179,8 +185,10 @@ class LLMRequest(BaseModel):
         history = self.messages[-2*self.max_history:]
         for msg in history:
             msg["role"] = mq2role.get(msg["role"]) or msg["role"]
-        history.insert(0, {"role": "system",
-                           "content": self.persona.system_prompt})
+        if self.persona.system_prompt is not None:
+            history.insert(0, {"role": "system",
+                               "content": self.persona.system_prompt})
+        history.append({"role": "user", "content": self.query})
         return {"model": self.model,
                 "messages": history,
                 "max_tokens": self.max_tokens,
@@ -194,7 +202,7 @@ class LLMRequest(BaseModel):
 
 class LLMResponse(BaseModel):
     response: str = Field(description="LLM Response to the input query")
-    history: List[Tuple[Literal["user", "llm"], str]] = Field(
+    history: List[Tuple[LlmMessageRole, str]] = Field(
         description="List of (role, content) tuples in chronological order "
                     "(`response` is in the last list element)")
     finish_reason: Literal["length", "stop"] = Field(
@@ -211,5 +219,20 @@ class LLMResponse(BaseModel):
         return values
 
 
+class BrainForgeLLM(BaseModel):
+    name: str = Field(description="LLM Name")
+    version: str = Field(description="LLM Version")
+    personas: List[LLMPersona] = Field(
+        default=[], description="List of personas defined in this model")
+
+    @property
+    def vllm_spec(self):
+        """
+        Model identifier used by vllm (<name>@<version>)
+        """
+        return f"{self.name}@{self.version}"
+
+
 __all__ = [LLMPersonaIdentity.__name__, LLMPersona.__name__,
-           LLMRequest.__name__, LLMResponse.__name__]
+           LLMRequest.__name__, LLMResponse.__name__,
+           BrainForgeLLM.__name__]
