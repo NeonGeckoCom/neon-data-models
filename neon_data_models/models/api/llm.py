@@ -113,6 +113,10 @@ class LLMRequest(BaseModel):
     def beam_search(self) -> bool:
         return self.extra_body.get("use_beam_search", False)
 
+    @beam_search.setter
+    def beam_search(self, value: bool):
+        self.extra_body["use_beam_search"] = value
+
     @property
     def best_of(self) -> int:
         return self.extra_body.get("best_of", 1)
@@ -173,8 +177,8 @@ class LLMRequest(BaseModel):
             self.stream = True
             self.beam_search = False
 
-        assert isinstance(self.stream, bool)
-        assert isinstance(self.beam_search, bool)
+        assert isinstance(self.stream, bool), f"Expected `stream` to be a bool, got {type(self.stream)}"
+        assert isinstance(self.beam_search, bool), f"Expected `beam_search` to be a bool, got {type(self.beam_search)}"
 
         # If beam search is enabled, temperature must be set to 0.0
         if self.beam_search:
