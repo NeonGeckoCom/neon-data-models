@@ -173,9 +173,11 @@ class LLMRequest(BaseModel):
                 raise ValueError("Cannot enable both `stream` and "
                                  "`beam_search`")
             self.stream = False
-        if self.stream is None and self.beam_search is None:
+        if self.stream is None and self.beam_search in (None, False):
             self.stream = True
             self.beam_search = False
+        elif self.stream is None:
+            self.stream = False
 
         assert isinstance(self.stream, bool), f"Expected `stream` to be a bool, got {type(self.stream)}"
         assert isinstance(self.beam_search, bool), f"Expected `beam_search` to be a bool, got {type(self.beam_search)}"
