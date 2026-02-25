@@ -107,11 +107,11 @@ class LLMRequest(BaseModel):
 
     @property
     def repetition_penalty(self) -> float:
-        return self.extra_body.get("repetition_penalty", 1.0)
+        return self.extra_body['repetition_penalty']
 
     @property
     def beam_search(self) -> bool:
-        return self.extra_body.get("use_beam_search", False)
+        return self.extra_body['use_beam_search']
 
     @beam_search.setter
     def beam_search(self, value: bool):
@@ -119,7 +119,7 @@ class LLMRequest(BaseModel):
 
     @property
     def best_of(self) -> int:
-        return self.extra_body.get("best_of", 1)
+        return self.extra_body['best_of']
 
     @model_validator(mode='before')
     @classmethod
@@ -137,11 +137,13 @@ class LLMRequest(BaseModel):
         values['extra_body'].setdefault("add_special_tokens", True)
         if values.get('repetition_penalty') is not None:
             values['extra_body']['repetition_penalty'] = values['repetition_penalty']
+        values['extra_body'].setdefault('repetition_penalty', 1.0)
         if values.get('beam_search') is not None:
             values['extra_body']['use_beam_search'] = values['beam_search']
-        values.setdefault('best_of', 1)
+        values['extra_body'].setdefault('use_beam_search', None)
         if values.get('best_of') is not None:
             values['extra_body']['best_of'] = values['best_of']
+        values['extra_body'].setdefault('best_of', 1)
         return values
 
     @model_validator(mode='after')
