@@ -23,7 +23,7 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from typing import List, Tuple, Optional, Literal
+from typing import Any, Dict, List, Tuple, Optional, Literal
 from pydantic import Field, model_validator, computed_field
 
 from neon_data_models.models.base import BaseModel
@@ -80,7 +80,6 @@ class LLMPersona(LLMPersonaIdentity):
 
 class LLMRequest(BaseModel):
     query: str = Field(description="Incoming user prompt")
-    # TODO: History may support more options in the future
     history: List[Tuple[LlmMessageRole, str]] = Field(
         description="Formatted chat history (excluding system prompt). Note "
                     "that the roles used here will differ from those used in "
@@ -96,23 +95,31 @@ class LLMRequest(BaseModel):
         description="Temperature of response. 0 guarantees reproducibility, "
                     "higher values increase variability. Must be `0.0` if "
                     "`beam_search` is True")
-    repetition_penalty: float = Field(
-        default=1.0, ge=1.0, le=2.0,
-        description="Repetition penalty. Higher values limit repeated "
-                    "information in responses")
     stream: bool = Field(
         default=None, description="Enable streaming responses. "
                                   "Mutually exclusive with `beam_search`.")
-    best_of: int = Field(
-        default=1, ge=1,
-        description="Number of beams to use if `beam_search` is enabled.")
-    beam_search: bool = Field(
-        default=None, description="Enable beam search. "
-                                  "Mutually exclusive with `stream`.")
     max_history: int = Field(
         default=2, description="Maximum number of user/assistant "
                                "message pairs to include in history context. "
                                "Excludes system prompt and incoming query.")
+    extra_body: Dict[str, Any] = Field(
+        description="Optional dict of additional request body parameters")
+
+    @property
+    def repetition_penalty(self) -> float:
+        return self.extra_body['repetition_penalty']
+
+    @property
+    def beam_search(self) -> bool:
+        return self.extra_body['use_beam_search']
+
+    @beam_search.setter
+    def beam_search(self, value: bool):
+        self.extra_body["use_beam_search"] = value
+
+    @property
+    def best_of(self) -> int:
+        return self.extra_body['best_of']
 
     @model_validator(mode='before')
     @classmethod
@@ -125,6 +132,18 @@ class LLMRequest(BaseModel):
         # OpenAI `extra_body` may be included in input; parse those inputs
         if values.get('use_beam_search') is not None:
             values['beam_search'] = values['use_beam_search']
+
+        values.setdefault("extra_body", {})
+        values['extra_body'].setdefault("add_special_tokens", True)
+        if values.get('repetition_penalty') is not None:
+            values['extra_body']['repetition_penalty'] = values['repetition_penalty']
+        values['extra_body'].setdefault('repetition_penalty', 1.0)
+        if values.get('beam_search') is not None:
+            values['extra_body']['use_beam_search'] = values['beam_search']
+        values['extra_body'].setdefault('use_beam_search', None)
+        if values.get('best_of') is not None:
+            values['extra_body']['best_of'] = values['best_of']
+        values['extra_body'].setdefault('best_of', 1)
         return values
 
     @model_validator(mode='after')
@@ -156,12 +175,14 @@ class LLMRequest(BaseModel):
                 raise ValueError("Cannot enable both `stream` and "
                                  "`beam_search`")
             self.stream = False
-        if self.stream is None and self.beam_search is None:
+        if self.stream is None and self.beam_search in (None, False):
             self.stream = True
             self.beam_search = False
+        elif self.stream is None:
+            self.stream = False
 
-        assert isinstance(self.stream, bool)
-        assert isinstance(self.beam_search, bool)
+        assert isinstance(self.stream, bool), f"Expected `stream` to be a bool, got {type(self.stream)}"
+        assert isinstance(self.beam_search, bool), f"Expected `beam_search` to be a bool, got {type(self.beam_search)}"
 
         # If beam search is enabled, temperature must be set to 0.0
         if self.beam_search:
@@ -194,10 +215,7 @@ class LLMRequest(BaseModel):
                 "max_tokens": self.max_tokens,
                 "temperature": self.temperature,
                 "stream": self.stream,
-                "extra_body": {"add_special_tokens": True,
-                               "repetition_penalty": self.repetition_penalty,
-                               "use_beam_search": self.beam_search,
-                               "best_of": self.best_of}}
+                "extra_body": self.extra_body}
 
 
 class LLMResponse(BaseModel):

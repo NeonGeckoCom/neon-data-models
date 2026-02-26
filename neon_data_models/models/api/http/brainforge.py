@@ -159,7 +159,7 @@ class OpenAiCompletionRequest(BaseModel):
             query=query,
             history=history,
             persona=self.persona,
-            **self.extra_body
+            extra_body=self.extra_body
         )
 
 

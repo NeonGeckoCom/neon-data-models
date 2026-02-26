@@ -25,7 +25,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from typing import Optional, Dict, List
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from neon_data_models.models.api.llm import LLMRequest, LLMPersona
 from neon_data_models.models.base.contexts import MQContext
@@ -42,6 +42,11 @@ class LLMProposeRequest(MQContext, LLMRequest):
                     "parameter, with default behavior hard-coded into each "
                     "LLM module.")
 
+    @model_validator(mode="before")
+    @classmethod
+    def validate_inputs(cls, values):
+        return LLMRequest.validate_inputs(values)
+
 
 class LLMProposeResponse(MQContext):
     response: str = Field(description="LLM response to the prompt")
@@ -51,6 +56,11 @@ class LLMDiscussRequest(LLMProposeRequest):
     options: Dict[str, str] = Field(
         description="Mapping of participant name to response to be discussed.")
 
+    @model_validator(mode="before")
+    @classmethod
+    def validate_inputs(cls, values):
+        return LLMRequest.validate_inputs(values)
+
 
 class LLMDiscussResponse(MQContext):
     opinion: str = Field(description="LLM response to the available options.")
@@ -59,6 +69,11 @@ class LLMDiscussResponse(MQContext):
 class LLMVoteRequest(LLMProposeRequest):
     responses: List[str] = Field(
         description="List of responses to choose from.")
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_inputs(cls, values):
+        return LLMRequest.validate_inputs(values)
 
 
 class LLMVoteResponse(MQContext):
