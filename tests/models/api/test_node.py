@@ -325,3 +325,205 @@ class TestNodeV1(TestCase):
         # Validate cast from timestamp/epoch to datetime/timedelta
         self.assertEqual(CoreAlertExpired(data=datetime_alert, context={}),
                          CoreAlertExpired(data=iso_alert, context={}))
+
+    def test_node_hello(self):
+        from neon_data_models.models.api.node_v1 import NodeHello
+        valid_data = {"node_id": "node-a1b2c3d4",
+                      "node_name": "Kitchen Phone",
+                      "capabilities": {"launch_camera_app": True,
+                                       "launch_sms_app": False}}
+
+        # Invalid msg_type
+        with self.assertRaises(ValidationError):
+            NodeHello(msg_type="bad_message_type",
+                      data=valid_data, context={})
+
+        # Missing context
+        with self.assertRaises(ValidationError):
+            NodeHello(data=valid_data)
+
+        # Missing node_id
+        with self.assertRaises(ValidationError):
+            NodeHello(data={"node_name": "Kitchen Phone"}, context={})
+
+        # Valid with or without `msg_type` explicitly passed
+        self.assertEqual(NodeHello(msg_type="node.hello",
+                                   data=valid_data, context={}),
+                         NodeHello(data=valid_data, context={}))
+
+        # name and capabilities are optional
+        minimal = NodeHello(data={"node_id": "node-a1b2c3d4"}, context={})
+        self.assertEqual(minimal.data.node_name, "")
+        self.assertEqual(minimal.data.capabilities, {})
+
+        # Unknown capability keys are allowed (forward-compatibility)
+        extended = NodeHello(data={**valid_data,
+                                   "capabilities": {"future_action": True}},
+                             context={})
+        self.assertTrue(extended.data.capabilities["future_action"])
+
+    def test_node_invoke_native(self):
+        from neon_data_models.models.api.node_v1 import NodeInvokeNative
+        from neon_data_models.enum import NodeNativeAction
+
+        # Launch-only action
+        launch_only = NodeInvokeNative(data={"action": "launch_camera_app"},
+                                       context={})
+        self.assertEqual(launch_only.data.action,
+                         NodeNativeAction.LAUNCH_CAMERA_APP)
+        self.assertEqual(launch_only.data.params, {})
+
+        # Action with pre-fill payload
+        with_params = NodeInvokeNative(
+            data={"action": "launch_email_app",
+                  "params": {"subject": "Running late", "body": "Sorry!"}},
+            context={})
+        self.assertEqual(with_params.data.params["subject"], "Running late")
+
+        # Unknown action is rejected
+        with self.assertRaises(ValidationError):
+            NodeInvokeNative(data={"action": "launch_unknown_app"},
+                             context={})
+
+        # Missing action is rejected
+        with self.assertRaises(ValidationError):
+            NodeInvokeNative(data={}, context={})
+
+        # Action enum serializes to its wire string
+        self.assertEqual(launch_only.model_dump()["data"]["action"],
+                         "launch_camera_app")
+
+    def test_node_invoke_native_response(self):
+        from neon_data_models.models.api.node_v1 import NodeInvokeNativeResponse
+        from neon_data_models.enum import NativeActionErrorCode
+
+        # Success response
+        success = NodeInvokeNativeResponse(
+            data={"action": "launch_camera_app", "status": "success"},
+            context={})
+        self.assertIsNone(success.data.error)
+
+        # Error response
+        error = NodeInvokeNativeResponse(
+            data={"action": "launch_camera_app", "status": "error",
+                  "error": {"code": "unavailable",
+                            "message": "No camera app is available."}},
+            context={})
+        self.assertEqual(error.data.error.code,
+                         NativeActionErrorCode.UNAVAILABLE)
+
+        # Error status without an error object is rejected
+        with self.assertRaises(ValidationError):
+            NodeInvokeNativeResponse(
+                data={"action": "launch_camera_app", "status": "error"},
+                context={})
+
+        # Success status with an error object is rejected
+        with self.assertRaises(ValidationError):
+            NodeInvokeNativeResponse(
+                data={"action": "launch_camera_app", "status": "success",
+                      "error": {"code": "unavailable"}},
+                context={})
+
+        # Unknown error code is rejected
+        with self.assertRaises(ValidationError):
+            NodeInvokeNativeResponse(
+                data={"action": "launch_camera_app", "status": "error",
+                      "error": {"code": "not_an_error_code"}},
+                context={})
+
+        # Error code serializes to its wire string
+        self.assertEqual(
+            error.model_dump()["data"]["error"]["code"], "unavailable")
+
+    def test_native_action_wire_strings(self):
+        # These enum values are the wire contract shared with HANA, the
+        # skills, and the Node app. Changing one is a breaking change.
+        from neon_data_models.enum import (NodeNativeAction,
+                                           NativeActionErrorCode)
+        self.assertEqual({a.value for a in NodeNativeAction},
+                         {"launch_camera_app", "launch_voice_recorder_app",
+                          "launch_reminders_app", "launch_clock_app",
+                          "launch_sms_app", "launch_email_app"})
+        self.assertEqual({c.value for c in NativeActionErrorCode},
+                         {"not_supported", "permission_denied",
+                          "unavailable", "internal_error"})
+
+    def test_native_action_models_round_trip(self):
+        from neon_data_models.models.api.node_v1 import (
+            NodeHello, NodeInvokeNative, NodeInvokeNativeResponse)
+        from neon_data_models.enum import NodeNativeAction
+
+        hello = NodeHello(
+            data={"node_id": "node-a1b2c3d4", "node_name": "Kitchen Phone",
+                  "capabilities": {a.value: True for a in NodeNativeAction}},
+            context={})
+        invoke = NodeInvokeNative(
+            data={"action": "launch_sms_app",
+                  "params": {"to": "+15551234567", "body": "On my way"}},
+            context={})
+        response = NodeInvokeNativeResponse(
+            data={"action": "launch_sms_app", "status": "error",
+                  "error": {"code": "not_supported"}},
+            context={})
+
+        # Serialization round-trips to an equal object for every model
+        self.assertEqual(hello, NodeHello(**hello.model_dump()))
+        self.assertEqual(invoke, NodeInvokeNative(**invoke.model_dump()))
+        self.assertEqual(response,
+                         NodeInvokeNativeResponse(**response.model_dump()))
+
+    def test_native_action_models_as_messagebus_message(self):
+        # HANA consumes these via `as_messagebus_message`; enum fields must
+        # arrive on the bus as their wire strings, not Enum objects
+        from neon_data_models.models.api.node_v1 import (
+            NodeInvokeNative, NodeInvokeNativeResponse)
+
+        invoke = NodeInvokeNative(data={"action": "launch_clock_app"},
+                                  context={})
+        bus_msg = invoke.as_messagebus_message()
+        self.assertEqual(bus_msg.msg_type, "node.invoke_native")
+        self.assertEqual(bus_msg.data["action"], "launch_clock_app")
+
+        response = NodeInvokeNativeResponse(
+            data={"action": "launch_clock_app", "status": "error",
+                  "error": {"code": "internal_error", "message": "oops"}},
+            context={})
+        bus_msg = response.as_messagebus_message()
+        self.assertEqual(bus_msg.msg_type, "node.invoke_native.response")
+        self.assertEqual(bus_msg.data["error"]["code"], "internal_error")
+
+    def test_native_action_version_skew_tolerance(self):
+        # An older hub must tolerate payloads from a newer Node: unknown
+        # fields are dropped, unknown capability keys and params are carried.
+        # (Unknown `action`/`error.code` values are strictly rejected by
+        # design — extending those enums is a coordinated release.)
+        from neon_data_models.models.api.node_v1 import (NodeHello,
+                                                         NodeInvokeNative)
+
+        # Unknown fields added by a future spec revision are ignored
+        hello = NodeHello(data={"node_id": "node-a1b2c3d4",
+                                "protocol_version": 2},
+                          context={})
+        self.assertIsNone(hello.data.model_dump().get("protocol_version"))
+
+        # Unknown params keys are retained so a relaying hub passes them
+        # through to the Node untouched
+        invoke = NodeInvokeNative(
+            data={"action": "launch_email_app",
+                  "params": {"subject": "hi", "importance": "high"}},
+            context={})
+        self.assertEqual(invoke.data.params["importance"], "high")
+        self.assertEqual(
+            invoke.model_dump()["data"]["params"]["importance"], "high")
+
+    def test_node_hello_name_length_cap(self):
+        from neon_data_models.models.api.node_v1 import NodeHello
+        from neon_data_models.models.base.contexts import NodeContext
+
+        NodeHello(data={"node_id": "n", "node_name": "x" * 128}, context={})
+        with self.assertRaises(ValidationError):
+            NodeHello(data={"node_id": "n", "node_name": "x" * 129},
+                      context={})
+        with self.assertRaises(ValidationError):
+            NodeContext(node_id="n", node_name="x" * 129)

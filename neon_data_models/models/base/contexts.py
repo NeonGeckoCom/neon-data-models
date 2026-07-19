@@ -25,7 +25,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from datetime import datetime, timedelta, timezone
-from typing import Literal, List, Optional, Any, Tuple
+from typing import Dict, Literal, List, Optional, Any, Tuple
 from uuid import uuid4
 
 from pydantic import Field, model_validator
@@ -155,3 +155,21 @@ class MQContext(BaseModel):
 
 class GradioContext(BaseModel):
     session: str = Field(description="Gradio session ID")
+
+
+class NodeContext(BaseModel):
+    """
+    Identity and capability snapshot for the Node session a message originated
+    from. HANA populates this on every outbound bus message from a Node
+    session, cached from the session's `node.hello`, so skills can read
+    capabilities synchronously without an extra round-trip.
+    """
+    node_id: str = Field(description="Session-scoped Node client ID")
+    node_name: str = Field(
+        default="", max_length=128,
+        description="User-editable Node device name")
+    site_id: Optional[str] = Field(
+        default=None, description="User-defined room/site label")
+    capabilities: Dict[str, bool] = Field(
+        default={}, description="Mapping of native action name to supported "
+                                "state. Absent keys mean unsupported.")

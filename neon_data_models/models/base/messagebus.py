@@ -28,9 +28,10 @@ from typing import Optional, List, Union
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from neon_data_models.models.base import BaseModel
-from neon_data_models.models.base.contexts import (GradioContext, 
+from neon_data_models.models.base.contexts import (GradioContext,
                                                    SessionContext, KlatContext,
-                                                   TimingContext, MQContext)
+                                                   TimingContext, MQContext,
+                                                   NodeContext)
 from neon_data_models.models.client.node import NodeData
 from neon_data_models.models.user.neon_profile import UserProfile
 
@@ -40,6 +41,10 @@ class MessageContext(BaseModel):
     session: SessionContext = Field(description="Session Data",
                                               default=SessionContext())
     node_data: Optional[NodeData] = Field(description="Node Data", default=None)
+    node: Optional[NodeContext] = Field(
+        description="Identity and capabilities of the originating Node "
+                    "session, populated hub-side from `node.hello`",
+        default=None)
     timing: TimingContext = Field(
         description="User Interaction Timing Information", 
         default=TimingContext())
