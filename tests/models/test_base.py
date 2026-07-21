@@ -490,3 +490,32 @@ class TestMessagebus(TestCase):
         nested_none_context = MessageContext(**{"session": None})
         self.assertIsNotNone(nested_none_context.session)
         self.assertIsInstance(nested_none_context.session, SessionContext)
+
+    def test_node_context(self):
+        from neon_data_models.enum import NodeNativeAction
+        from neon_data_models.models.base.contexts import NodeContext
+        from neon_data_models.models.base.messagebus import MessageContext
+
+        # node_id is required
+        with self.assertRaises(ValidationError):
+            NodeContext()
+
+        minimal = NodeContext(node_id="node-a1b2c3d4")
+        self.assertEqual(minimal.node_name, "")
+        self.assertIsNone(minimal.site_id)
+        self.assertEqual(minimal.capabilities, {})
+
+        populated = NodeContext(node_id="node-a1b2c3d4",
+                                node_name="Kitchen Phone",
+                                site_id="kitchen",
+                                capabilities={"launch_camera_app": True})
+        self.assertEqual(populated, NodeContext(**populated.model_dump()))
+
+        # MessageContext carries an optional `node` context
+        self.assertIsNone(MessageContext().node)
+        ctx = MessageContext(node=populated.model_dump())
+        self.assertIsInstance(ctx.node, NodeContext)
+        self.assertTrue(
+            ctx.node.capabilities[NodeNativeAction.LAUNCH_CAMERA_APP])
+        self.assertEqual(ctx.model_dump()["node"]["capabilities"],
+                         {"launch_camera_app": True})

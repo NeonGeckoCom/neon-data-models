@@ -123,3 +123,29 @@ class CcaiControl(Enum):
     CREATE_PROMPT = "!MSG:CREATE_PROMPT"
     START_AUTO_PROMPTS = "!START_AUTO_PROMPTS"
     STOP_AUTO_PROMPTS = "!STOP_AUTO_PROMPTS"
+
+
+class NodeNativeAction(Enum):
+    """
+    Defines platform-native actions a Node client may perform in response to
+    a `node.invoke_native` request. Each value is also the capability key a
+    Node advertises in `node.hello`.
+    """
+    LAUNCH_CAMERA_APP = "launch_camera_app"
+    LAUNCH_VOICE_RECORDER_APP = "launch_voice_recorder_app"
+    LAUNCH_REMINDERS_APP = "launch_reminders_app"
+    LAUNCH_CLOCK_APP = "launch_clock_app"
+    LAUNCH_SMS_APP = "launch_sms_app"
+    LAUNCH_EMAIL_APP = "launch_email_app"
+
+
+class NativeActionErrorCode(Enum):
+    """
+    Defines error codes a Node may return in a `node.invoke_native.response`.
+    String values are used so failures are debuggable in logs without a
+    translation table; numeric codes may be layered on later additively.
+    """
+    NOT_SUPPORTED = "not_supported"
+    PERMISSION_DENIED = "permission_denied"
+    UNAVAILABLE = "unavailable"
+    INTERNAL_ERROR = "internal_error"

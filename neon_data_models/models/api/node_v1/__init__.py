@@ -25,11 +25,13 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from datetime import datetime, timedelta
-from pydantic import Field
-from typing import List, Literal, Optional, Annotated, Dict
+from pydantic import Field, model_validator
+from typing import Any, List, Literal, Optional, Annotated, Dict
 
-from neon_data_models.enum import UserData, AlertType, Weekdays
+from neon_data_models.enum import (UserData, AlertType, Weekdays,
+                                   NodeNativeAction, NativeActionErrorCode)
 from neon_data_models.models.base import BaseModel
+from neon_data_models.models.base.contexts import NodeCapabilities
 from neon_data_models.models.base.messagebus import BaseMessage, MessageContext
 
 
@@ -134,6 +136,66 @@ class CoreClearData(BaseMessage):
     data: ClearDataData
 
 
+class NodeHello(BaseMessage):
+    class NodeHelloData(BaseModel):
+        node_id: str = Field(description="Session-scoped Node client ID")
+        # node_name is stamped onto every outbound bus message via
+        # `context.node`, so an unbounded value would be amplified per-message
+        node_name: str = Field(
+            default="", max_length=128,
+            description="User-editable Node device name")
+        capabilities: NodeCapabilities = Field(
+            default={},
+            description="Mapping of native action to supported state. "
+                        "`false` or absent means the action is not supported "
+                        "on this Node.")
+
+    msg_type: Literal["node.hello"] = "node.hello"
+    data: NodeHelloData
+
+
+class NodeInvokeNative(BaseMessage):
+    class InvokeNativeData(BaseModel):
+        action: NodeNativeAction = Field(
+            description="Native action for the Node to perform")
+        params: Dict[str, Any] = Field(
+            default={},
+            description="Parameters for the requested action. Most actions "
+                        "take none. To pre-fill the message composer, "
+                        "`launch_sms_app` accepts `to` and `body`; "
+                        "`launch_email_app` accepts `to`, `subject`, and "
+                        "`body`. Nodes ignore unrecognized keys.")
+
+    msg_type: Literal["node.invoke_native"] = "node.invoke_native"
+    data: InvokeNativeData
+
+
+class NodeInvokeNativeResponse(BaseMessage):
+    class InvokeNativeResponseData(BaseModel):
+        class NativeActionError(BaseModel):
+            code: NativeActionErrorCode
+            message: str = Field(
+                default="", description="Human-readable error description")
+
+        action: NodeNativeAction = Field(
+            description="Native action this response corresponds to")
+        status: Literal["success", "error"]
+        error: Optional[NativeActionError] = Field(
+            default=None, description="Required when `status` is `error`")
+
+        @model_validator(mode="after")
+        def validate_error_state(self):
+            if self.status == "error" and self.error is None:
+                raise ValueError("`error` is required when status is 'error'")
+            if self.status == "success" and self.error is not None:
+                raise ValueError("`error` is invalid when status is 'success'")
+            return self
+
+    msg_type: Literal["node.invoke_native.response"] = \
+        "node.invoke_native.response"
+    data: InvokeNativeResponseData
+
+
 class CoreAlertExpired(BaseMessage):
     class AlertData(BaseModel):
         alert_type: AlertType
@@ -154,6 +216,8 @@ class CoreAlertExpired(BaseMessage):
 __all__ = [NodeAudioInput.__name__, NodeTextInput.__name__, NodeGetStt.__name__,
            NodeGetTts.__name__, NodeKlatResponse.__name__,
            NodeAudioInputResponse.__name__, NodeGetSttResponse.__name__,
-           NodeGetTtsResponse.__name__, CoreWWDetected.__name__,
-           CoreIntentFailure.__name__, CoreErrorResponse.__name__,
-           CoreClearData.__name__, CoreAlertExpired.__name__]
+           NodeGetTtsResponse.__name__, NodeHello.__name__,
+           NodeInvokeNative.__name__, NodeInvokeNativeResponse.__name__,
+           CoreWWDetected.__name__, CoreIntentFailure.__name__,
+           CoreErrorResponse.__name__, CoreClearData.__name__,
+           CoreAlertExpired.__name__]
