@@ -26,11 +26,12 @@
 
 from datetime import datetime, timedelta
 from pydantic import Field, model_validator
-from typing import List, Literal, Optional, Annotated, Dict
+from typing import Any, List, Literal, Optional, Annotated, Dict
 
 from neon_data_models.enum import (UserData, AlertType, Weekdays,
                                    NodeNativeAction, NativeActionErrorCode)
 from neon_data_models.models.base import BaseModel
+from neon_data_models.models.base.contexts import NodeCapabilities
 from neon_data_models.models.base.messagebus import BaseMessage, MessageContext
 
 
@@ -143,11 +144,11 @@ class NodeHello(BaseMessage):
         node_name: str = Field(
             default="", max_length=128,
             description="User-editable Node device name")
-        capabilities: Dict[str, bool] = Field(
+        capabilities: NodeCapabilities = Field(
             default={},
-            description="Mapping of native action name (see NodeNativeAction) "
-                        "to supported state. `false` or absent means the "
-                        "action is not supported on this Node.")
+            description="Mapping of native action to supported state. "
+                        "`false` or absent means the action is not supported "
+                        "on this Node.")
 
     msg_type: Literal["node.hello"] = "node.hello"
     data: NodeHelloData
@@ -157,7 +158,7 @@ class NodeInvokeNative(BaseMessage):
     class InvokeNativeData(BaseModel):
         action: NodeNativeAction = Field(
             description="Native action for the Node to perform")
-        params: dict = Field(
+        params: Dict[str, Any] = Field(
             default={},
             description="Parameters for the requested action. Most actions "
                         "take none. To pre-fill the message composer, "

@@ -25,11 +25,12 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Literal, List, Optional, Any, Tuple
+from typing import Annotated, Dict, Literal, List, Optional, Any, Tuple
 from uuid import uuid4
 
-from pydantic import Field, model_validator
+from pydantic import BeforeValidator, Field, PlainSerializer, model_validator
 
+from neon_data_models.enum import NodeNativeAction
 from neon_data_models.models.base import BaseModel
 
 
@@ -157,6 +158,26 @@ class GradioContext(BaseModel):
     session: str = Field(description="Gradio session ID")
 
 
+def _drop_unknown_capabilities(value):
+    if isinstance(value, dict):
+        known_actions = {action.value for action in NodeNativeAction}
+        return {key: supported for key, supported in value.items()
+                if isinstance(key, NodeNativeAction) or key in known_actions}
+    return value
+
+
+# Keys are constrained to `NodeNativeAction` so equivalent actions don't get
+# re-defined under new names. Unrecognized keys are dropped rather than
+# rejected: a Node newer than this schema may advertise actions this version
+# cannot invoke anyway, and that must not invalidate the whole message.
+NodeCapabilities = Annotated[
+    Dict[NodeNativeAction, bool],
+    BeforeValidator(_drop_unknown_capabilities),
+    PlainSerializer(lambda caps: {action.value: supported
+                                  for action, supported in caps.items()},
+                    return_type=Dict[str, bool])]
+
+
 class NodeContext(BaseModel):
     """
     Identity and capability snapshot for the Node session a message originated
@@ -170,6 +191,6 @@ class NodeContext(BaseModel):
         description="User-editable Node device name")
     site_id: Optional[str] = Field(
         default=None, description="User-defined room/site label")
-    capabilities: Dict[str, bool] = Field(
-        default={}, description="Mapping of native action name to supported "
+    capabilities: NodeCapabilities = Field(
+        default={}, description="Mapping of native action to supported "
                                 "state. Absent keys mean unsupported.")

@@ -492,6 +492,7 @@ class TestMessagebus(TestCase):
         self.assertIsInstance(nested_none_context.session, SessionContext)
 
     def test_node_context(self):
+        from neon_data_models.enum import NodeNativeAction
         from neon_data_models.models.base.contexts import NodeContext
         from neon_data_models.models.base.messagebus import MessageContext
 
@@ -514,4 +515,7 @@ class TestMessagebus(TestCase):
         self.assertIsNone(MessageContext().node)
         ctx = MessageContext(node=populated.model_dump())
         self.assertIsInstance(ctx.node, NodeContext)
-        self.assertEqual(ctx.node.capabilities["launch_camera_app"], True)
+        self.assertTrue(
+            ctx.node.capabilities[NodeNativeAction.LAUNCH_CAMERA_APP])
+        self.assertEqual(ctx.model_dump()["node"]["capabilities"],
+                         {"launch_camera_app": True})

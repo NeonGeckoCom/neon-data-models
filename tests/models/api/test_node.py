@@ -328,6 +328,7 @@ class TestNodeV1(TestCase):
 
     def test_node_hello(self):
         from neon_data_models.models.api.node_v1 import NodeHello
+        from neon_data_models.enum import NodeNativeAction
         valid_data = {"node_id": "node-a1b2c3d4",
                       "node_name": "Kitchen Phone",
                       "capabilities": {"launch_camera_app": True,
@@ -347,20 +348,33 @@ class TestNodeV1(TestCase):
             NodeHello(data={"node_name": "Kitchen Phone"}, context={})
 
         # Valid with or without `msg_type` explicitly passed
+        hello = NodeHello(data=valid_data, context={})
         self.assertEqual(NodeHello(msg_type="node.hello",
-                                   data=valid_data, context={}),
-                         NodeHello(data=valid_data, context={}))
+                                   data=valid_data, context={}), hello)
+
+        # Capability keys validate to `NodeNativeAction` and serialize back
+        # to wire strings
+        self.assertTrue(
+            hello.data.capabilities[NodeNativeAction.LAUNCH_CAMERA_APP])
+        self.assertFalse(
+            hello.data.capabilities[NodeNativeAction.LAUNCH_SMS_APP])
+        self.assertEqual(hello.model_dump()["data"]["capabilities"],
+                         {"launch_camera_app": True,
+                          "launch_sms_app": False})
 
         # name and capabilities are optional
         minimal = NodeHello(data={"node_id": "node-a1b2c3d4"}, context={})
         self.assertEqual(minimal.data.node_name, "")
         self.assertEqual(minimal.data.capabilities, {})
 
-        # Unknown capability keys are allowed (forward-compatibility)
+        # Unknown capability keys are dropped, not rejected
+        # (forward-compatibility with Nodes newer than this schema)
         extended = NodeHello(data={**valid_data,
-                                   "capabilities": {"future_action": True}},
+                                   "capabilities": {"future_action": True,
+                                                    "launch_sms_app": True}},
                              context={})
-        self.assertTrue(extended.data.capabilities["future_action"])
+        self.assertEqual(extended.data.capabilities,
+                         {NodeNativeAction.LAUNCH_SMS_APP: True})
 
     def test_node_invoke_native(self):
         from neon_data_models.models.api.node_v1 import NodeInvokeNative
@@ -495,7 +509,7 @@ class TestNodeV1(TestCase):
 
     def test_native_action_version_skew_tolerance(self):
         # An older hub must tolerate payloads from a newer Node: unknown
-        # fields are dropped, unknown capability keys and params are carried.
+        # fields and capability keys are dropped, unknown params are carried.
         # (Unknown `action`/`error.code` values are strictly rejected by
         # design — extending those enums is a coordinated release.)
         from neon_data_models.models.api.node_v1 import (NodeHello,
