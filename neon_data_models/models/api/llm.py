@@ -118,6 +118,23 @@ class LLMRequest(BaseModel):
         self.extra_body["use_beam_search"] = value
 
     @property
+    def thinking_token_budget(self) -> Optional[int]:
+        return self.extra_body.get('thinking_token_budget')
+
+    @thinking_token_budget.setter
+    def thinking_token_budget(self, value: Optional[int]):
+        if value is None:
+            self.extra_body.pop("thinking_token_budget", None)
+            if "chat_template_kwargs" in self.extra_body:
+                self.extra_body["chat_template_kwargs"].pop(
+                    "add_thinking_start", None)
+        elif isinstance(value, int):
+            assert value >= 0, "thinking_token_budget must be positive"
+            self.extra_body["thinking_token_budget"] = value
+            self.extra_body.setdefault("chat_template_kwargs",
+                                       {})["add_thinking_start"] = True
+
+    @property
     def best_of(self) -> int:
         return self.extra_body['best_of']
 
@@ -187,6 +204,19 @@ class LLMRequest(BaseModel):
         # If beam search is enabled, temperature must be set to 0.0
         if self.beam_search:
             assert self.temperature == 0.0, "Beam search requires temperature 0"
+
+        if self.thinking_token_budget is not None:
+            if self.thinking_token_budget < 0:
+                raise ValueError("thinking_token_budget must be positive")
+            if self.extra_body.get("chat_template_kwargs", {}).get(
+                    "add_thinking_start") is not True:
+                raise ValueError("add_thinking_start must be True if "
+                                 "thinking_token_budget is set")
+        if self.extra_body.get("chat_template_kwargs", {}).get(
+                "add_thinking_start") is True:
+            if self.thinking_token_budget is None:
+                raise ValueError("thinking_token_budget must be set if "
+                                 "add_thinking_start is True")
         return self
 
     @property

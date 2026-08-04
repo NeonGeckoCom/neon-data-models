@@ -89,6 +89,7 @@ class TestLLM(TestCase):
         self.assertIsInstance(valid_request.persona, LLMPersona)
         self.assertTrue(valid_request.stream)
         self.assertFalse(valid_request.beam_search)
+        self.assertIsNone(valid_request.thinking_token_budget)
         self.assertEqual(len(valid_request.history), len(test_history))
         self.assertEqual(len(valid_request.to_completion_kwargs()['messages']),
                          2 * valid_request.max_history + 2)
@@ -122,6 +123,42 @@ class TestLLM(TestCase):
         self.assertFalse(valid_no_stream.beam_search)
         self.assertFalse(valid_no_stream.stream)
 
+        # Valid thinking_token_budget via extra_body
+        thinking_request = LLMRequest(
+            query=test_query, history=test_history, persona=test_persona,
+            model=test_model,
+            extra_body={"thinking_token_budget": 128,
+                        "chat_template_kwargs": {"add_thinking_start": True}})
+        self.assertEqual(thinking_request.thinking_token_budget, 128)
+        self.assertTrue(thinking_request.extra_body["chat_template_kwargs"][
+                            "add_thinking_start"])
+        self.assertEqual(
+            thinking_request.to_completion_kwargs()["extra_body"][
+                "thinking_token_budget"], 128)
+
+        # Valid zero thinking_token_budget
+        zero_thinking = LLMRequest(
+            query=test_query, history=test_history, persona=test_persona,
+            model=test_model,
+            extra_body={"thinking_token_budget": 0,
+                        "chat_template_kwargs": {"add_thinking_start": True}})
+        self.assertEqual(zero_thinking.thinking_token_budget, 0)
+
+        # thinking_token_budget property setter enables chat_template_kwargs
+        setter_request = LLMRequest(query=test_query, history=test_history,
+                                    persona=test_persona, model=test_model)
+        setter_request.thinking_token_budget = 64
+        self.assertEqual(setter_request.thinking_token_budget, 64)
+        self.assertTrue(setter_request.extra_body["chat_template_kwargs"][
+                            "add_thinking_start"])
+        # Clearing thinking_token_budget also clears add_thinking_start
+        setter_request.thinking_token_budget = None
+        self.assertIsNone(setter_request.thinking_token_budget)
+        self.assertNotIn("thinking_token_budget", setter_request.extra_body)
+        self.assertNotIn("add_thinking_start",
+                         setter_request.extra_body.get(
+                             "chat_template_kwargs", {}))
+
         # Validate `llm` history input
         old_history = [("user", "hello"),
                        ("llm", "Hi, how can I help you today?"),
@@ -151,6 +188,37 @@ class TestLLM(TestCase):
             LLMRequest(query=test_query, history=test_history,
                        persona=test_persona, model=test_model, stream=False,
                        beam_search=True, best_of=1)
+        # Invalid thinking_token_budget without add_thinking_start
+        with self.assertRaises(ValidationError):
+            LLMRequest(query=test_query, history=test_history,
+                       persona=test_persona, model=test_model,
+                       extra_body={"thinking_token_budget": 128})
+        # Invalid add_thinking_start without thinking_token_budget
+        with self.assertRaises(ValidationError):
+            LLMRequest(
+                query=test_query, history=test_history, persona=test_persona,
+                model=test_model,
+                extra_body={"chat_template_kwargs": {
+                    "add_thinking_start": True}})
+        # Invalid negative thinking_token_budget
+        with self.assertRaises(ValidationError):
+            LLMRequest(
+                query=test_query, history=test_history, persona=test_persona,
+                model=test_model,
+                extra_body={"thinking_token_budget": -1,
+                            "chat_template_kwargs": {
+                                "add_thinking_start": True}})
+        # Invalid add_thinking_start=False with thinking_token_budget
+        with self.assertRaises(ValidationError):
+            LLMRequest(
+                query=test_query, history=test_history, persona=test_persona,
+                model=test_model,
+                extra_body={"thinking_token_budget": 128,
+                            "chat_template_kwargs": {
+                                "add_thinking_start": False}})
+        # Invalid negative thinking_token_budget via property setter
+        with self.assertRaises(AssertionError):
+            setter_request.thinking_token_budget = -1
         # Invalid history
         test_history.append(("invalid_key", "okay"))
         with self.assertRaises(ValidationError):
