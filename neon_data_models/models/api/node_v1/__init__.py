@@ -196,6 +196,50 @@ class NodeInvokeNativeResponse(BaseMessage):
     data: InvokeNativeResponseData
 
 
+class NodeHelloResponse(BaseMessage):
+    """
+    Hub acknowledgement of a `node.hello`: the normalized snapshot as
+    cached (what `context.node` will carry), or the validation error that
+    made the hub drop it. Hubs that predate this never send one.
+    """
+    class HelloResponseData(BaseModel):
+        class NormalizedNode(BaseModel):
+            node_id: str = Field(
+                description="Session-derived Node ID as cached by the hub")
+            node_name: str = Field(
+                default="", max_length=128,
+                description="Node device name as cached by the hub")
+            capabilities: NodeCapabilities = Field(
+                default={},
+                description="Capabilities as cached by the hub")
+
+        class HelloError(BaseModel):
+            message: str = Field(
+                default="",
+                description="Why the hub dropped the `node.hello`")
+
+        status: Literal["success", "error"]
+        node: Optional[NormalizedNode] = Field(
+            default=None, description="Required when `status` is `success`")
+        error: Optional[HelloError] = Field(
+            default=None, description="Required when `status` is `error`")
+
+        @model_validator(mode="after")
+        def validate_status_state(self):
+            if self.status == "success" and self.node is None:
+                raise ValueError("`node` is required when status is "
+                                 "'success'")
+            if self.status == "success" and self.error is not None:
+                raise ValueError("`error` is invalid when status is "
+                                 "'success'")
+            if self.status == "error" and self.error is None:
+                raise ValueError("`error` is required when status is 'error'")
+            return self
+
+    msg_type: Literal["node.hello.response"] = "node.hello.response"
+    data: HelloResponseData
+
+
 class CoreAlertExpired(BaseMessage):
     class AlertData(BaseModel):
         alert_type: AlertType
@@ -218,6 +262,7 @@ __all__ = [NodeAudioInput.__name__, NodeTextInput.__name__, NodeGetStt.__name__,
            NodeAudioInputResponse.__name__, NodeGetSttResponse.__name__,
            NodeGetTtsResponse.__name__, NodeHello.__name__,
            NodeInvokeNative.__name__, NodeInvokeNativeResponse.__name__,
+           NodeHelloResponse.__name__,
            CoreWWDetected.__name__, CoreIntentFailure.__name__,
            CoreErrorResponse.__name__, CoreClearData.__name__,
            CoreAlertExpired.__name__]

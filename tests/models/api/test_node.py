@@ -450,6 +450,49 @@ class TestNodeV1(TestCase):
         self.assertEqual(
             error.model_dump()["data"]["error"]["code"], "unavailable")
 
+    def test_node_hello_response(self):
+        from neon_data_models.models.api.node_v1 import NodeHelloResponse
+
+        # Success carries the hub-normalized snapshot
+        success = NodeHelloResponse(
+            data={"status": "success",
+                  "node": {"node_id": "session-123",
+                           "node_name": "Kitchen Phone",
+                           "capabilities": {"launch_camera_app": True}}},
+            context={})
+        self.assertEqual(success.data.node.node_id, "session-123")
+        self.assertIsNone(success.data.error)
+
+        # Capability keys serialize back to wire strings
+        self.assertEqual(
+            success.model_dump()["data"]["node"]["capabilities"]
+            ["launch_camera_app"], True)
+
+        # Rejection carries the validation error
+        error = NodeHelloResponse(
+            data={"status": "error",
+                  "error": {"message": "data.node_id Field required"}},
+            context={})
+        self.assertIsNone(error.data.node)
+        self.assertEqual(error.data.error.message,
+                         "data.node_id Field required")
+
+        # Success without a node snapshot is rejected
+        with self.assertRaises(ValidationError):
+            NodeHelloResponse(data={"status": "success"}, context={})
+
+        # Success with an error object is rejected
+        with self.assertRaises(ValidationError):
+            NodeHelloResponse(
+                data={"status": "success",
+                      "node": {"node_id": "x"},
+                      "error": {"message": "nope"}},
+                context={})
+
+        # Error status without an error object is rejected
+        with self.assertRaises(ValidationError):
+            NodeHelloResponse(data={"status": "error"}, context={})
+
     def test_native_action_wire_strings(self):
         # These enum values are the wire contract shared with HANA, the
         # skills, and the Node app. Changing one is a breaking change.
