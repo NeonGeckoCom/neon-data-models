@@ -130,6 +130,9 @@ class LLMRequest(BaseModel):
                     "add_thinking_start", None)
         elif isinstance(value, int):
             assert value >= 0, "thinking_token_budget must be positive"
+            if value >= self.max_tokens:
+                raise ValueError(
+                    "thinking_token_budget must be smaller than max_tokens")
             self.extra_body["thinking_token_budget"] = value
             self.extra_body.setdefault("chat_template_kwargs",
                                        {})["add_thinking_start"] = True
@@ -208,6 +211,9 @@ class LLMRequest(BaseModel):
         if self.thinking_token_budget is not None:
             if self.thinking_token_budget < 0:
                 raise ValueError("thinking_token_budget must be positive")
+            if self.thinking_token_budget >= self.max_tokens:
+                raise ValueError(
+                    "thinking_token_budget must be smaller than max_tokens")
             if self.extra_body.get("chat_template_kwargs", {}).get(
                     "add_thinking_start") is not True:
                 raise ValueError("add_thinking_start must be True if "

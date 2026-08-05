@@ -216,9 +216,28 @@ class TestLLM(TestCase):
                 extra_body={"thinking_token_budget": 128,
                             "chat_template_kwargs": {
                                 "add_thinking_start": False}})
+        # Invalid thinking_token_budget equal to max_tokens
+        with self.assertRaises(ValidationError):
+            LLMRequest(
+                query=test_query, history=test_history, persona=test_persona,
+                model=test_model, max_tokens=128,
+                extra_body={"thinking_token_budget": 128,
+                            "chat_template_kwargs": {
+                                "add_thinking_start": True}})
+        # Invalid thinking_token_budget greater than max_tokens
+        with self.assertRaises(ValidationError):
+            LLMRequest(
+                query=test_query, history=test_history, persona=test_persona,
+                model=test_model, max_tokens=128,
+                extra_body={"thinking_token_budget": 129,
+                            "chat_template_kwargs": {
+                                "add_thinking_start": True}})
         # Invalid negative thinking_token_budget via property setter
         with self.assertRaises(AssertionError):
             setter_request.thinking_token_budget = -1
+        # Invalid thinking_token_budget via property setter
+        with self.assertRaises(ValueError):
+            setter_request.thinking_token_budget = setter_request.max_tokens
         # Invalid history
         test_history.append(("invalid_key", "okay"))
         with self.assertRaises(ValidationError):
