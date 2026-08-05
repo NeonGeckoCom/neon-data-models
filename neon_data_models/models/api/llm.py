@@ -250,6 +250,8 @@ class LLMRequest(BaseModel):
 
 class LLMResponse(BaseModel):
     response: str = Field(description="LLM Response to the input query")
+    reasoning_content: Optional[str] = Field(
+        None, description="Thinking/reasoning trace returned by the LLM")
     history: List[Tuple[LlmMessageRole, str]] = Field(
         description="List of (role, content) tuples in chronological order "
                     "(`response` is in the last list element)")

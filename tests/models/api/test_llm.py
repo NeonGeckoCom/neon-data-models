@@ -235,7 +235,14 @@ class TestLLM(TestCase):
         # Valid response with valid history
         response = LLMResponse(response=valid_response, history=valid_history)
         self.assertEqual(response.response, valid_response)
+        self.assertIsNone(response.reasoning_content)
         self.assertEqual(response.history, valid_history)
+
+        # Valid response with a reasoning trace
+        reasoning_content = "We need answer the user's greeting."
+        response = LLMResponse(response=valid_response, history=valid_history,
+                               reasoning_content=reasoning_content)
+        self.assertEqual(response.reasoning_content, reasoning_content)
 
         # Valid response with legacy history
         response = LLMResponse(response=valid_response, history=legacy_history)
