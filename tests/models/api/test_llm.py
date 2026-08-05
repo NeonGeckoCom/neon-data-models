@@ -132,9 +132,19 @@ class TestLLM(TestCase):
         self.assertEqual(thinking_request.thinking_token_budget, 128)
         self.assertTrue(thinking_request.extra_body["chat_template_kwargs"][
                             "add_thinking_start"])
+        self.assertFalse(thinking_request.extra_body["skip_special_tokens"])
         self.assertEqual(
             thinking_request.to_completion_kwargs()["extra_body"][
                 "thinking_token_budget"], 128)
+
+        # Valid thinking with explicit skip_special_tokens=False
+        thinking_no_skip = LLMRequest(
+            query=test_query, history=test_history, persona=test_persona,
+            model=test_model,
+            extra_body={"thinking_token_budget": 128,
+                        "skip_special_tokens": False,
+                        "chat_template_kwargs": {"add_thinking_start": True}})
+        self.assertFalse(thinking_no_skip.extra_body["skip_special_tokens"])
 
         # Valid zero thinking_token_budget
         zero_thinking = LLMRequest(
@@ -143,6 +153,7 @@ class TestLLM(TestCase):
             extra_body={"thinking_token_budget": 0,
                         "chat_template_kwargs": {"add_thinking_start": True}})
         self.assertEqual(zero_thinking.thinking_token_budget, 0)
+        self.assertFalse(zero_thinking.extra_body["skip_special_tokens"])
 
         # thinking_token_budget property setter enables chat_template_kwargs
         setter_request = LLMRequest(query=test_query, history=test_history,
@@ -151,6 +162,7 @@ class TestLLM(TestCase):
         self.assertEqual(setter_request.thinking_token_budget, 64)
         self.assertTrue(setter_request.extra_body["chat_template_kwargs"][
                             "add_thinking_start"])
+        self.assertFalse(setter_request.extra_body["skip_special_tokens"])
         # Clearing thinking_token_budget also clears add_thinking_start
         setter_request.thinking_token_budget = None
         self.assertIsNone(setter_request.thinking_token_budget)
@@ -216,6 +228,15 @@ class TestLLM(TestCase):
                 extra_body={"thinking_token_budget": 128,
                             "chat_template_kwargs": {
                                 "add_thinking_start": False}})
+        # Invalid skip_special_tokens=True with thinking enabled
+        with self.assertRaises(ValidationError):
+            LLMRequest(
+                query=test_query, history=test_history, persona=test_persona,
+                model=test_model,
+                extra_body={"thinking_token_budget": 128,
+                            "skip_special_tokens": True,
+                            "chat_template_kwargs": {
+                                "add_thinking_start": True}})
         # Invalid thinking_token_budget equal to max_tokens
         with self.assertRaises(ValidationError):
             LLMRequest(

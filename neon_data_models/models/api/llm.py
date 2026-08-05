@@ -125,6 +125,7 @@ class LLMRequest(BaseModel):
     def thinking_token_budget(self, value: Optional[int]):
         if value is None:
             self.extra_body.pop("thinking_token_budget", None)
+            self.extra_body.pop("skip_special_tokens", None)
             if "chat_template_kwargs" in self.extra_body:
                 self.extra_body["chat_template_kwargs"].pop(
                     "add_thinking_start", None)
@@ -134,6 +135,7 @@ class LLMRequest(BaseModel):
                 raise ValueError(
                     "thinking_token_budget must be smaller than max_tokens")
             self.extra_body["thinking_token_budget"] = value
+            self.extra_body["skip_special_tokens"] = False
             self.extra_body.setdefault("chat_template_kwargs",
                                        {})["add_thinking_start"] = True
 
@@ -223,6 +225,11 @@ class LLMRequest(BaseModel):
             if self.thinking_token_budget is None:
                 raise ValueError("thinking_token_budget must be set if "
                                  "add_thinking_start is True")
+            # Reasoning parsers need the literal think tags in decoded text
+            if self.extra_body.get("skip_special_tokens") is True:
+                raise ValueError("skip_special_tokens must be False if "
+                                 "add_thinking_start is True")
+            self.extra_body["skip_special_tokens"] = False
         return self
 
     @property
