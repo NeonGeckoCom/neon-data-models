@@ -146,7 +146,7 @@ class TestLLM(TestCase):
                         "chat_template_kwargs": {"add_thinking_start": True}})
         self.assertFalse(thinking_no_skip.extra_body["skip_special_tokens"])
 
-        # Valid zero thinking_token_budget
+        # A zero thinking_token_budget requests no thinking at all
         zero_thinking = LLMRequest(
             query=test_query, history=test_history, persona=test_persona,
             model=test_model,
@@ -154,6 +154,25 @@ class TestLLM(TestCase):
                         "chat_template_kwargs": {"add_thinking_start": True}})
         self.assertEqual(zero_thinking.thinking_token_budget, 0)
         self.assertFalse(zero_thinking.extra_body["skip_special_tokens"])
+        self.assertFalse(zero_thinking.extra_body["chat_template_kwargs"][
+                             "add_thinking_start"])
+        self.assertFalse(zero_thinking.extra_body["chat_template_kwargs"][
+                             "enable_thinking"])
+        self.assertNotIn("thinking_token_budget",
+                         zero_thinking.to_completion_kwargs()["extra_body"])
+
+        # Thinking may be disabled with `add_thinking_start` alone
+        disabled_thinking = LLMRequest(
+            query=test_query, history=test_history, persona=test_persona,
+            model=test_model,
+            extra_body={"chat_template_kwargs": {"add_thinking_start": False}})
+        self.assertEqual(disabled_thinking.thinking_token_budget, 0)
+        self.assertFalse(disabled_thinking.extra_body["skip_special_tokens"])
+        self.assertFalse(disabled_thinking.extra_body["chat_template_kwargs"][
+                             "enable_thinking"])
+        self.assertNotIn(
+            "thinking_token_budget",
+            disabled_thinking.to_completion_kwargs()["extra_body"])
 
         # thinking_token_budget property setter enables chat_template_kwargs
         setter_request = LLMRequest(query=test_query, history=test_history,
@@ -163,6 +182,16 @@ class TestLLM(TestCase):
         self.assertTrue(setter_request.extra_body["chat_template_kwargs"][
                             "add_thinking_start"])
         self.assertFalse(setter_request.extra_body["skip_special_tokens"])
+        # A zero budget via the property setter disables thinking
+        setter_request.thinking_token_budget = 0
+        self.assertEqual(setter_request.thinking_token_budget, 0)
+        self.assertNotIn("thinking_token_budget",
+                         setter_request.to_completion_kwargs()["extra_body"])
+        self.assertFalse(setter_request.extra_body["chat_template_kwargs"][
+                             "add_thinking_start"])
+        self.assertFalse(setter_request.extra_body["chat_template_kwargs"][
+                             "enable_thinking"])
+        self.assertFalse(setter_request.extra_body["skip_special_tokens"])
         # Clearing thinking_token_budget also clears add_thinking_start
         setter_request.thinking_token_budget = None
         self.assertIsNone(setter_request.thinking_token_budget)
@@ -170,6 +199,10 @@ class TestLLM(TestCase):
         self.assertNotIn("add_thinking_start",
                          setter_request.extra_body.get(
                              "chat_template_kwargs", {}))
+        self.assertNotIn("enable_thinking",
+                         setter_request.extra_body.get(
+                             "chat_template_kwargs", {}))
+        self.assertNotIn("skip_special_tokens", setter_request.extra_body)
 
         # Validate `llm` history input
         old_history = [("user", "hello"),
