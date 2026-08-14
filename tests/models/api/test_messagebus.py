@@ -331,11 +331,19 @@ class TestMessagebusModels(TestCase):
         self.assertEqual(valid_message.data.responses["en-us"].genders, ["female", "male"])
         self.assertEqual(valid_message.data.responses["en-us"].audio["female"], "base64audio1")
         self.assertEqual(valid_message.msg_type, "neon.get_tts.response")
+        self.assertFalse(valid_message.data.expect_response)
 
         # Test alternate msg_type
-        alt_message = NeonTtsResponse(data=data, message_id=message_id, context={}, 
+        alt_message = NeonTtsResponse(data=data, message_id=message_id, context={},
                                     msg_type="klat.response")
         self.assertEqual(alt_message.msg_type, "klat.response")
+
+        # Test `expect_response` flag is forwarded to signal clients to listen
+        listen_data = TtsReponseData(responses={"en-us": response},
+                                      expect_response=True)
+        listen_message = NeonTtsResponse(data=listen_data, context={},
+                                          msg_type="klat.response")
+        self.assertTrue(listen_message.data.expect_response)
 
         # Test missing required fields
         with self.assertRaises(ValidationError):
