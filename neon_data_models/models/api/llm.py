@@ -118,6 +118,38 @@ class LLMRequest(BaseModel):
         self.extra_body["use_beam_search"] = value
 
     @property
+    def thinking_token_budget(self) -> Optional[int]:
+        return self.extra_body.get('thinking_token_budget')
+
+    @thinking_token_budget.setter
+    def thinking_token_budget(self, value: Optional[int]):
+        if value is None:
+            self.extra_body.pop("thinking_token_budget", None)
+            self.extra_body.pop("skip_special_tokens", None)
+            if "chat_template_kwargs" in self.extra_body:
+                self.extra_body["chat_template_kwargs"].pop(
+                    "add_thinking_start", None)
+                self.extra_body["chat_template_kwargs"].pop(
+                    "enable_thinking", None)
+        elif isinstance(value, int):
+            assert value >= 0, "thinking_token_budget must be positive"
+            if value >= self.max_tokens:
+                raise ValueError(
+                    "thinking_token_budget must be smaller than max_tokens")
+            # Reasoning parsers need the literal think tags in decoded text
+            self.extra_body["skip_special_tokens"] = False
+            template_kwargs = self.extra_body.setdefault(
+                "chat_template_kwargs", {})
+            self.extra_body["thinking_token_budget"] = value
+            if value == 0:
+                # Treat `0` as a request for no thinking at all
+                template_kwargs["add_thinking_start"] = False
+                template_kwargs["enable_thinking"] = False
+            else:
+                template_kwargs["add_thinking_start"] = True
+                template_kwargs.pop("enable_thinking", None)
+
+    @property
     def best_of(self) -> int:
         return self.extra_body['best_of']
 
@@ -187,6 +219,32 @@ class LLMRequest(BaseModel):
         # If beam search is enabled, temperature must be set to 0.0
         if self.beam_search:
             assert self.temperature == 0.0, "Beam search requires temperature 0"
+
+        requested_budget = self.extra_body.get("thinking_token_budget")
+        add_thinking_start = self.extra_body.get(
+            "chat_template_kwargs", {}).get("add_thinking_start")
+        if requested_budget is not None and requested_budget < 0:
+            raise ValueError("thinking_token_budget must be positive")
+        if requested_budget:
+            if requested_budget >= self.max_tokens:
+                raise ValueError(
+                    "thinking_token_budget must be smaller than max_tokens")
+            if add_thinking_start is not True:
+                raise ValueError("add_thinking_start must be True if "
+                                 "thinking_token_budget is set")
+            # Reasoning parsers need the literal think tags in decoded text
+            if self.extra_body.get("skip_special_tokens") is True:
+                raise ValueError("skip_special_tokens must be False if "
+                                 "add_thinking_start is True")
+            self.thinking_token_budget = requested_budget
+        elif requested_budget == 0 or add_thinking_start is False:
+            # Either parameter alone means no thinking is requested; set both
+            # so the request cannot ask the model to open a think block that
+            # it has no budget to complete
+            self.thinking_token_budget = 0
+        elif add_thinking_start is True:
+            raise ValueError("thinking_token_budget must be set if "
+                             "add_thinking_start is True")
         return self
 
     @property
@@ -210,16 +268,25 @@ class LLMRequest(BaseModel):
             history.insert(0, {"role": "system",
                                "content": self.persona.system_prompt})
         history.append({"role": "user", "content": self.query})
+        extra_body = dict(self.extra_body)
+        if extra_body.get("thinking_token_budget") == 0:
+            # A zero budget requests no thinking, but an inference engine reads
+            # it as a budget to spend; it opens a think block and closes it
+            # after one generated token, leaving the model to complete its
+            # interrupted reasoning as response content
+            extra_body.pop("thinking_token_budget")
         return {"model": self.model,
                 "messages": history,
                 "max_tokens": self.max_tokens,
                 "temperature": self.temperature,
                 "stream": self.stream,
-                "extra_body": self.extra_body}
+                "extra_body": extra_body}
 
 
 class LLMResponse(BaseModel):
     response: str = Field(description="LLM Response to the input query")
+    reasoning: Optional[str] = Field(
+        None, description="Thinking/reasoning trace returned by the LLM")
     history: List[Tuple[LlmMessageRole, str]] = Field(
         description="List of (role, content) tuples in chronological order "
                     "(`response` is in the last list element)")
