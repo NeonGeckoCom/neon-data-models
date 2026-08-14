@@ -117,6 +117,11 @@ class TtsReponseData(BaseModel):
     speaker: Optional[TtsSpeaker] = Field(
         default=None, description="Optional speaker metadata"
     )
+    expect_response: bool = Field(
+        default=False,
+        description="True if a response is expected after this TTS is "
+        "played, signaling the client to re-open the mic/listen",
+    )
 
 
 class GetSttData(BaseModel):
