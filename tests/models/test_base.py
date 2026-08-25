@@ -372,6 +372,46 @@ class TestContexts(TestCase):
         minimal_ctx = MQContext(message_id="test_message_id_string")
         self.assertEqual(minimal_ctx, MQContext(**minimal_ctx.model_dump()))
 
+    def test_mq_response(self):
+        from neon_data_models.models.base import BaseModel
+        from neon_data_models.models.base.contexts import MQContext
+        from neon_data_models.models.base.mq import MQResponse
+
+        self.assertTrue(issubclass(MQResponse, MQContext))
+        self.assertTrue(issubclass(MQResponse, BaseModel))
+
+        default = MQResponse()
+        self.assertTrue(default.is_final)
+        self.assertIsNone(default.part)
+        self.assertIsInstance(default.message_id, str)
+
+        serialized = default.model_dump()
+        self.assertEqual(serialized["is_final"], True)
+        self.assertIn("part", serialized)
+        self.assertIsNone(serialized["part"])
+        self.assertNotIn("_is_final", serialized)
+        self.assertNotIn("_part", serialized)
+
+        multipart = MQResponse(message_id="test_message_id",
+                               is_final=False,
+                               part=0)
+        self.assertFalse(multipart.is_final)
+        self.assertEqual(multipart.part, 0)
+        self.assertEqual(multipart.model_dump(),
+                         {"message_id": "test_message_id",
+                          "routing_key": None,
+                          "is_final": False,
+                          "part": 0})
+
+        final_part = MQResponse(message_id="test_message_id",
+                                is_final=True,
+                                part=2)
+        self.assertEqual(final_part, MQResponse(**final_part.model_dump()))
+
+        json_str = json.dumps(multipart.model_dump())
+        deserialized = MQResponse(**json.loads(json_str))
+        self.assertEqual(deserialized, multipart)
+
 
 class TestMessagebus(TestCase):
     def test_base_model(self):

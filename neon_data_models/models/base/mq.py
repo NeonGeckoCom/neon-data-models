@@ -32,12 +32,10 @@ from neon_data_models.models.base.contexts import MQContext
 class MQResponse(MQContext):
     is_final: bool = Field(
         default=True,
-        alias="_is_final",
         description="If False, another response message is expected.",
     )
     part: Optional[int] = Field(
         default=None,
-        alias="_part",
         description="Index of this response message in a series "
         "(zero-indexed). If `None`, message is not multipart.",
     )
