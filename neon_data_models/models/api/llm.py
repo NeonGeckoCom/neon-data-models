@@ -304,9 +304,22 @@ class LLMResponse(BaseModel):
         return values
 
 
+class ToolUseConfig(BaseModel):
+    native_support: bool = Field(
+        default=False,
+        description="True if the model has native tool use support",
+    )
+    citations: bool = Field(
+        default=False,
+        description="True if the model supports citation generation",
+    )
+
+
 class BrainForgeLLM(BaseModel):
     name: str = Field(description="LLM Name")
     version: str = Field(description="LLM Version")
+    tool_use: ToolUseConfig = Field(description="Tool use support",
+                                    default=ToolUseConfig())
     personas: List[LLMPersona] = Field(
         default=[], description="List of personas defined in this model")
 
