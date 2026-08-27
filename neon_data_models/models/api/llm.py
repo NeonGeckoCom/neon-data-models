@@ -88,8 +88,9 @@ class LLMRequest(BaseModel):
         description="Requested persona to respond to this message")
     model: str = Field(description="Model to request (<name>@<revision>)")
     max_tokens: int = Field(
-        default=512, ge=64, le=2048,
-        description="Maximum number of tokens to include in the response")
+        default=512, ge=64, le=8192,
+        description="Maximum number of tokens to include in the response "
+                    "(including reasoning tokens)")
     temperature: float = Field(
         default=0.0, ge=0.0, le=1.0,
         description="Temperature of response. 0 guarantees reproducibility, "
@@ -304,9 +305,35 @@ class LLMResponse(BaseModel):
         return values
 
 
+class ToolUseConfig(BaseModel):
+    native_support: bool = Field(
+        default=False,
+        description="True if the model has native tool use support",
+    )
+    citations: bool = Field(
+        default=False,
+        description="True if the model supports citation generation",
+    )
+
+
+class DefaultRequestParams(BaseModel):
+    streaming: bool = Field(
+        default=True, description="Default streaming behavior"
+    )
+    temperature: float = Field(default=0.0, description="Default temperature")
+    repetition_penalty: float = Field(
+        default=1.05, description="Default repetition penalty"
+    )
+
+
 class BrainForgeLLM(BaseModel):
     name: str = Field(description="LLM Name")
     version: str = Field(description="LLM Version")
+    tool_use: ToolUseConfig = Field(description="Tool use support",
+                                    default=ToolUseConfig())
+    default_request_params: DefaultRequestParams = Field(
+            description="Default request parameters",
+            default=DefaultRequestParams())
     personas: List[LLMPersona] = Field(
         default=[], description="List of personas defined in this model")
 
