@@ -25,7 +25,6 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from typing import Annotated, List, Literal, Union
-from ovos_bus_client.message import Message
 from pydantic import Field, TypeAdapter, model_validator
 
 from neon_data_models.models.base import BaseModel
@@ -174,16 +173,21 @@ class NeonMqCallSkillApi(NeonCallSkillApi, MQContext):
         description="API request data including `msg_type` and call params"
     )
 
-    def as_messagebus_message(self) -> Message:
+    def as_messagebus_message(self) -> "Message":  # type: ignore
         """
         Override default Message translation to account for `msg_type` being
         specified in request data
         """
-        return Message(
-            msg_type=self.data.msg_type,
-            data={"args": self.data.args, "kwargs": self.data.kwargs},
-            context=self.context.model_dump()
-            )
+        try:
+            from ovos_bus_client.message import Message
+            return Message(
+                msg_type=self.data.msg_type,
+                data={"args": self.data.args, "kwargs": self.data.kwargs},
+                context=self.context.model_dump()
+                )
+        except ImportError:
+            raise RuntimeError("pip install ovos-bus-client to enable Message "
+                               "deserialization.")
 
 class NeonMqCallSkillApiResponse(NeonCallSkillApiResponse, MQContext):
     """
